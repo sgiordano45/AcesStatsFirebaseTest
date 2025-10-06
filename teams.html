@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Teams - Mountainside Aces</title>
+<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile-enhancements.css">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .teams-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 20px;
+  }
+  
+  .team-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .team-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .team-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    text-align: center;
+  }
+  
+  .team-logo {
+    height: 60px;
+    max-width: 80px;
+    margin-bottom: 12px;
+    object-fit: contain;
+    filter: brightness(1.1);
+  }
+  
+  .team-header h3 {
+    margin: 0;
+    font-size: 1.6em;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .team-details {
+    padding: 20px;
+  }
+  
+  .team-years {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  
+  .team-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  
+  .stat-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+  }
+  
+  .stat-number {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #333;
+    display: block;
+  }
+  
+  .stat-label {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 3px;
+  }
+  
+  .championship-banner {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #333;
+    padding: 8px 15px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9em;
+    border-radius: 6px;
+    margin-top: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .games-breakdown {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 12px;
+    background: #e8f4fd;
+    border-left: 3px solid #007bff;
+    font-size: 0.9em;
+    color: #333;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary p {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .summary p:last-child {
+    margin-bottom: 0;
+    color: #666;
+    font-size: 0.95rem;
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .nav-container {
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 10px 15px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .teams-container {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    
+    .team-header {
+      padding: 20px 15px;
+    }
+    
+    .team-header h3 {
+      font-size: 1.4em;
+    }
+    
+    .team-stats {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .team-header {
+      padding: 15px;
+    }
+    
+    .team-logo {
+      height: 50px;
+      max-width: 70px;
+    }
+    
+    .team-details {
+      padding: 15px;
+    }
+    
+    .stat-item {
+      padding: 8px;
+    }
+    
+    .stat-number {
+      font-size: 1.2em;
+    }
+  }
+</style>
+</head>
+<body>
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">🏆 All Teams</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item active">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+<div class="page-container">
+  <div class="page-header">
+    <h1>All Teams</h1>
+    <p>Browse team statistics, seasons played, and championship history</p>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link active">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+	  <a href="team_compare.html" class="nav-link">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+
+
+
+  <div id="summary" class="summary">
+    <p id="totalTeamsText"></p>
+    <p>Each team card shows their active years, player count, game statistics, and championship history. Click on any team to view detailed roster and season-by-season performance.</p>
+  </div>
+
+  <div id="teams-container" class="teams-container">
+    <!-- Team cards will be generated dynamically -->
+  </div>
+</div>
+
+<script>
+let allData = [];
+let allGames = [];
+
+// Load statistics data and games data
+Promise.all([
+  fetch("data.json").then(res => res.json()),
+  fetch("games.json").then(res => res.ok ? res.json() : [])
+])
+  .then(([battingData, gamesData]) => {
+    allData = battingData.map(p => ({
+      ...p,
+      name: p.name ? p.name.trim() : "",
+      team: p.team ? p.team.trim() : "",
+      year: p.year ? String(p.year).trim() : "",
+      games: Number(p.games) || 0,
+      atBats: Number(p.atBats) || 0,
+      hits: Number(p.hits) || 0
+    }));
+    
+    allGames = gamesData;
+    
+    generateTeamCards();
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    document.getElementById("teams-container").innerHTML = 
+      '<p style="text-align: center; color: #666; padding: 2rem;">Error loading team data. Please check that data files are available.</p>';
+  });
+
+function generateTeamCards() {
+  // Get unique teams and filter out "Kings"
+  const teams = [...new Set(allData.map(p => p.team))]
+    .filter(t => t && t.toLowerCase() !== "kings")
+    .sort();
+  
+  // Calculate stats for each team
+  const teamStats = teams.map(teamName => {
+    const teamData = allData.filter(p => p.team === teamName);
+    const years = [...new Set(teamData.map(p => p.year))].sort();
+    const totalPlayers = new Set(teamData.map(p => p.name)).size;
+    
+    // Calculate team games from games.json
+    const teamGames = allGames.filter(g => 
+      g["home team"] === teamName || g["away team"] === teamName
+    );
+    const totalTeamGames = teamGames.length;
+    const regularSeasonGames = teamGames.filter(g => g.game_type === 'Regular').length;
+    const playoffGames = teamGames.filter(g => g.game_type === 'Playoff').length;
+    
+    // Calculate championships (team finished first in playoff standings)
+    const championships = calculateTeamChampionships(teamName);
+    
+    return {
+      name: teamName,
+      years: years,
+      totalPlayers: totalPlayers,
+      totalTeamGames: totalTeamGames,
+      regularSeasonGames: regularSeasonGames,
+      playoffGames: playoffGames,
+      championships: championships,
+      firstYear: years[0],
+      lastYear: years[years.length - 1]
+    };
+  });
+  
+  // Update summary
+  const totalTeams = teams.length;
+  const activeTeams = teamStats.filter(t => parseInt(t.lastYear) === 2025).length;
+  const totalChampionships = teamStats.reduce((sum, t) => sum + t.championships.length, 0);
+  
+  document.getElementById("totalTeamsText").textContent = 
+    `${totalTeams} total teams (${activeTeams} active in 2025, ${totalTeams - activeTeams} inactive) • ${totalChampionships} championships awarded`;
+  
+  const container = document.getElementById("teams-container");
+  container.innerHTML = '';
+  
+  teamStats.forEach(team => {
+    const yearsText = team.years.length > 1 ? 
+      `${team.firstYear} - ${team.lastYear}` : 
+      team.firstYear;
+    
+    // Create games breakdown text
+    let gamesBreakdown = '';
+    if (team.regularSeasonGames > 0 && team.playoffGames > 0) {
+      gamesBreakdown = `${team.regularSeasonGames} regular season, ${team.playoffGames} playoff games`;
+    } else if (team.regularSeasonGames > 0) {
+      gamesBreakdown = `${team.regularSeasonGames} regular season games`;
+    } else if (team.playoffGames > 0) {
+      gamesBreakdown = `${team.playoffGames} playoff games`;
+    } else {
+      gamesBreakdown = `${team.totalTeamGames} total games`;
+    }
+    
+    // Championship banner HTML
+    let championshipHTML = '';
+    if (team.championships.length > 0) {
+      const championshipText = team.championships.length === 1 ? 
+        `🏆 ${team.championships[0]} Champions` : 
+        `🏆 ${team.championships.length} Championships`;
+      championshipHTML = `<div class="championship-banner">${championshipText}</div>`;
+    }
+    
+    const teamCard = document.createElement('a');
+    teamCard.href = `team.html?team=${encodeURIComponent(team.name)}`;
+    teamCard.className = 'team-card';
+    
+    teamCard.innerHTML = `
+      <div class="team-header">
+        <img src="logos/${team.name.toLowerCase().replace(/\s+/g, '_')}.png" 
+             alt="${team.name} Logo" 
+             class="team-logo" 
+             onerror="this.style.display='none';">
+        <h3>${team.name}</h3>
+      </div>
+      <div class="team-details">
+        <div class="team-years">Active: ${yearsText}</div>
+        <div class="team-stats">
+          <div class="stat-item">
+            <span class="stat-number">${team.totalPlayers}</span>
+            <div class="stat-label">Total Players</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${team.totalTeamGames}</span>
+            <div class="stat-label">Total Games</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${team.years.length}</span>
+            <div class="stat-label">Season${team.years.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${team.championships.length}</span>
+            <div class="stat-label">Championship${team.championships.length !== 1 ? 's' : ''}</div>
+          </div>
+          ${team.totalTeamGames > 0 ? `<div class="games-breakdown">${gamesBreakdown}</div>` : ''}
+        </div>
+        ${championshipHTML}
+      </div>
+    `;
+    
+    container.appendChild(teamCard);
+  });
+}
+
+function calculateTeamChampionships(teamName) {
+  const championships = [];
+  
+  // Get all games for this team
+  const teamGames = allGames.filter(g => 
+    g["home team"] === teamName || g["away team"] === teamName
+  );
+  
+  // Get unique seasons for this team
+  const teamSeasons = [...new Set(teamGames.map(g => `${g.year}-${g.season}`))];
+  
+  teamSeasons.forEach(seasonKey => {
+    const [year, season] = seasonKey.split('-');
+    
+    // Get all playoff games for this season (for all teams, not just current team)
+    const allPlayoffGames = allGames.filter(g => 
+      g.year === year && 
+      g.season === season && 
+      g.game_type === 'Playoff'
+    );
+    
+    if (allPlayoffGames.length === 0) return; // No playoffs this season
+    
+    // Calculate playoff standings for this season
+    const playoffStandings = calculatePlayoffStandings(allPlayoffGames);
+    
+    // Check if current team won the championship (is at top of standings)
+    if (playoffStandings.length > 0 && playoffStandings[0].name === teamName) {
+      championships.push(`${year} ${season}`);
+    }
+  });
+  
+  return championships;
+}
+
+function calculatePlayoffStandings(playoffGames) {
+  const teamStats = {};
+  
+  playoffGames.forEach(game => {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const winner = game.winner;
+    
+    // Initialize teams if not exists
+    if (!teamStats[homeTeam]) {
+      teamStats[homeTeam] = { name: homeTeam, wins: 0, losses: 0, ties: 0 };
+    }
+    if (!teamStats[awayTeam]) {
+      teamStats[awayTeam] = { name: awayTeam, wins: 0, losses: 0, ties: 0 };
+    }
+    
+    // Count results
+    if (winner === "Tie") {
+      teamStats[homeTeam].ties++;
+      teamStats[awayTeam].ties++;
+    } else if (winner === homeTeam) {
+      teamStats[homeTeam].wins++;
+      teamStats[awayTeam].losses++;
+    } else if (winner === awayTeam) {
+      teamStats[awayTeam].wins++;
+      teamStats[homeTeam].losses++;
+    } else if (winner.includes("Forfeit")) {
+      // Handle forfeit cases
+      const actualWinner = winner.replace("Forfeit - ", "").replace("Tie", "");
+      if (actualWinner && actualWinner !== "Tie") {
+        if (actualWinner === homeTeam) {
+          teamStats[homeTeam].wins++;
+          teamStats[awayTeam].losses++;
+        } else if (actualWinner === awayTeam) {
+          teamStats[awayTeam].wins++;
+          teamStats[homeTeam].losses++;
+        }
+      } else {
+        teamStats[homeTeam].ties++;
+        teamStats[awayTeam].ties++;
+      }
+    }
+  });
+  
+  // Calculate win percentage and sort
+  const standings = Object.values(teamStats).map(team => {
+    const totalDecidedGames = team.wins + team.losses;
+    team.winPct = totalDecidedGames > 0 ? team.wins / totalDecidedGames : 0;
+    return team;
+  });
+  
+  // Sort by win percentage (descending), then by wins (descending)
+  standings.sort((a, b) => {
+    if (b.winPct !== a.winPct) {
+      return b.winPct - a.winPct;
+    }
+    return b.wins - a.wins;
+  });
+  
+  return standings;
+}
+</script>
+<script>
+// Team Color System JavaScript
+class TeamColorSystem {
+  constructor() {
+    this.teams = [
+      'black', 'green', 'red', 'blue', 'white', 
+      'orange', 'silver', 'purple', 'gold', 'carolina', 'army'
+    ];
+  }
+  
+  // Apply team colors to an element
+  applyTeamColors(element, teamName, variant = 'text') {
+    if (!element || !teamName) return;
+    
+    const team = teamName.toLowerCase().trim();
+    
+    // Validate team name
+    if (!this.teams.includes(team)) return;
+    
+    // Remove any existing team classes
+    element.classList.forEach(cls => {
+      if (cls.startsWith('team-')) {
+        element.classList.remove(cls);
+      }
+    });
+    
+    // Build class name
+    let className;
+    switch(variant) {
+      case 'primary':
+        className = `team-${team}`;
+        break;
+      case 'light':
+        className = `team-${team}-light`;
+        break;
+      case 'text':
+        className = `team-text-${team}`;
+        break;
+      case 'badge':
+        className = `team-badge-${team}`;
+        break;
+      default:
+        className = `team-text-${team}`;
+    }
+    
+    // Add new team class
+    element.classList.add(className);
+    return element;
+  }
+  
+  // Automatically detect and style team names in content
+  styleAllTeamNames(variant = 'text') {
+    const teamNames = ['Black', 'Green', 'Red', 'Blue', 'White', 
+                      'Orange', 'Silver', 'Purple', 'Gold', 'Carolina', 'Army'];
+    
+    // Find all text elements that might contain team names
+    const selectors = 'td, th, span, div, p, a, li';
+    document.querySelectorAll(selectors).forEach(element => {
+      // Skip if element already has team styling
+      if (element.classList.toString().includes('team-')) return;
+      
+      const text = element.textContent || '';
+      
+      teamNames.forEach(team => {
+        // Look for team names (with or without "Aces")
+        const patterns = [
+          new RegExp(`\\bAces\\s+${team}\\b`, 'i'),
+          new RegExp(`\\b${team}\\s+Aces\\b`, 'i'),
+          // Only match standalone team name if it's in a table cell or specific context
+          ...(element.tagName === 'TD' || element.tagName === 'TH' ? 
+             [new RegExp(`\\b${team}\\b`, 'i')] : [])
+        ];
+        
+        patterns.forEach(pattern => {
+          if (pattern.test(text) && !element.querySelector('[class*="team-"]')) {
+            this.applyTeamColors(element, team, variant);
+          }
+        });
+      });
+    });
+  }
+  
+  // Style search results specifically
+  styleSearchResults() {
+    // Style team names in search results
+    document.querySelectorAll('.search-item').forEach(item => {
+      const teamName = item.dataset.team;
+      if (teamName) {
+        // Style team badges in search results
+        const subtitles = item.querySelectorAll('.search-item-subtitle');
+        subtitles.forEach(subtitle => {
+          if (subtitle.textContent.includes(teamName)) {
+            // Replace team name with styled badge
+            subtitle.innerHTML = subtitle.innerHTML.replace(
+              new RegExp(`\\b${teamName}\\b`, 'g'),
+              `<span class="team-badge-${teamName.toLowerCase()}">${teamName}</span>`
+            );
+          }
+        });
+      }
+    });
+  }
+}
+
+// Initialize team color system
+const teamColors = new TeamColorSystem();
+
+// Auto-apply team colors when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  // Style all team names in the page
+  teamColors.styleAllTeamNames();
+  
+  // Also style search results if they exist
+  setTimeout(() => {
+    teamColors.styleSearchResults();
+  }, 500);
+  
+  console.log('🎨 Team colors applied!');
+});
+
+// Make available globally for other scripts
+window.teamColors = teamColors;
+</script>
+<script src="team-colors.js"></script>
+  
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

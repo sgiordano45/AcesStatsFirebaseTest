@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Test v2</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="status">Starting test...</div>
+    <div id="results"></div>
+
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+        
+        statusDiv.innerHTML = 'Step 1: Script loaded ✓';
+        
+        try {
+            statusDiv.innerHTML = 'Step 2: Importing firebase-config...';
+            
+            // Import Firebase SDK directly first
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            statusDiv.innerHTML = 'Step 3: Firebase SDK loaded ✓';
+            
+            // Initialize Firebase
+            const firebaseConfig = {
+                apiKey: "AIzaSyCAEWkrTcprzJ2KPPJu-vFJPvYOVU4ky20",
+                authDomain: "acessoftballreference-84791.firebaseapp.com",
+                projectId: "acessoftballreference-84791",
+                storageBucket: "acessoftballreference-84791.firebasestorage.app",
+                messagingSenderId: "777699560175",
+                appId: "1:777699560175:web:4092b422e7d7116352e91a"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            
+            statusDiv.innerHTML = 'Step 4: Firebase initialized ✓';
+            
+            // Try to get teams
+            const teamsSnapshot = await getDocs(collection(db, 'teams'));
+            const teams = teamsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            
+            statusDiv.innerHTML = '✅ SUCCESS!';
+            resultsDiv.innerHTML = `
+                <h2>Found ${teams.length} teams:</h2>
+                <ul>
+                    ${teams.map(t => `<li>${t.name} (${t.id})</li>`).join('')}
+                </ul>
+            `;
+            
+            console.log('Teams:', teams);
+            
+        } catch (error) {
+            statusDiv.innerHTML = '❌ ERROR';
+            resultsDiv.innerHTML = `
+                <p style="color: red;">Error: ${error.message}</p>
+                <pre>${error.stack}</pre>
+            `;
+            console.error('Full error:', error);
+        }
+    </script>
+</body>
+</html>

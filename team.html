@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Stats - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .back-nav {
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .back-nav a {
+    padding: 0.6rem 1.2rem;
+    background: white;
+    border: 2px solid #667eea;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .back-nav a:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .team-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .team-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  }
+  
+  .team-logo {
+    height: 120px;
+    max-width: 120px;
+    object-fit: contain;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem;
+    display: none;
+  }
+  
+  .team-logo.loaded {
+    display: block;
+  }
+  
+  .team-info {
+    flex: 1;
+  }
+  
+  .team-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .team-description {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 1rem 0 0 0;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary h2 {
+    margin: 0 0 1.5rem 0;
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .summary-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+  }
+  
+  .summary-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+  }
+  
+  .summary-label {
+    color: #666;
+    font-weight: 600;
+  }
+  
+  /* Team Media Gallery Section */
+  .team-media-section {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .team-media-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .team-media-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+/* Replace the existing .media-gallery-container CSS with this: */
+
+.media-gallery-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  max-height: 400px; /* Limits to roughly 2 rows */
+  overflow-y: auto;
+  padding-right: 8px; /* Space for scrollbar */
+}
+
+/* Style the scrollbar for webkit browsers */
+.media-gallery-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.media-gallery-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.media-gallery-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.media-gallery-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Adjust for mobile */
+@media (max-width: 768px) {
+  .media-gallery-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    max-height: 320px; /* Slightly smaller for mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .media-gallery-container {
+    max-height: 300px;
+  }
+}
+  
+  .media-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .media-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+  
+  .media-thumbnail {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    background: #f0f0f0;
+  }
+  
+  .media-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 0.5rem;
+    color: white;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .media-item:hover .media-overlay {
+    opacity: 1;
+  }
+  
+  .video-indicator {
+    position: relative;
+  }
+  
+  .video-indicator::after {
+    content: "▶";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.3);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  
+  .no-media {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+    font-style: italic;
+  }
+  
+  .no-media::before {
+    content: "📷";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+  
+  /* Lightbox styles for team media */
+  .team-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .team-lightbox.active {
+    display: flex;
+  }
+  
+  .team-lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+  }
+  
+  .team-lightbox-image {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+  }
+  
+  .team-lightbox-video {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+  
+  .team-lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+  }
+  
+  .team-lightbox-close:hover {
+    color: #667eea;
+  }
+  
+  .team-lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 1rem;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+  
+  .team-lightbox-nav:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  
+  .team-lightbox-prev {
+    left: 20px;
+  }
+  
+  .team-lightbox-next {
+    right: 20px;
+  }
+  
+  .filters-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .filter-group label {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .filter-group select {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    background: white;
+    color: #333;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  
+  .filter-group select:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  
+  .stats-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    margin-bottom: 2rem;
+  }
+  
+  .stats-table-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  
+  thead {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e1e5e9;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease;
+  }
+  
+  th:hover {
+    background: #e9ecef;
+  }
+  
+  th.asc::after {
+    content: " ▲";
+    color: #667eea;
+  }
+  
+  th.desc::after {
+    content: " ▼";
+    color: #667eea;
+  }
+  
+  td {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  tbody tr:hover {
+    background: #f8f9ff;
+  }
+  
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+  td a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  td a:hover {
+    color: #4c63d2;
+    text-decoration: underline;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+  
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .team-header {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+    
+    .team-header h1 {
+      font-size: 2rem;
+    }
+    
+    .summary-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .media-gallery-container {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .media-thumbnail {
+      height: 150px;
+    }
+    
+    .team-lightbox-nav {
+      font-size: 1.5rem;
+      padding: 0.5rem;
+    }
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .back-nav a {
+      display: block;
+      margin: 0.25rem 0;
+      text-align: center;
+    }
+    
+    .summary-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8em;
+    }
+  }
+  /* Missing navigation styles */
+.filters-nav {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+  border: 1px solid #e1e5e9;
+}
+
+.nav-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link {
+  padding: 0.8rem 1.5rem;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.nav-link.active {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+.nav-link.pitching {
+  border-color: #11998e;
+  color: #11998e;
+}
+
+.nav-link.pitching:hover {
+  background: #11998e;
+  color: white;
+  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+}
+
+.nav-link.batting {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.nav-link.batting:hover,
+.nav-link.batting.active {
+  background: #667eea;
+  color: white;
+}
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+<div class="page-container">
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="teams.html" class="nav-link">← Back to All Teams</a>
+      <a id="currentSeasonTeamLink" href="#" class="nav-link">👤 Current Season Team Page</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="players.html" class="nav-link">👤👤 All Players</a>
+      <a href="team-compare.html" class="nav-link">⚖️ Compare Teams</a>
+    </nav>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">⚾ Mountainside Aces</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a id="currentSeasonTeamLinkMobile" href="#" class="mobile-nav-item">👤 Current Season Team</a>
+	  <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+
+  <div class="team-header">
+    <img id="team-logo" class="team-logo" src="" alt="" onerror="this.style.display='none';">
+    
+    <div class="team-info">
+      <h1>Team Stats: <span id="team-name">Loading...</span></h1>
+      <p class="team-description">Complete season-by-season statistics and performance history</p>
+    </div>
+  </div>
+
+  <div class="summary">
+    <h2>Team Overview</h2>
+    <div class="summary-grid" id="summary-grid">
+      <div class="loading">Loading team statistics...</div>
+    </div>
+  </div>
+
+  <!-- Team Media Gallery Section -->
+  <div class="team-media-section">
+    <h2>📸 Team Photos & Videos</h2>
+    <div class="media-gallery-container" id="teamMediaGallery">
+      <div class="loading">Loading team media...</div>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="yearFilter">Year:</label>
+        <select id="yearFilter">
+          <option value="All">All Years</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="seasonFilter">Season:</label>
+        <select id="seasonFilter">
+          <option value="All">All Seasons</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-table-container">
+    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
+    <table id="team-stats-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Season</th>
+          <th>Name</th>
+          <th>G</th>
+          <th>AB</th>
+          <th>H</th>
+          <th>R</th>
+          <th>BB</th>
+          <th>AcesBPI</th>
+          <th>BA</th>
+          <th>OBP</th>
+          <th>Sub</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="12" class="loading">Loading statistics...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Lightbox for team media -->
+<div class="team-lightbox" id="teamLightbox">
+  <div class="team-lightbox-content">
+    <button class="team-lightbox-close" onclick="closeTeamLightbox()">×</button>
+    <button class="team-lightbox-nav team-lightbox-prev" onclick="navigateTeamLightbox(-1)">‹</button>
+    <button class="team-lightbox-nav team-lightbox-next" onclick="navigateTeamLightbox(1)">›</button>
+    <img class="team-lightbox-image" id="teamLightboxImage" style="display:none;" />
+    <video class="team-lightbox-video" id="teamLightboxVideo" controls style="display:none;"></video>
+  </div>
+</div>
+
+<script src="team.js"></script>
+<script src="team-colors.js"></script>
+
+<script>
+// Update the current season team link with the team parameter
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const teamName = params.get('team');
+  
+  if (teamName) {
+    // Update desktop nav link
+    const currentSeasonLink = document.getElementById('currentSeasonTeamLink');
+    if (currentSeasonLink) {
+      currentSeasonLink.href = `current-season-team.html?team=${encodeURIComponent(teamName)}`;
+    }
+    
+    // Update mobile nav link
+    const currentSeasonLinkMobile = document.getElementById('currentSeasonTeamLinkMobile');
+    if (currentSeasonLinkMobile) {
+      currentSeasonLinkMobile.href = `current-season-team.html?team=${encodeURIComponent(teamName)}`;
+    }
+  }
+});
+// Media Gallery JavaScript
+let teamMedia = [];
+let currentTeamLightboxIndex = 0;
+
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic', '.HEIC'];
+const videoExtensions = ['.mp4', '.webm', '.mov', '.MOV', '.avi'];
+
+async function loadTeamMedia(teamName) {
+  const galleryContainer = document.getElementById('teamMediaGallery');
+  
+  console.log(`📸 Loading media for team: ${teamName}`);
+  
+  if (!teamName) {
+    console.error('❌ No team name provided');
+    galleryContainer.innerHTML = '<div class="no-media">No team selected</div>';
+    return;
+  }
+  
+  const mediaFolder = `/media/${teamName.toLowerCase().replace(/\s+/g, '_')}/`;
+  console.log(`📁 Media folder path: ${mediaFolder}`);
+  
+  // First try to load from manifest
+  teamMedia = await loadFromManifest(teamName);
+  
+  // If no manifest or no files for this team, try discovery
+  if (teamMedia.length === 0) {
+    teamMedia = await discoverTeamMedia(mediaFolder, teamName);
+  }
+  
+  console.log(`✅ Found ${teamMedia.length} media files for ${teamName}`);
+  
+  if (teamMedia.length === 0) {
+    galleryContainer.innerHTML = `
+      <div class="no-media">
+        No photos or videos available for this team yet.
+              </div>
+    `;
+    return;
+  }
+  
+  renderTeamMedia();
+}
+
+async function loadFromManifest(teamName) {
+  try {
+    const manifestUrl = '/media-manifest.json';
+    console.log(`🔍 Attempting to fetch: ${window.location.origin}${manifestUrl}`);
+    
+    const response = await fetch(manifestUrl);
+    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Loaded manifest with ${data.media.length} total files`);
+      
+      const teamFiles = data.media.filter(item => 
+        item.folder.toLowerCase() === teamName.toLowerCase()
+      );
+      
+      if (teamFiles.length > 0) {
+        // Validate that files actually exist
+        console.log(`🔍 Validating ${teamFiles.length} files for ${teamName}...`);
+        const validatedFiles = [];
+        
+        for (const item of teamFiles) {
+          if (await checkFileExists(item.path)) {
+            validatedFiles.push(item);
+            console.log(`  ✅ Valid: ${item.path}`);
+          } else {
+            console.warn(`  ⚠️ File not found (skipping): ${item.path}`);
+          }
+        }
+        
+        if (validatedFiles.length > 0) {
+          console.log(`✅ Found ${validatedFiles.length} valid files for ${teamName}`);
+          return validatedFiles;
+        } else {
+          console.warn(`⚠️ All files for ${teamName} are missing or inaccessible`);
+        }
+      } else {
+        console.log(`⚠️ No files for team "${teamName}" in manifest`);
+      }
+    } else {
+      console.error(`❌ Failed to load manifest: ${response.status} ${response.statusText}`);
+      console.error(`   Check that media-manifest.json exists at: ${window.location.origin}/media-manifest.json`);
+    }
+  } catch (error) {
+    console.error('❌ Error loading media-manifest.json:', error);
+    console.error('   Full URL attempted:', `${window.location.origin}/media-manifest.json`);
+    console.log('⚠️ Will try pattern matching instead');
+  }
+  return [];
+}
+
+async function discoverTeamMedia(folder, teamName) {
+  console.log(`🔍 Scanning folder: ${folder}`);
+  const discovered = [];
+  
+  // Try common filename patterns including camera defaults
+  const patterns = [
+    // Numbered files
+    ...Array.from({length: 50}, (_, i) => `photo${i + 1}`),
+    ...Array.from({length: 50}, (_, i) => `img${i + 1}`),
+    ...Array.from({length: 50}, (_, i) => `image${i + 1}`),
+    // Camera default naming (IMG_0001, IMG_0002, etc.)
+    ...Array.from({length: 50}, (_, i) => `IMG_${String(i + 1).padStart(4, '0')}`),
+    // DSLR naming (DSC_0001, etc.)
+    ...Array.from({length: 50}, (_, i) => `DSC_${String(i + 1).padStart(4, '0')}`),
+    ...Array.from({length: 30}, (_, i) => `video${i + 1}`),
+    ...Array.from({length: 30}, (_, i) => `vid${i + 1}`),
+    ...Array.from({length: 30}, (_, i) => `VID_${String(i + 1).padStart(4, '0')}`),
+    // Common descriptive names
+    'team_photo', 'team_picture', 'roster', 'lineup', 'action', 'game',
+    'celebration', 'victory', 'trophy', 'field', 'dugout', 'bench'
+  ];
+  
+  console.log(`  Testing ${patterns.length} filename patterns × ${imageExtensions.length + videoExtensions.length} extensions`);
+  
+  for (const pattern of patterns) {
+    // Try image extensions
+    for (const ext of imageExtensions) {
+      const path = `${folder}${pattern}${ext}`;
+      if (await checkFileExists(path)) {
+        console.log(`    ✅ Found image: ${path}`);
+        discovered.push({
+          path: path,
+          name: `${pattern}${ext}`,
+          type: 'image'
+        });
+      }
+    }
+    
+    // Try video extensions
+    for (const ext of videoExtensions) {
+      const path = `${folder}${pattern}${ext}`;
+      if (await checkFileExists(path)) {
+        console.log(`    ✅ Found video: ${path}`);
+        discovered.push({
+          path: path,
+          name: `${pattern}${ext}`,
+          type: 'video'
+        });
+      }
+    }
+  }
+  
+  if (discovered.length === 0) {
+    console.warn(`  ⚠️ No media files found in ${folder}`);
+    console.warn(`  💡 TIP: Create a media-manifest.json file to list your media with any filenames`);
+  } else {
+    console.log(`  📊 Total files found: ${discovered.length}`);
+  }
+  
+  return discovered;
+}
+
+async function checkFileExists(url) {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    const exists = response.ok;
+    if (!exists && response.status !== 404) {
+      console.log(`      ⚠️ ${url} returned ${response.status}`);
+    }
+    return exists;
+  } catch (error) {
+    console.log(`      ⚠️ Error checking ${url}: ${error.message}`);
+    return false;
+  }
+}
+
+function renderTeamMedia() {
+  const galleryContainer = document.getElementById('teamMediaGallery');
+  galleryContainer.innerHTML = '';
+  
+  teamMedia.forEach((item, index) => {
+    const mediaItem = document.createElement('div');
+    mediaItem.className = 'media-item';
+    if (item.type === 'video') {
+      mediaItem.classList.add('video-indicator');
+    }
+    mediaItem.onclick = () => openTeamLightbox(index);
+    
+    const thumbnail = document.createElement(item.type === 'video' ? 'video' : 'img');
+    thumbnail.className = 'media-thumbnail';
+    thumbnail.src = item.path;
+    thumbnail.alt = item.name;
+    
+    if (item.type === 'video') {
+      thumbnail.muted = true;
+    }
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.textContent = item.name;
+    
+    mediaItem.appendChild(thumbnail);
+    mediaItem.appendChild(overlay);
+    galleryContainer.appendChild(mediaItem);
+  });
+}
+
+function openTeamLightbox(index) {
+  currentTeamLightboxIndex = index;
+  const item = teamMedia[index];
+  const lightbox = document.getElementById('teamLightbox');
+  const image = document.getElementById('teamLightboxImage');
+  const video = document.getElementById('teamLightboxVideo');
+  
+  if (item.type === 'image') {
+    image.src = item.path;
+    image.style.display = 'block';
+    video.style.display = 'none';
+  } else {
+    video.src = item.path;
+    video.style.display = 'block';
+    image.style.display = 'none';
+  }
+  
+  lightbox.classList.add('active');
+  document.addEventListener('keydown', handleTeamLightboxKeys);
+}
+
+function closeTeamLightbox() {
+  const lightbox = document.getElementById('teamLightbox');
+  const video = document.getElementById('teamLightboxVideo');
+  
+  lightbox.classList.remove('active');
+  video.pause();
+  document.removeEventListener('keydown', handleTeamLightboxKeys);
+}
+
+function navigateTeamLightbox(direction) {
+  currentTeamLightboxIndex += direction;
+  
+  if (currentTeamLightboxIndex < 0) {
+    currentTeamLightboxIndex = teamMedia.length - 1;
+  } else if (currentTeamLightboxIndex >= teamMedia.length) {
+    currentTeamLightboxIndex = 0;
+  }
+  
+  openTeamLightbox(currentTeamLightboxIndex);
+}
+
+function handleTeamLightboxKeys(e) {
+  if (e.key === 'Escape') closeTeamLightbox();
+  if (e.key === 'ArrowLeft') navigateTeamLightbox(-1);
+  if (e.key === 'ArrowRight') navigateTeamLightbox(1);
+}
+
+// Click outside lightbox to close
+document.getElementById('teamLightbox')?.addEventListener('click', (e) => {
+  if (e.target.id === 'teamLightbox') {
+    closeTeamLightbox();
+  }
+});
+
+// Initialize media gallery after team name is loaded
+window.addEventListener('DOMContentLoaded', () => {
+  // Wait for the team name to be loaded from team.js
+  setTimeout(() => {
+    const teamNameElement = document.getElementById('team-name');
+    if (teamNameElement && teamNameElement.textContent !== 'Loading...') {
+      loadTeamMedia(teamNameElement.textContent);
+    }
+  }, 1000);
+});
+</script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

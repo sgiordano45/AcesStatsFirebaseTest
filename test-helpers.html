@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Helper Files</title>
+</head>
+<body>
+    <h1>Testing firebase-config.js and firebase-data.js</h1>
+    <div id="status">Starting test...</div>
+    <div id="results"></div>
+
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+        
+        try {
+            statusDiv.innerHTML = 'Step 1: Importing firebase-data.js...';
+            
+            const { 
+                getAllTeams, 
+                getAllPlayers,
+                getCurrentSeason,
+                getSeasonPlayerStats 
+            } = await import('./firebase-data.js');
+            
+            statusDiv.innerHTML = 'Step 2: firebase-data.js loaded ✓<br>Step 3: Getting teams...';
+            
+            const teams = await getAllTeams();
+            
+            statusDiv.innerHTML = 'Step 4: Getting players...';
+            
+            const players = await getAllPlayers();
+            
+            statusDiv.innerHTML = 'Step 5: Getting current season...';
+            
+            const currentSeason = await getCurrentSeason();
+            
+            statusDiv.innerHTML = 'Step 6: Getting season stats...';
+            
+            const seasonStats = currentSeason ? await getSeasonPlayerStats(currentSeason.id) : [];
+            
+            statusDiv.innerHTML = '✅ ALL TESTS PASSED!';
+            resultsDiv.innerHTML = `
+                <h2>Results:</h2>
+                <ul>
+                    <li>✅ Found ${teams.length} teams</li>
+                    <li>✅ Found ${players.length} players</li>
+                    <li>✅ Current season: ${currentSeason ? currentSeason.id : 'None'}</li>
+                    <li>✅ Found ${seasonStats.length} players with stats this season</li>
+                </ul>
+                <h3>Sample Teams:</h3>
+                <ul>
+                    ${teams.slice(0, 5).map(t => `<li>${t.name} (${t.id})</li>`).join('')}
+                </ul>
+                <h3>Sample Players:</h3>
+                <ul>
+                    ${players.slice(0, 5).map(p => `<li>${p.displayName}</li>`).join('')}
+                </ul>
+            `;
+            
+            console.log('Teams:', teams);
+            console.log('Players:', players);
+            console.log('Current Season:', currentSeason);
+            console.log('Season Stats:', seasonStats);
+            
+        } catch (error) {
+            statusDiv.innerHTML = '❌ ERROR';
+            resultsDiv.innerHTML = `
+                <p style="color: red;">Error: ${error.message}</p>
+                <pre style="background: #f5f5f5; padding: 10px; overflow: auto;">${error.stack}</pre>
+            `;
+            console.error('Full error:', error);
+        }
+    </script>
+</body>
+</html>

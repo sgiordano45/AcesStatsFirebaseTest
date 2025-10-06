@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Batting Milestones - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary p {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .summary p:last-child {
+    margin-bottom: 0;
+    color: #666;
+    font-size: 0.95rem;
+  }
+  
+  .milestones-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .milestone-category {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+  }
+  
+  .milestone-category::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .milestone-category h2 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 2rem;
+    font-size: 1.8em;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .milestone-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+  }
+  
+  .milestone-table-container {
+    background: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .milestone-table-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  }
+  
+  .milestone-table-container h3 {
+    background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+    color: white;
+    margin: 0;
+    padding: 1rem;
+    font-size: 1.2em;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .milestone-table {
+    width: 100%;
+    margin: 0;
+    background: white;
+  }
+  
+  .milestone-table th,
+  .milestone-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e1e5e9;
+  }
+  
+  .milestone-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+  }
+  
+  .milestone-table tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  .milestone-table tr:hover {
+    background: #e8f4fd;
+  }
+  
+  .milestone-table a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  .milestone-table a:hover {
+    color: #4c63d2;
+    text-decoration: underline;
+  }
+  
+  .rank {
+    text-align: center;
+    font-weight: bold;
+    color: #666;
+    width: 60px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  }
+  
+  .stat-value {
+    text-align: center;
+    font-weight: bold;
+    min-width: 80px;
+    color: #333;
+  }
+  
+  .empty-milestone {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #666;
+    font-style: italic;
+    background: white;
+  }
+  
+  .empty-milestone::before {
+    content: "🎯";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+  
+  /* Loading state */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .loading::before {
+    content: "⏳";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Achievement badges for top performers */
+  .rank-1 .rank {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #333;
+    font-weight: 700;
+  }
+  
+  .rank-1 .rank::after {
+    content: " 🥇";
+  }
+  
+  .rank-2 .rank {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+    color: #333;
+    font-weight: 700;
+  }
+  
+  .rank-2 .rank::after {
+    content: " 🥈";
+  }
+  
+  .rank-3 .rank {
+    background: linear-gradient(135deg, #cd7f32 0%, #daa560 100%);
+    color: white;
+    font-weight: 700;
+  }
+  
+  .rank-3 .rank::after {
+    content: " 🥉";
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .nav-container {
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 10px 15px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .milestone-tables {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      padding: 1rem;
+    }
+    
+    .milestone-category h2 {
+      padding: 1.5rem 1rem;
+      font-size: 1.5em;
+    }
+    
+    .milestone-table th,
+    .milestone-table td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .milestone-table th,
+    .milestone-table td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8em;
+    }
+    
+    .milestone-category h2 {
+      font-size: 1.3em;
+      padding: 1rem;
+    }
+    
+    .milestone-table-container h3 {
+      font-size: 1.1em;
+      padding: 0.75rem;
+    }
+  }
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">🎯 Batting Milestones</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item active">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+<div class="page-container">
+  <div class="page-header">
+    <h1>Batting Milestones</h1>
+    <p>Career milestone achievements for batting statistics across all players</p>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+
+
+
+  <div id="summary" class="summary">
+    <p>Career milestone achievements for batting statistics</p>
+    <p id="milestoneSummary">Loading milestone data...</p>
+  </div>
+
+  <div id="milestones-container" class="milestones-container">
+    <div class="loading">Loading milestone data...</div>
+  </div>
+</div>
+
+<script>
+let allData = [];
+
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+    allData = cleanData(data);
+    generateMilestones();
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    document.getElementById("milestones-container").innerHTML = 
+      '<div class="loading">Error loading batting statistics data. Please check that data.json is available.</div>';
+  });
+
+function cleanData(data) {
+  return data.map(p => ({
+    ...p,
+    name: p.name ? p.name.trim() : "",
+    team: p.team ? p.team.trim() : "",
+    games: Number(p.games) || 0,
+    atBats: Number(p.atBats) || 0,
+    hits: Number(p.hits) || 0,
+    runs: Number(p.runs) || 0,
+    walks: Number(p.walks) || 0
+  }));
+}
+
+function aggregatePlayerStats() {
+  const playerStats = {};
+  
+  allData.forEach(p => {
+    if (!p.name) return;
+    
+    if (!playerStats[p.name]) {
+      playerStats[p.name] = {
+        name: p.name,
+        totalHits: 0,
+        totalRuns: 0,
+        totalWalks: 0
+      };
+    }
+    
+    playerStats[p.name].totalHits += p.hits;
+    playerStats[p.name].totalRuns += p.runs;
+    playerStats[p.name].totalWalks += p.walks;
+  });
+  
+  return Object.values(playerStats);
+}
+
+function generateMilestones() {
+  const players = aggregatePlayerStats();
+  const container = document.getElementById("milestones-container");
+  
+  // Define milestone categories and thresholds
+  const milestoneCategories = [
+    {
+      title: "Career Hits Milestones",
+      stat: "totalHits",
+      thresholds: [100, 200, 300],
+      format: (val) => val.toString(),
+      icon: "🏏"
+    },
+    {
+      title: "Career Runs Milestones", 
+      stat: "totalRuns",
+      thresholds: [50, 100, 150, 200],
+      format: (val) => val.toString(),
+      icon: "🏃"
+    },
+    {
+      title: "Career Walks Milestones",
+      stat: "totalWalks", 
+      thresholds: [10, 20, 30],
+      format: (val) => val.toString(),
+      icon: "🚶"
+    }
+  ];
+  
+  let totalMilestones = 0;
+  let html = '';
+  
+  milestoneCategories.forEach(category => {
+    const categoryHTML = generateMilestoneCategory(players, category);
+    html += categoryHTML.html;
+    totalMilestones += categoryHTML.count;
+  });
+  
+  container.innerHTML = html;
+  
+  // Update summary
+  document.getElementById("milestoneSummary").textContent = 
+    `${totalMilestones} total milestone achievements across all categories`;
+}
+
+function generateMilestoneCategory(players, category) {
+  let categoryHTML = `
+    <div class="milestone-category">
+      <h2>${category.icon} ${category.title}</h2>
+      <div class="milestone-tables">
+  `;
+  
+  let milestoneCount = 0;
+  
+  category.thresholds.forEach(threshold => {
+    const achievers = players
+      .filter(p => p[category.stat] >= threshold)
+      .sort((a, b) => b[category.stat] - a[category.stat]); // Sort by stat value descending
+    
+    milestoneCount += achievers.length;
+    
+    categoryHTML += `
+      <div class="milestone-table-container">
+    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
+        <h3>${threshold}+ ${category.title.split(' ')[1]}</h3>
+    `;
+    
+    if (achievers.length === 0) {
+      categoryHTML += `
+        <div class="empty-milestone">
+          No players have reached this milestone yet
+        </div>
+      `;
+    } else {
+      categoryHTML += `
+        <table class="milestone-table">
+          <thead>
+            <tr>
+              <th class="rank">Rank</th>
+              <th>Player</th>
+              <th class="stat-value">${category.title.split(' ')[1]}</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      achievers.forEach((player, index) => {
+        const rank = index + 1;
+        const statValue = category.format(player[category.stat]);
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        
+        categoryHTML += `
+          <tr class="${rankClass}">
+            <td class="rank">${rank}</td>
+            <td><a href="player.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+            <td class="stat-value">${statValue}</td>
+          </tr>
+        `;
+      });
+      
+      categoryHTML += `
+          </tbody>
+        </table>
+      `;
+    }
+    
+    categoryHTML += `</div>`;
+  });
+  
+  categoryHTML += `
+      </div>
+    </div>
+  `;
+  
+  return {
+    html: categoryHTML,
+    count: milestoneCount
+  };
+}
+</script>
+  <script src="team-colors.js"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

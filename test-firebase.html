@@ -1,0 +1,73 @@
+<body>
+  <h1>Firebase Connection Test</h1>
+  <div id="result">Testing...</div>
+  
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    const firebaseConfig = {
+     <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        import { 
+            getAllTeams, 
+            getAllPlayers,
+            getCurrentSeason,
+            getSeasonPlayerStats 
+        } from './firebase-data.js';
+
+        const resultsDiv = document.getElementById('results');
+
+        async function runTests() {
+            try {
+                resultsDiv.innerHTML = '<p>Loading data from Firebase...</p>';
+
+                // Test 1: Get all teams
+                const teams = await getAllTeams();
+                console.log('Teams:', teams);
+
+                // Test 2: Get all players
+                const players = await getAllPlayers();
+                console.log('Players:', players);
+
+                // Test 3: Get current season
+                const currentSeason = await getCurrentSeason();
+                console.log('Current Season:', currentSeason);
+
+                // Test 4: Get season player stats
+                if (currentSeason) {
+                    const seasonStats = await getSeasonPlayerStats(currentSeason.id);
+                    console.log('Season Stats:', seasonStats);
+                }
+
+                resultsDiv.innerHTML = `
+                    <p>✅ Firebase connection successful!</p>
+                    <ul>
+                        <li>Found ${teams.length} teams</li>
+                        <li>Found ${players.length} players</li>
+                        <li>Current season: ${currentSeason ? currentSeason.id : 'None'}</li>
+                    </ul>
+                    <p>Check browser console (Cmd+Option+C) for full data</p>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+                console.error('Test failed:', error);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
+
+    

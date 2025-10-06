@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Players - Aces Stats</title>
+<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile-enhancements.css">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .players-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 20px;
+  }
+  
+  .team-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .team-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .team-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  }
+  
+  .team-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  
+  .team-logo {
+    height: 45px;
+    max-width: 65px;
+    margin-right: 15px;
+    object-fit: contain;
+    filter: brightness(1.1);
+  }
+  
+  .team-header h3 {
+    margin: 0;
+    font-size: 1.4em;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .player-count {
+    position: absolute;
+    right: 20px;
+    font-size: 0.9em;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-weight: 600;
+  }
+  
+  .players-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  
+  .player-item {
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+  }
+  
+  .player-item:last-child {
+    border-bottom: none;
+  }
+  
+  .player-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  }
+  
+  .player-link {
+    display: block;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s ease;
+  }
+  
+  .player-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    color: #333;
+  }
+  
+  .player-stats {
+    font-size: 0.9em;
+    color: #666;
+    line-height: 1.4;
+  }
+  
+  /* Active/Inactive section headers */
+  .roster-section-header {
+    background: #f8f9fa;
+    padding: 10px 20px;
+    border-top: 2px solid #e9ecef;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .roster-section-header.active {
+    background: #e8f5e8;
+    color: #2d5a2d;
+    border-top-color: #28a745;
+  }
+  
+  .roster-section-header.inactive {
+    background: #fff3cd;
+    color: #856404;
+    border-top-color: #ffc107;
+  }
+  
+  /* Inactive player styling */
+  .player-item.inactive .player-name {
+    color: #999;
+  }
+  
+  .player-item.inactive .player-stats {
+    color: #aaa;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary p {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .summary p:last-child {
+    margin-bottom: 0;
+    color: #666;
+    font-size: 0.95rem;
+  }
+  
+  /* Navigation styling */
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .nav-link.batting {
+    border-color: #667eea;
+    color: #667eea;
+  }
+  
+  .nav-link.batting:hover {
+    background: #667eea;
+    color: white;
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .nav-container {
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 10px 15px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .players-container {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .team-header {
+      padding: 15px;
+    }
+    
+    .team-header h3 {
+      font-size: 1.2em;
+    }
+    
+    .player-count {
+      right: 15px;
+      font-size: 0.8em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .team-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 10px;
+    }
+    
+    .player-count {
+      position: static;
+      background: rgba(255,255,255,0.3);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+    }
+    
+    .team-logo {
+      margin-right: 0;
+      margin-bottom: 5px;
+    }
+    
+    .player-link {
+      padding: 12px 15px;
+    }
+  }
+</style>
+</head>
+<body>
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">👤 All Players</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item active">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+<div class="page-container">
+  <div class="page-header">
+    <h1>All Players</h1>
+    <p>Browse all players organized by their most recent team assignment</p>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link active">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+
+
+
+  <div id="summary" class="summary">
+    <p id="totalPlayersText"></p>
+    <p>Players are grouped by their most recent team assignment and split into current active roster (2025 Fall/Summer) and inactive players. Click on any player to view their detailed statistics.</p>
+  </div>
+
+  <div id="players-container" class="players-container">
+    <!-- Team sections will be generated dynamically -->
+  </div>
+</div>
+
+<script>
+let allData = [];
+
+// Load the data
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+    allData = data.map(p => ({
+      name: p.name ? p.name.trim() : "",
+      team: p.team ? p.team.trim() : "",
+      year: p.year ? String(p.year).trim() : "",
+      season: p.season ? p.season.trim() : "",
+      games: Number(p.games) || 0,
+      atBats: Number(p.atBats) || 0,
+      hits: Number(p.hits) || 0,
+      runs: Number(p.runs) || 0,
+      walks: Number(p.walks) || 0
+    }));
+    
+    generatePlayersByTeam();
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    document.getElementById("players-container").innerHTML = 
+      '<p>Error loading player data. Please check that data.json is available.</p>';
+  });
+
+function isPlayerActive(player) {
+  // Player is active if their most recent season is 2025 Fall only
+  const year = parseInt(player.year) || 0;
+  return year === 2025 && player.season === 'Fall';
+}
+
+function sortPlayers(players, isActive) {
+  return players.sort((a, b) => {
+    if (isActive) {
+      // For active players: sort by games with current team (descending), then by name
+      if (b.currentTeamGames !== a.currentTeamGames) {
+        return b.currentTeamGames - a.currentTeamGames;
+      }
+      return a.name.localeCompare(b.name);
+    } else {
+      // For inactive players: sort by most recent year/season, then by name
+      const yearA = parseInt(a.year) || 0;
+      const yearB = parseInt(b.year) || 0;
+      
+      if (yearB !== yearA) return yearB - yearA;
+      
+      // Fall before Summer within same year
+      const seasonPriorityA = a.season === 'Fall' ? 2 : 1;
+      const seasonPriorityB = b.season === 'Fall' ? 2 : 1;
+      
+      if (seasonPriorityB !== seasonPriorityA) return seasonPriorityB - seasonPriorityA;
+      
+      return a.name.localeCompare(b.name);
+    }
+  });
+}
+
+function generatePlayersByTeam() {
+  // Find each player's most recent team assignment
+  const playerTeams = {};
+  
+  allData.forEach(p => {
+    if (!p.name || !p.team) return;
+    
+    // Skip the "Kings" team
+    if (p.team.toLowerCase() === "kings") return;
+    
+    if (!playerTeams[p.name]) {
+      playerTeams[p.name] = {
+        name: p.name,
+        team: p.team,
+        year: p.year,
+        season: p.season,
+        totalGames: 0,
+        totalAtBats: 0,
+        totalHits: 0,
+        totalRuns: 0,
+        totalWalks: 0,
+        currentTeamGames: 0
+      };
+    }
+    
+    // Keep track of most recent assignment
+    const currentEntry = playerTeams[p.name];
+    const currentYear = parseInt(currentEntry.year) || 0;
+    const newYear = parseInt(p.year) || 0;
+    
+    // Season priority: Fall > Summer (within same year)
+    const currentSeasonPriority = currentEntry.season === 'Fall' ? 2 : 1;
+    const newSeasonPriority = p.season === 'Fall' ? 2 : 1;
+    
+    // Update to more recent team if this record is newer
+    if (newYear > currentYear || 
+        (newYear === currentYear && newSeasonPriority > currentSeasonPriority)) {
+      currentEntry.team = p.team;
+      currentEntry.year = p.year;
+      currentEntry.season = p.season;
+    }
+    
+    // Accumulate career stats
+    currentEntry.totalGames += p.games;
+    currentEntry.totalAtBats += p.atBats;
+    currentEntry.totalHits += p.hits;
+    currentEntry.totalRuns += p.runs;
+    currentEntry.totalWalks += p.walks;
+  });
+  
+  // Calculate current team games for each player
+  Object.values(playerTeams).forEach(player => {
+    // Find all games played for the player's current team
+    const currentTeamData = allData.filter(p => 
+      p.name === player.name && p.team === player.team
+    );
+    player.currentTeamGames = currentTeamData.reduce((sum, p) => sum + p.games, 0);
+  });
+  
+  // Group players by their most recent team
+  const teamGroups = {};
+  Object.values(playerTeams).forEach(player => {
+    if (!teamGroups[player.team]) {
+      teamGroups[player.team] = [];
+    }
+    teamGroups[player.team].push(player);
+  });
+  
+  // Define active teams (teams that played in 2025 Fall)
+  const activeTeams = new Set(['Black', 'Blue', 'Carolina', 'Gold', 'Green', 'Orange', 'Purple', 'Red', 'Silver', 'White']);
+  
+  // Separate active and inactive teams, then sort each alphabetically
+  const allTeams = Object.keys(teamGroups);
+  const activeTeamsList = allTeams.filter(team => activeTeams.has(team)).sort();
+  const inactiveTeamsList = allTeams.filter(team => !activeTeams.has(team)).sort();
+  
+  // Combine active teams first, then inactive teams
+  const sortedTeams = [...activeTeamsList, ...inactiveTeamsList];
+  
+  // Count active and total players
+  let totalPlayers = 0;
+  let activePlayers = 0;
+  
+  Object.values(playerTeams).forEach(player => {
+    totalPlayers++;
+    if (isPlayerActive(player)) {
+      activePlayers++;
+    }
+  });
+  
+  // Update summary
+  document.getElementById("totalPlayersText").textContent = 
+    `Total Players: ${totalPlayers} (${activePlayers} active in 2025, ${totalPlayers - activePlayers} inactive) across ${sortedTeams.length} teams`;
+  
+  const container = document.getElementById("players-container");
+  container.innerHTML = '';
+  
+  sortedTeams.forEach(teamName => {
+    const players = teamGroups[teamName];
+    
+    // Split players into active and inactive
+    const activePlayers = players.filter(p => isPlayerActive(p));
+    const inactivePlayers = players.filter(p => !isPlayerActive(p));
+    
+    // Sort each group
+    sortPlayers(activePlayers, true);
+    sortPlayers(inactivePlayers, false);
+    
+    // Create team section
+    const teamSection = document.createElement('div');
+    teamSection.className = 'team-section';
+    
+    const teamHeader = document.createElement('div');
+    teamHeader.className = 'team-header';
+    
+    // Try to load team logo
+    const logo = document.createElement('img');
+    logo.className = 'team-logo';
+    logo.src = `logos/${teamName.toLowerCase().replace(/\s+/g, '_')}.png`;
+    logo.alt = `${teamName} logo`;
+    logo.onerror = function() { this.style.display = 'none'; };
+    
+    const teamTitle = document.createElement('h3');
+    teamTitle.textContent = teamName;
+    
+    const playerCount = document.createElement('div');
+    playerCount.className = 'player-count';
+    playerCount.textContent = `${activePlayers.length}/${players.length} active`;
+    
+    teamHeader.appendChild(logo);
+    teamHeader.appendChild(teamTitle);
+    teamHeader.appendChild(playerCount);
+    
+    const playersList = document.createElement('ul');
+    playersList.className = 'players-list';
+    
+    // Add active players section if any exist
+    if (activePlayers.length > 0) {
+      const activeHeader = document.createElement('li');
+      activeHeader.className = 'roster-section-header active';
+      activeHeader.textContent = `Current Roster (${activePlayers.length})`;
+      playersList.appendChild(activeHeader);
+      
+      activePlayers.forEach(player => {
+        const playerItem = createPlayerItem(player, teamName);
+        playersList.appendChild(playerItem);
+      });
+    }
+    
+    // Add inactive players section if any exist
+    if (inactivePlayers.length > 0) {
+      const inactiveHeader = document.createElement('li');
+      inactiveHeader.className = 'roster-section-header inactive';
+      inactiveHeader.textContent = `Inactive Players (${inactivePlayers.length})`;
+      playersList.appendChild(inactiveHeader);
+      
+      inactivePlayers.forEach(player => {
+        const playerItem = createPlayerItem(player, teamName);
+        playerItem.classList.add('inactive');
+        playersList.appendChild(playerItem);
+      });
+    }
+    
+    teamSection.appendChild(teamHeader);
+    teamSection.appendChild(playersList);
+    container.appendChild(teamSection);
+  });
+}
+
+function createPlayerItem(player, teamName) {
+  const playerItem = document.createElement('li');
+  playerItem.className = 'player-item';
+  
+  const playerLink = document.createElement('a');
+  playerLink.href = `player.html?name=${encodeURIComponent(player.name)}`;
+  playerLink.className = 'player-link';
+  
+  const playerNameDiv = document.createElement('div');
+  playerNameDiv.className = 'player-name';
+  playerNameDiv.textContent = player.name;
+  
+  const playerStats = document.createElement('div');
+  playerStats.className = 'player-stats';
+  
+  const careerBA = player.totalAtBats > 0 ? 
+    (player.totalHits / player.totalAtBats).toFixed(3) : '0.000';
+  
+  playerStats.textContent = 
+    `${player.totalGames} games • ${player.totalHits}/${player.totalAtBats} (.${careerBA.slice(2)}) • ${player.currentTeamGames} with ${teamName} • Last: ${player.year} ${player.season}`;
+  
+  playerLink.appendChild(playerNameDiv);
+  playerLink.appendChild(playerStats);
+  playerItem.appendChild(playerLink);
+  
+  return playerItem;
+}
+</script>
+<script src="team-colors.js"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

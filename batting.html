@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aces Historical Batting</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .filters-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .filters-section label {
+    font-weight: 600;
+    color: #333;
+    margin-right: 0.5rem;
+  }
+  
+  .filters-section select {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    background: white;
+    font-size: 1rem;
+    color: #333;
+    transition: border-color 0.3s ease;
+  }
+  
+  .filters-section select:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary p {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  
+  .summary p:last-child {
+    margin-bottom: 0;
+  }
+  
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  
+  th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 0.8rem;
+    text-align: center;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+  
+  th:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  }
+  
+  th.asc::after {
+    content: " ▲";
+    font-size: 0.8em;
+    margin-left: 0.5rem;
+  }
+  
+  th.desc::after {
+    content: " ▼";
+    font-size: 0.8em;
+    margin-left: 0.5rem;
+  }
+  
+  td {
+    padding: 0.8rem;
+    text-align: center;
+    border-bottom: 1px solid #f1f3f4;
+    color: #333;
+  }
+  
+  tbody tr {
+    transition: background-color 0.3s ease;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  
+  tbody tr:hover {
+    background-color: #e3f2fd;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .filters-section {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+    
+    .nav-container {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 12px 15px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    table {
+      font-size: 0.8rem;
+    }
+    
+    th, td {
+      padding: 0.5rem 0.3rem;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .page-header h1 {
+      font-size: 1.8rem;
+    }
+    
+    .filters-nav {
+      padding: 1rem;
+    }
+    
+    .summary {
+      padding: 1.5rem;
+    }
+    
+    .summary p {
+      font-size: 1rem;
+    }
+    
+    table {
+      font-size: 0.7rem;
+    }
+    
+    th, td {
+      padding: 0.4rem 0.2rem;
+    }
+  }
+</style>
+<link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">⚾ Batting Statistics</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="batting.html" class="mobile-nav-item active">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+    </nav>
+  </div>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Mountainside Aces Batting Stats</h1>
+    <p>Complete batting statistics and performance metrics for all players</p>
+  </div>
+
+  <div id="summary" class="summary">
+    <div id="loadingIndicator" style="text-align: center; padding: 2rem;">
+      <p style="font-size: 1.2rem; color: #667eea;">⏳ Loading batting statistics...</p>
+      <p style="color: #666; margin-top: 0.5rem;">Fetching data from 10 seasons (this may take 10-15 seconds)</p>
+    </div>
+    <p id="totalsText" style="display: none;"></p>
+    <p id="leadersText" style="display: none;"></p>
+  </div>
+
+  <div class="filters-nav">
+    <div class="filters-section">
+      <div>
+        <label for="yearFilter">Year:</label>
+        <select id="yearFilter">
+          <option value="All">All Years</option>
+        </select>
+      </div>
+      <div>
+        <label for="seasonFilter">Season:</label>
+        <select id="seasonFilter">
+          <option value="All">All Seasons</option>
+        </select>
+      </div>
+    </div>
+    
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting active">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+  <div class="table-container">
+    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
+    <table id="statsTable">
+      <thead>
+        <tr>
+          <th data-field="name">Name</th>
+          <th data-field="team">Team</th>
+          <th data-field="year">Year</th>
+          <th data-field="season">Season</th>
+          <th data-field="games">Games</th>
+          <th data-field="atBats">At Bats</th>
+          <th data-field="hits">Hits</th>
+          <th data-field="runs">Runs</th>
+          <th data-field="walks">Walks</th>
+          <th data-field="AcesWar">AcesBPI</th>
+          <th data-field="BA">BA</th>
+          <th data-field="OBP">OBP</th>
+          <th data-field="Sub">Sub</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows generated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="team-colors.js"></script>
+<script type="module">
+  console.log('🔄 Script started - checking Firebase imports...');
+  
+  // Import Firebase helper functions
+  import { 
+    getSeasonPlayerStats,
+    getAllSeasons
+  } from './firebase-data.js';
+  
+  console.log('✅ Firebase imports successful!');
+
+  // Global variables
+  let allPlayerData = [];
+  let currentSortField = null;
+  let currentSortDirection = 'desc';
+
+  // Helper function for capitalization
+  const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
+  // Cache management
+  const CACHE_KEY = 'battingStatsCache';
+  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+  function getCachedData() {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (!cached) return null;
+      
+      const { data, timestamp } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+      
+      if (age > CACHE_DURATION) {
+        console.log('🗑️ Cache expired, will fetch fresh data');
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      
+      console.log(`✅ Using cached data (age: ${(age / 1000 / 60).toFixed(1)} minutes)`);
+      return data;
+    } catch (error) {
+      console.error('❌ Error reading cache:', error);
+      return null;
+    }
+  }
+
+  function setCachedData(data) {
+    try {
+      const cacheObject = {
+        data: data,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+      console.log('💾 Data cached successfully');
+    } catch (error) {
+      console.error('❌ Error writing cache:', error);
+      // If quota exceeded, clear cache and try again
+      if (error.name === 'QuotaExceededError') {
+        localStorage.removeItem(CACHE_KEY);
+        console.log('🗑️ Cache cleared due to quota exceeded');
+      }
+    }
+  }
+
+  function clearCache() {
+    localStorage.removeItem(CACHE_KEY);
+    console.log('🗑️ Cache cleared');
+  }
+
+  // Load data from Firebase
+  async function loadData() {
+    const loadStartTime = performance.now();
+    console.log('🔄 Loading batting data from Firebase...');
+    console.time('Total Load Time');
+    
+    try {
+      // Check cache first
+      const cachedData = getCachedData();
+      if (cachedData) {
+        console.log('⚡ Loading from cache...');
+        allPlayerData = cachedData;
+        
+        // Hide loading indicator and show data
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const totalsText = document.getElementById('totalsText');
+        const leadersText = document.getElementById('leadersText');
+        
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (totalsText) totalsText.style.display = 'block';
+        if (leadersText) leadersText.style.display = 'block';
+        
+        populateFilters();
+        filterAndDisplayStats();
+        updateSummary();
+        
+        const loadEndTime = performance.now();
+        console.log(`✅ Page loaded from cache in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+        console.timeEnd('Total Load Time');
+        return;
+      }
+      
+      // No cache, fetch from Firebase
+      console.log('📡 No cache found, fetching from Firebase...');
+      
+      // Time: Get all seasons
+      console.time('Fetch Seasons');
+      const seasons = await getAllSeasons();
+      console.timeEnd('Fetch Seasons');
+      console.log(`✅ Fetched: ${seasons?.length || 0} seasons`);
+      
+      if (!seasons || seasons.length === 0) {
+        console.warn('⚠️ No seasons found');
+        document.getElementById('totalsText').textContent = 'No season data available.';
+        return;
+      }
+      
+      // Time: Fetch player stats for each season
+      console.log('🔄 Fetching batting stats for all seasons...');
+      console.time('Fetch All Season Stats');
+      const seasonStatsStartTime = performance.now();
+      
+      const allStatsPromises = seasons.map(season => 
+        getSeasonPlayerStats(season.id).then(stats => ({
+          seasonId: season.id,
+          year: season.year,
+          season: season.season,
+          stats: stats || []
+        }))
+      );
+      
+      const seasonStats = await Promise.all(allStatsPromises);
+      const seasonStatsEndTime = performance.now();
+      console.timeEnd('Fetch All Season Stats');
+      console.log(`⏱️  Fetched stats from ${seasons.length} seasons in ${(seasonStatsEndTime - seasonStatsStartTime).toFixed(0)}ms (avg: ${((seasonStatsEndTime - seasonStatsStartTime) / seasons.length).toFixed(0)}ms per season)`);
+      
+      // Time: Flatten and process data
+      console.time('Process Data');
+      const allStats = [];
+      seasonStats.forEach(seasonData => {
+        if (seasonData.stats && seasonData.stats.length > 0) {
+          console.log(`📊 Season ${seasonData.year} ${seasonData.season}: ${seasonData.stats.length} player records`);
+          
+          seasonData.stats.forEach(stat => {
+            allStats.push({
+              ...stat,
+              year: seasonData.year,
+              season: seasonData.season,
+              seasonId: seasonData.seasonId
+            });
+          });
+        }
+      });
+      
+      console.log(`✅ Total player stat records: ${allStats.length}`);
+      
+      // Log sample data structure
+      if (allStats.length > 0) {
+        console.log('📊 Sample Firebase player stat:', allStats[0]);
+        console.log('🔑 Available properties:', Object.keys(allStats[0]));
+        
+        // Check for AcesBPI/AcesWar specifically
+        const sample = allStats[0];
+        console.log('🎯 Checking AcesBPI properties:');
+        console.log('  - acesBPI:', sample.acesBPI);
+        console.log('  - AcesWar:', sample.AcesWar);
+        console.log('  - acesWar:', sample.acesWar);
+        console.log('  - acesbpi:', sample.acesbpi);
+        console.log('  - aceswar:', sample.aceswar);
+      }
+      
+      // Map Firebase data to expected format
+      allPlayerData = allStats.map(p => {
+        // Firebase uses 'acesWar' (lowercase 'a'), but we store as 'AcesWar' for consistency with existing code
+        const acesWarValue = p.acesWar || p.acesBPI || p.AcesWar || p.acesbpi || p.aceswar || 0;
+        
+        return {
+          // Player identifiers
+          name: p.playerName || p.displayName || p.playerId || p.id,
+          team: capitalize(p.team || p.teamId || ""),
+          
+          // Season context
+          year: p.year ? p.year.toString() : "",
+          season: capitalize(p.season || ""),
+          
+          // Stats - convert to numbers
+          games: Number(p.games) || 0,
+          atBats: Number(p.atBats) || 0,
+          hits: Number(p.hits) || 0,
+          runs: Number(p.runs) || 0,
+          walks: Number(p.walks) || 0,
+          
+          // Calculated stats - AcesWar is the internal name, displayed as AcesBPI
+          AcesWar: typeof acesWarValue === 'number' ? acesWarValue : (acesWarValue === "N/A" ? "N/A" : Number(acesWarValue) || 0),
+          BA: p.battingAverage || p.BA || 0,
+          OBP: p.onBasePercentage || p.OBP || 0,
+          
+          // Sub field (Firebase might not track this)
+          sub: p.sub || "No",
+          
+          // Preserve ID
+          id: p.id || ""
+        };
+      });
+      
+      console.log('✅ Mapped player data:', allPlayerData.length);
+      if (allPlayerData.length > 0) {
+        console.log('📊 Sample mapped player:', allPlayerData[0]);
+      }
+      console.timeEnd('Process Data');
+      
+      // Cache the processed data
+      setCachedData(allPlayerData);
+      
+      // Time: Render UI
+      console.time('Render UI');
+      
+      // Hide loading indicator and show data
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const totalsText = document.getElementById('totalsText');
+      const leadersText = document.getElementById('leadersText');
+      
+      if (loadingIndicator) loadingIndicator.style.display = 'none';
+      if (totalsText) totalsText.style.display = 'block';
+      if (leadersText) leadersText.style.display = 'block';
+      
+      populateFilters();
+      filterAndDisplayStats();
+      updateSummary();
+      console.timeEnd('Render UI');
+      
+      const loadEndTime = performance.now();
+      const totalLoadTime = loadEndTime - loadStartTime;
+      console.timeEnd('Total Load Time');
+      console.log(`✅ Page loaded successfully in ${totalLoadTime.toFixed(0)}ms (${(totalLoadTime / 1000).toFixed(2)}s)`);
+      
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      const totalsEl = document.getElementById('totalsText');
+      if (totalsEl) {
+        totalsEl.textContent = 'Error loading data. Please refresh the page.';
+        totalsEl.style.display = 'block';
+      }
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      if (loadingIndicator) loadingIndicator.style.display = 'none';
+    }
+  }
+
+  // Populate year and season filters
+  function populateFilters() {
+    const yearFilter = document.getElementById('yearFilter');
+    const seasonFilter = document.getElementById('seasonFilter');
+    
+    if (!yearFilter || !seasonFilter) {
+      console.error('❌ Filter elements not found');
+      return;
+    }
+    
+    const years = new Set();
+    const seasons = new Set();
+    
+    allPlayerData.forEach(player => {
+      if (player.year) years.add(player.year);
+      if (player.season) seasons.add(player.season);
+    });
+    
+    // Clear existing options (except "All")
+    yearFilter.innerHTML = '<option value="All">All Years</option>';
+    seasonFilter.innerHTML = '<option value="All">All Seasons</option>';
+    
+    // Add years to filter
+    Array.from(years).sort((a, b) => b.localeCompare(a)).forEach(year => {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      yearFilter.appendChild(option);
+    });
+    
+    // Add seasons to filter
+    Array.from(seasons).sort().forEach(season => {
+      const option = document.createElement('option');
+      option.value = season;
+      option.textContent = season;
+      seasonFilter.appendChild(option);
+    });
+    
+    console.log(`✅ Found ${years.size} unique years and ${seasons.size} unique seasons`);
+    
+    // Add event listeners
+    yearFilter.addEventListener('change', filterAndDisplayStats);
+    seasonFilter.addEventListener('change', filterAndDisplayStats);
+  }
+
+  // Filter and display statistics
+  function filterAndDisplayStats() {
+    const yearFilter = document.getElementById('yearFilter').value;
+    const seasonFilter = document.getElementById('seasonFilter').value;
+    
+    let filteredData = allPlayerData;
+    
+    // Apply filters
+    if (yearFilter !== 'All') {
+      filteredData = filteredData.filter(p => p.year === yearFilter);
+    }
+    if (seasonFilter !== 'All') {
+      filteredData = filteredData.filter(p => p.season === seasonFilter);
+    }
+    
+    console.log(`📊 Filtered to ${filteredData.length} records`);
+    
+    // Sort if a sort field is selected, otherwise default to year/season
+    if (currentSortField) {
+      sortData(filteredData, currentSortField, currentSortDirection);
+    } else {
+      // Default sort: most recent first (2025 Fall, 2025 Summer, 2024 Fall, etc.)
+      sortData(filteredData, 'year', 'desc');
+    }
+    
+    // Display the table
+    displayTable(filteredData);
+    updateSummary(filteredData);
+  }
+
+  // Display table
+  function displayTable(data) {
+    const tbody = document.querySelector('#statsTable tbody');
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+      const row = tbody.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = 13;
+      cell.textContent = 'No data available for selected filters';
+      cell.style.textAlign = 'center';
+      cell.style.padding = '2rem';
+      return;
+    }
+    
+    data.forEach(player => {
+      const row = tbody.insertRow();
+      
+      // Name (with link to player page)
+      const nameCell = row.insertCell();
+      const nameLink = document.createElement('a');
+      nameLink.href = `player.html?name=${encodeURIComponent(player.name)}`;
+      nameLink.textContent = player.name;
+      nameLink.style.color = '#667eea';
+      nameLink.style.textDecoration = 'none';
+      nameLink.style.fontWeight = '600';
+      nameCell.appendChild(nameLink);
+      
+      // Team (with link to team page)
+      const teamCell = row.insertCell();
+      const teamLink = document.createElement('a');
+      teamLink.href = `team.html?team=${encodeURIComponent(player.team)}`;
+      teamLink.textContent = player.team;
+      teamLink.style.color = '#667eea';
+      teamLink.style.textDecoration = 'none';
+      teamCell.appendChild(teamLink);
+      
+      // Other fields
+      row.insertCell().textContent = player.year;
+      row.insertCell().textContent = player.season;
+      row.insertCell().textContent = player.games;
+      row.insertCell().textContent = player.atBats;
+      row.insertCell().textContent = player.hits;
+      row.insertCell().textContent = player.runs;
+      row.insertCell().textContent = player.walks;
+      row.insertCell().textContent = typeof player.AcesWar === 'number' ? player.AcesWar.toFixed(2) : player.AcesWar;
+      row.insertCell().textContent = typeof player.BA === 'number' ? player.BA.toFixed(3) : player.BA;
+      row.insertCell().textContent = typeof player.OBP === 'number' ? player.OBP.toFixed(3) : player.OBP;
+      row.insertCell().textContent = player.sub;
+    });
+  }
+
+  // Update summary statistics
+  function updateSummary(data = allPlayerData) {
+    const totalsText = document.getElementById('totalsText');
+    const leadersText = document.getElementById('leadersText');
+    
+    if (data.length === 0) {
+      totalsText.textContent = 'No data available';
+      leadersText.textContent = '';
+      return;
+    }
+    
+    // Calculate totals
+    const totalGames = data.reduce((sum, p) => sum + p.games, 0);
+    const totalAtBats = data.reduce((sum, p) => sum + p.atBats, 0);
+    const totalHits = data.reduce((sum, p) => sum + p.hits, 0);
+    const totalRuns = data.reduce((sum, p) => sum + p.runs, 0);
+    const totalWalks = data.reduce((sum, p) => sum + p.walks, 0);
+    
+    totalsText.textContent = `${data.length} player records | ${totalGames} total games | ${totalAtBats} at bats | ${totalHits} hits | ${totalRuns} runs | ${totalWalks} walks`;
+    
+    // Find all-time leaders (use all data, not just filtered)
+    const allTimeData = allPlayerData;
+    const qualifiedPlayers = allTimeData.filter(p => p.atBats >= 10);
+    
+    if (allTimeData.length > 0) {
+      // Counting stats leaders
+      const topGames = allTimeData.reduce((max, p) => p.games > max.games ? p : max);
+      const topAtBats = allTimeData.reduce((max, p) => p.atBats > max.atBats ? p : max);
+      const topHits = allTimeData.reduce((max, p) => p.hits > max.hits ? p : max);
+      const topRuns = allTimeData.reduce((max, p) => p.runs > max.runs ? p : max);
+      const topWalks = allTimeData.reduce((max, p) => p.walks > max.walks ? p : max);
+      
+      // Rate stats leaders (minimum 10 at bats)
+      const topBA = qualifiedPlayers.reduce((max, p) => p.BA > max.BA ? p : max, {BA: 0});
+      const topOBP = qualifiedPlayers.reduce((max, p) => p.OBP > max.OBP ? p : max, {OBP: 0});
+      
+      // AcesBPI leader
+      const topAcesWar = allTimeData.filter(p => typeof p.AcesWar === 'number').reduce((max, p) => p.AcesWar > max.AcesWar ? p : max, {AcesWar: 0});
+      
+      leadersText.innerHTML = `All-Time Single Season Leaders — Games: ${topGames.name} (${topGames.games}) | At Bats: ${topAtBats.name} (${topAtBats.atBats}) | Hits: ${topHits.name} (${topHits.hits}) | Runs: ${topRuns.name} (${topRuns.runs}) | Walks: ${topWalks.name} (${topWalks.walks}) | BA: ${topBA.name} (${topBA.BA.toFixed(3)}) | OBP: ${topOBP.name} (${topOBP.OBP.toFixed(3)}) | AcesBPI: ${topAcesWar.name} (${topAcesWar.AcesWar.toFixed(2)})`;
+    } else {
+      leadersText.textContent = '';
+    }
+  }
+
+  // Sort functionality
+  function sortData(data, field, direction) {
+    data.sort((a, b) => {
+      // Always sort by year first, then season, then team (for default grouping)
+      // unless a specific field is being sorted
+      
+      if (field === 'year' || field === 'season' || !field) {
+        // First sort by year (descending - newest first)
+        const yearA = parseInt(a.year) || 0;
+        const yearB = parseInt(b.year) || 0;
+        
+        if (yearA !== yearB) {
+          return direction === 'asc' ? yearA - yearB : yearB - yearA;
+        }
+        
+        // Within same year, sort by season (Fall > Summer > Spring)
+        const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+        const seasonA = seasonOrder[a.season] || 0;
+        const seasonB = seasonOrder[b.season] || 0;
+        
+        if (seasonA !== seasonB) {
+          return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA;
+        }
+        
+        // Within same year and season, sort by team name alphabetically
+        const teamA = String(a.team).toLowerCase();
+        const teamB = String(b.team).toLowerCase();
+        return teamA.localeCompare(teamB);
+      }
+      
+      // If sorting by team field specifically
+      if (field === 'team') {
+        const teamA = String(a.team).toLowerCase();
+        const teamB = String(b.team).toLowerCase();
+        const teamCompare = teamA.localeCompare(teamB);
+        
+        if (teamCompare !== 0) {
+          return direction === 'asc' ? teamCompare : -teamCompare;
+        }
+        
+        // Within same team, still maintain year/season order
+        const yearA = parseInt(a.year) || 0;
+        const yearB = parseInt(b.year) || 0;
+        if (yearA !== yearB) return yearB - yearA;
+        
+        const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+        const seasonA = seasonOrder[a.season] || 0;
+        const seasonB = seasonOrder[b.season] || 0;
+        return seasonB - seasonA;
+      }
+      
+      // Regular sorting for other fields
+      let aVal = a[field];
+      let bVal = b[field];
+      
+      // Handle numeric vs string comparison
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        const numCompare = direction === 'asc' ? aVal - bVal : bVal - aVal;
+        
+        // If values are equal, fall back to year/season/team order
+        if (numCompare === 0) {
+          const yearA = parseInt(a.year) || 0;
+          const yearB = parseInt(b.year) || 0;
+          if (yearA !== yearB) return yearB - yearA;
+          
+          const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+          const seasonA = seasonOrder[a.season] || 0;
+          const seasonB = seasonOrder[b.season] || 0;
+          if (seasonA !== seasonB) return seasonB - seasonA;
+          
+          const teamA = String(a.team).toLowerCase();
+          const teamB = String(b.team).toLowerCase();
+          return teamA.localeCompare(teamB);
+        }
+        
+        return numCompare;
+      } else {
+        aVal = String(aVal).toLowerCase();
+        bVal = String(bVal).toLowerCase();
+        
+        const strCompare = direction === 'asc' ? 
+          (aVal < bVal ? -1 : aVal > bVal ? 1 : 0) :
+          (aVal > bVal ? -1 : aVal < bVal ? 1 : 0);
+        
+        // If values are equal, fall back to year/season/team order
+        if (strCompare === 0) {
+          const yearA = parseInt(a.year) || 0;
+          const yearB = parseInt(b.year) || 0;
+          if (yearA !== yearB) return yearB - yearA;
+          
+          const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+          const seasonA = seasonOrder[a.season] || 0;
+          const seasonB = seasonOrder[b.season] || 0;
+          if (seasonA !== seasonB) return seasonB - seasonA;
+          
+          const teamA = String(a.team).toLowerCase();
+          const teamB = String(b.team).toLowerCase();
+          return teamA.localeCompare(teamB);
+        }
+        
+        return strCompare;
+      }
+    });
+  }
+
+  // Add click handlers to table headers
+  function initializeSorting() {
+    document.querySelectorAll('#statsTable th[data-field]').forEach(th => {
+      th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        
+        // Toggle direction if same field, otherwise default to desc
+        if (currentSortField === field) {
+          currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSortField = field;
+          currentSortDirection = 'desc';
+        }
+        
+        // Update header classes
+        document.querySelectorAll('#statsTable th').forEach(h => {
+          h.classList.remove('asc', 'desc');
+        });
+        th.classList.add(currentSortDirection);
+        
+        // Re-filter and display
+        filterAndDisplayStats();
+      });
+    });
+  }
+
+  // Initialize page when DOM is ready
+  function initPage() {
+    console.log('📄 Initializing page...');
+    console.log('Checking for filter elements:');
+    console.log('  - yearFilter:', document.getElementById('yearFilter'));
+    console.log('  - seasonFilter:', document.getElementById('seasonFilter'));
+    console.log('  - statsTable:', document.getElementById('statsTable'));
+    console.log('  - totalsText:', document.getElementById('totalsText'));
+    
+    initializeSorting();
+    loadData();
+  }
+  
+  // Wait for DOM to be fully ready
+  if (document.readyState === 'loading') {
+    console.log('⏳ Waiting for DOM to load...');
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    // DOM is already loaded
+    console.log('✅ DOM already loaded');
+    initPage();
+  }
+</script>
+<script src="mobile-enhancements.js"></script>
+</body>
+</html>

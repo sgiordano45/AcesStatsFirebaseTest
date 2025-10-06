@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitching Statistics - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .summary {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  }
+  
+  .summary h2 {
+    margin: 0 0 1.5rem 0;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .summary p {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .summary p:last-child {
+    margin-bottom: 0;
+    color: #666;
+    font-size: 0.95rem;
+  }
+  
+  .filters-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .filter-group label {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .filter-group select {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    background: white;
+    color: #333;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  
+  .filter-group select:focus {
+    outline: none;
+    border-color: #11998e;
+  }
+  
+  .nav-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.batting {
+    border-color: #667eea;
+    color: #667eea;
+  }
+  
+  .nav-link.batting:hover {
+    background: #667eea;
+    color: white;
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .stats-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+  }
+  
+  .stats-table-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  }
+  
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0;
+    background: white;
+  }
+  
+  th, td {
+    border: none;
+    border-bottom: 1px solid #e1e5e9;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  th {
+    cursor: pointer;
+    background: #11998e;
+    color: white;
+    font-weight: 600;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  th:hover {
+    background: #0f8a80;
+  }
+  
+  th.asc::after { content: " ▲"; }
+  th.desc::after { content: " ▼"; }
+  
+  tbody tr:hover {
+    background: #f8f9fa;
+  }
+  
+  tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  tbody tr:nth-child(even):hover {
+    background: #e8f4fd;
+  }
+  
+  table a {
+    color: #11998e;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  table a:hover {
+    color: #0f8a80;
+    text-decoration: underline;
+  }
+  
+  /* Loading indicator */
+  #loadingIndicator {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+  }
+  
+  #loadingIndicator::before {
+    content: "⏳";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .filters-container {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .filter-group {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+    
+    .nav-container {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 10px 15px;
+      font-size: 14px;
+      text-align: center;
+      justify-content: center;
+    }
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .nav-link {
+      display: block;
+      margin: 0.25rem 0;
+      text-align: center;
+    }
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8em;
+    }
+  }
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">🥎 Pitching Statistics</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🏂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item active">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>⚾ Mountainside Aces Pitching Statistics</h1>
+    <p>Complete pitching statistics for all players across all seasons</p>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div id="loadingIndicator" style="display: none;">
+    Loading pitching statistics...<br>
+    <small>Fetching data from 10 seasons (this may take 10-15 seconds)</small>
+  </div>
+
+  <div class="summary">
+    <h2>Pitching Overview</h2>
+    <p id="totalsText">Loading statistics...</p>
+    <p id="leadersText">Loading leaders...</p>
+  </div>
+
+  <div class="filters-section">
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="yearFilter">Year:</label>
+        <select id="yearFilter">
+          <option value="All">All Years</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="seasonFilter">Season:</label>
+        <select id="seasonFilter">
+          <option value="All">All Seasons</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🏂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching active">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+  </div>
+
+  <div class="stats-table-container">
+    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
+    <table id="pitchingTable">
+      <thead>
+        <tr>
+          <th data-field="name">Name</th>
+          <th data-field="team">Team</th>
+          <th data-field="year">Year</th>
+          <th data-field="season">Season</th>
+          <th data-field="games">Games</th>
+          <th data-field="IP">Innings Pitched</th>
+          <th data-field="runsAllowed">Runs Allowed</th>
+          <th data-field="ERA">ERA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows generated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+  // Import Firebase functions
+  import { 
+    getSeasonPitchingStats,
+    getAllSeasons
+  } from './firebase-data.js';
+
+  // Global variables
+  let allData = [];
+  let currentSort = { column: null, dir: "asc" };
+  
+  // Cache configuration
+  const CACHE_KEY = 'pitchingStatsCache';
+  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+  // Helper function to capitalize strings
+  const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
+  // Cache functions
+  function getCachedData() {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (!cached) return null;
+      
+      const { data, timestamp } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+      
+      if (age > CACHE_DURATION) {
+        console.log('⏰ Cache expired, will fetch fresh data');
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      
+      console.log(`✅ Using cached data (age: ${(age / 1000 / 60).toFixed(1)} minutes)`);
+      return data;
+    } catch (error) {
+      console.error('❌ Cache read error:', error);
+      return null;
+    }
+  }
+
+  function setCachedData(data) {
+    try {
+      const cacheObject = {
+        data: data,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+      console.log(`💾 Cached ${data.length} records`);
+    } catch (error) {
+      if (error.name === 'QuotaExceededError') {
+        console.warn('⚠️ localStorage quota exceeded, clearing cache');
+        localStorage.removeItem(CACHE_KEY);
+      } else {
+        console.error('❌ Cache write error:', error);
+      }
+    }
+  }
+
+  function showLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) indicator.style.display = 'block';
+  }
+
+  function hideLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) indicator.style.display = 'none';
+  }
+
+  // Load data from Firebase (with caching)
+  async function loadData() {
+    const startTime = performance.now();
+    console.log('🔄 Starting data load...');
+    console.time('Total Load Time');
+    
+    // Check cache first
+    const cachedData = getCachedData();
+    if (cachedData) {
+      allData = cachedData;
+      hideLoadingIndicator();
+      populateFilters();
+      renderTable(allData);
+      const loadTime = (performance.now() - startTime).toFixed(0);
+      console.log(`✅ Loaded from cache in ${loadTime}ms`);
+      console.timeEnd('Total Load Time');
+      return;
+    }
+    
+    // Show loading indicator for fresh data fetch
+    showLoadingIndicator();
+    
+    try {
+      // Performance timing
+      const timings = {};
+      
+      // 1. Get all seasons
+      const t1 = performance.now();
+      const seasons = await getAllSeasons();
+      timings.fetchSeasons = performance.now() - t1;
+      console.log(`✅ Fetched: ${seasons?.length || 0} seasons (${timings.fetchSeasons.toFixed(0)}ms)`);
+      
+      if (!seasons || seasons.length === 0) {
+        throw new Error('No seasons found');
+      }
+      
+      // 2. Fetch pitching stats for each season
+      const t2 = performance.now();
+      const allStatsPromises = seasons.map(season => 
+        getSeasonPitchingStats(season.id).then(stats => ({
+          seasonId: season.id,
+          year: season.year,
+          season: season.season,
+          stats: stats || []
+        }))
+      );
+      
+      const seasonStats = await Promise.all(allStatsPromises);
+      timings.fetchAllStats = performance.now() - t2;
+      console.log(`✅ Fetched all season stats (${timings.fetchAllStats.toFixed(0)}ms)`);
+      
+      // 3. Flatten and add season context
+      const t3 = performance.now();
+      const allStats = [];
+      seasonStats.forEach(seasonData => {
+        if (seasonData.stats && seasonData.stats.length > 0) {
+          console.log(`📊 Season ${seasonData.year} ${seasonData.season}: ${seasonData.stats.length} records`);
+          seasonData.stats.forEach(stat => {
+            allStats.push({
+              ...stat,
+              year: seasonData.year,
+              season: seasonData.season,
+              seasonId: seasonData.seasonId
+            });
+          });
+        }
+      });
+      timings.processData = performance.now() - t3;
+      
+      console.log(`✅ Total records: ${allStats.length}`);
+      
+      // Log sample data to see property names
+      if (allStats.length > 0) {
+        console.log('📊 Sample Firebase data:', allStats[0]);
+        console.log('🔑 Available properties:', Object.keys(allStats[0]));
+      }
+      
+      // 4. Map to expected format
+      allData = allStats.map(p => {
+        // Check for different possible property names for pitching stats
+        const ipValue = p.inningsPitched || p.IP || p.ip || 0;
+        const runsValue = p.runsAllowed || p.runs_allowed || p.runs || 0;
+        const eraValue = p.era || p.ERA || "N/A";
+        
+        return {
+          name: p.playerName || p.displayName || p.playerId || p.id || "",
+          team: capitalize(p.team || p.teamId || ""),
+          year: p.year ? p.year.toString() : "",
+          season: capitalize(p.season || ""),
+          games: Number(p.games) || 0,
+          IP: typeof ipValue === 'number' ? ipValue.toString() : (ipValue || "0"),
+          runsAllowed: Number(runsValue) || 0,
+          ERA: eraValue === "N/A" || eraValue === null || eraValue === undefined ? "N/A" : Number(eraValue),
+          id: p.id || ""
+        };
+      });
+      
+      console.log(`✅ Mapped records: ${allData.length}`);
+      
+      // Cache the results
+      setCachedData(allData);
+      
+      // Performance summary
+      const t4 = performance.now();
+      timings.renderUI = t4 - t3 - timings.processData;
+      timings.total = t4 - startTime;
+      
+      console.log('\n📊 Performance Breakdown:');
+      console.log(`Fetch Seasons:        ${timings.fetchSeasons.toFixed(0)}ms (${(timings.fetchSeasons/timings.total*100).toFixed(1)}%)`);
+      console.log(`Fetch All Stats:      ${timings.fetchAllStats.toFixed(0)}ms (${(timings.fetchAllStats/timings.total*100).toFixed(1)}%)`);
+      console.log(`Process Data:         ${timings.processData.toFixed(0)}ms (${(timings.processData/timings.total*100).toFixed(1)}%)`);
+      console.log(`Render UI:            ${timings.renderUI.toFixed(0)}ms (${(timings.renderUI/timings.total*100).toFixed(1)}%)`);
+      console.log(`Total:                ${timings.total.toFixed(0)}ms\n`);
+      
+      hideLoadingIndicator();
+      populateFilters();
+      renderTable(allData);
+      console.timeEnd('Total Load Time');
+      
+    } catch (error) {
+      console.error("❌ Error loading data:", error);
+      hideLoadingIndicator();
+      document.body.innerHTML = `
+        <div class="page-container">
+          <h1>Error loading pitching statistics</h1>
+          <p>Error: ${error.message}</p>
+          <p><a href="index.html">Return to home</a></p>
+        </div>
+      `;
+    }
+  }
+
+  function populateFilters() {
+    const years = [...new Set(allData.map(p => p.year))].sort((a, b) => b.localeCompare(a));
+    const seasons = [...new Set(allData.map(p => p.season))].sort();
+
+    const yearFilter = document.getElementById("yearFilter");
+    const seasonFilter = document.getElementById("seasonFilter");
+
+    years.forEach(y => {
+      let opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      yearFilter.appendChild(opt);
+    });
+
+    seasons.forEach(s => {
+      let opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      seasonFilter.appendChild(opt);
+    });
+
+    yearFilter.addEventListener("change", applyFilters);
+    seasonFilter.addEventListener("change", applyFilters);
+  }
+
+  function applyFilters() {
+    const yearVal = document.getElementById("yearFilter").value;
+    const seasonVal = document.getElementById("seasonFilter").value;
+
+    let filtered = allData.filter(
+      p =>
+        (yearVal === "All" || p.year === yearVal) &&
+        (seasonVal === "All" || p.season === seasonVal)
+    );
+
+    renderTable(filtered);
+  }
+
+  function renderTable(data) {
+    const tbody = document.querySelector("#pitchingTable tbody");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8">No data matches the current filters.</td></tr>';
+      document.getElementById("totalsText").textContent = "No data to display.";
+      document.getElementById("leadersText").textContent = "";
+      return;
+    }
+
+    // Sort data by year (desc) → season (Fall > Summer > Spring) → team (alphabetical)
+    const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+    const sortedData = [...data].sort((a, b) => {
+      // Primary: Year (newest first)
+      if (a.year !== b.year) return b.year.localeCompare(a.year);
+      
+      // Secondary: Season (Fall > Summer > Spring)
+      const seasonA = seasonOrder[a.season] || 0;
+      const seasonB = seasonOrder[b.season] || 0;
+      if (seasonA !== seasonB) return seasonB - seasonA;
+      
+      // Tertiary: Team name (alphabetical)
+      return a.team.localeCompare(b.team);
+    });
+
+    // Calculate totals
+    let totals = {
+      games: 0,
+      totalIP: 0,
+      runsAllowed: 0,
+    };
+
+    data.forEach(p => {
+      totals.games += p.games;
+      totals.totalIP += parseFloat(p.IP) || 0;
+      totals.runsAllowed += p.runsAllowed;
+    });
+
+    // Find leaders - only consider pitchers with meaningful innings
+    const qualifyingPitchers = data.filter(p => parseFloat(p.IP) >= 10);
+    let leaders = {};
+    
+    // Counting stats leaders
+    ["games", "runsAllowed"].forEach(stat => {
+      let maxPitcher = data.reduce((prev, curr) =>
+        curr[stat] > prev[stat] ? curr : prev,
+        { [stat]: -1 }
+      );
+      leaders[stat] = maxPitcher.name ? `${maxPitcher.name} (${maxPitcher[stat]})` : "N/A";
+    });
+
+    // Innings Pitched leader
+    let mostIP = data.reduce((prev, curr) => {
+      let currIP = parseFloat(curr.IP) || 0;
+      let prevIP = parseFloat(prev.IP) || 0;
+      return currIP > prevIP ? curr : prev;
+    }, { IP: "0" });
+    leaders.IP = mostIP.name ? `${mostIP.name} (${mostIP.IP})` : "N/A";
+
+    // ERA leader (minimum 10 innings)
+    let bestERA = qualifyingPitchers.reduce((prev, curr) => {
+      let currERA = (curr.ERA !== "N/A" && !isNaN(curr.ERA)) ? Number(curr.ERA) : Infinity;
+      let prevERA = (prev.ERA !== "N/A" && !isNaN(prev.ERA)) ? Number(prev.ERA) : Infinity;
+      return currERA < prevERA ? curr : prev;
+    }, { ERA: Infinity });
+    leaders.ERA = bestERA.name ? 
+      `${bestERA.name} (${Number(bestERA.ERA).toFixed(2)})` : "N/A";
+
+    // Update summary text
+    document.getElementById("totalsText").textContent =
+      `Totals — Games: ${totals.games}, Innings Pitched: ${totals.totalIP.toFixed(1)}, Runs Allowed: ${totals.runsAllowed}`;
+
+    document.getElementById("leadersText").innerHTML = `
+      Season Leaders — Games: ${leaders.games}, Innings Pitched: ${leaders.IP}, Runs Allowed: ${leaders.runsAllowed}, Best ERA: ${leaders.ERA}<br>
+      <a href="pitching_leaders.html" style="color: #11998e; text-decoration: none; font-weight: normal;">Pitching Career Leaders →</a>
+    `;
+
+    // Generate table rows
+    sortedData.forEach(p => {
+      const row = document.createElement("tr");
+      
+      const ERA = p.ERA !== "N/A" && !isNaN(p.ERA)
+        ? Number(p.ERA).toFixed(2)
+        : "N/A";
+
+      row.innerHTML = `
+        <td><a href="pitcher.html?name=${encodeURIComponent(p.name)}">${p.name}</a></td>
+        <td><a href="team.html?team=${encodeURIComponent(p.team)}">${p.team}</a></td>
+        <td>${p.year}</td>
+        <td>${p.season}</td>
+        <td>${p.games}</td>
+        <td>${p.IP}</td>
+        <td>${p.runsAllowed}</td>
+        <td>${ERA}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    attachSorting();
+  }
+
+  function attachSorting() {
+    const headers = document.querySelectorAll("#pitchingTable th");
+    headers.forEach((th, idx) => {
+      th.onclick = () => sortTable(idx, th.getAttribute("data-field"));
+    });
+  }
+
+  function sortTable(columnIndex, field) {
+    const table = document.getElementById("pitchingTable");
+    const rows = Array.from(table.rows).slice(1);
+    const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+
+    let dir = currentSort.column === field && currentSort.dir === "asc" ? "desc" : "asc";
+    currentSort = { column: field, dir };
+
+    rows.sort((a, b) => {
+      let x = a.cells[columnIndex].innerText.trim();
+      let y = b.cells[columnIndex].innerText.trim();
+
+      let comparison = 0;
+
+      // Primary sort based on the clicked column
+      if (field === "year" || field === "season") {
+        // For year/season columns, sort by year → season → team
+        const yearA = a.cells[2].innerText.trim();
+        const yearB = b.cells[2].innerText.trim();
+        const seasonA = a.cells[3].innerText.trim();
+        const seasonB = b.cells[3].innerText.trim();
+        const teamA = a.cells[1].innerText.trim();
+        const teamB = b.cells[1].innerText.trim();
+        
+        if (yearA !== yearB) {
+          comparison = dir === "asc" ? yearA.localeCompare(yearB) : yearB.localeCompare(yearA);
+        } else {
+          const sOrderA = seasonOrder[seasonA] || 0;
+          const sOrderB = seasonOrder[seasonB] || 0;
+          if (sOrderA !== sOrderB) {
+            comparison = dir === "asc" ? sOrderA - sOrderB : sOrderB - sOrderA;
+          } else {
+            comparison = dir === "asc" ? teamA.localeCompare(teamB) : teamB.localeCompare(teamA);
+          }
+        }
+      } else if (field === "team") {
+        // For team column, sort by team first, then year/season
+        comparison = dir === "asc" ? x.localeCompare(y) : y.localeCompare(x);
+        
+        if (comparison === 0) {
+          const yearA = a.cells[2].innerText.trim();
+          const yearB = b.cells[2].innerText.trim();
+          if (yearA !== yearB) {
+            comparison = yearB.localeCompare(yearA); // Most recent first
+          } else {
+            const seasonA = a.cells[3].innerText.trim();
+            const seasonB = b.cells[3].innerText.trim();
+            const sOrderA = seasonOrder[seasonA] || 0;
+            const sOrderB = seasonOrder[seasonB] || 0;
+            comparison = sOrderB - sOrderA;
+          }
+        }
+      } else {
+        // For all other columns (stats), sort by the value with tie-breakers
+        
+        // Handle special cases
+        if (field === "ERA") {
+          // Move N/A values to the end
+          if (x === "N/A" && y !== "N/A") return 1;
+          if (y === "N/A" && x !== "N/A") return -1;
+          if (x === "N/A" && y === "N/A") comparison = 0;
+        }
+
+        if (comparison === 0) {
+          // Handle IP field (innings pitched can have decimals)
+          if (field === "IP") {
+            let xNum = parseFloat(x);
+            let yNum = parseFloat(y);
+            if (!isNaN(xNum) && !isNaN(yNum)) {
+              comparison = dir === "asc" ? xNum - yNum : yNum - xNum;
+            }
+          } else {
+            // Try parsing as numbers first
+            let xNum = parseFloat(x.replace(/,/g, ""));
+            let yNum = parseFloat(y.replace(/,/g, ""));
+
+            if (!isNaN(xNum) && !isNaN(yNum)) {
+              comparison = dir === "asc" ? xNum - yNum : yNum - xNum;
+            } else {
+              // Fall back to string comparison
+              comparison = dir === "asc" ? x.localeCompare(y) : y.localeCompare(x);
+            }
+          }
+        }
+        
+        // Tie-breaker: year → season → team
+        if (comparison === 0) {
+          const yearA = a.cells[2].innerText.trim();
+          const yearB = b.cells[2].innerText.trim();
+          if (yearA !== yearB) {
+            comparison = yearB.localeCompare(yearA); // Most recent first
+          } else {
+            const seasonA = a.cells[3].innerText.trim();
+            const seasonB = b.cells[3].innerText.trim();
+            const sOrderA = seasonOrder[seasonA] || 0;
+            const sOrderB = seasonOrder[seasonB] || 0;
+            if (sOrderA !== sOrderB) {
+              comparison = sOrderB - sOrderA;
+            } else {
+              const teamA = a.cells[1].innerText.trim();
+              const teamB = b.cells[1].innerText.trim();
+              comparison = teamA.localeCompare(teamB);
+            }
+          }
+        }
+      }
+
+      return comparison;
+    });
+
+    // Re-append sorted rows
+    rows.forEach(row => table.tBodies[0].appendChild(row));
+
+    // Update sort indicators
+    document.querySelectorAll("#pitchingTable th").forEach(th => th.classList.remove("asc", "desc"));
+    table.rows[0].cells[columnIndex].classList.add(dir);
+  }
+
+  // Initialize sorting
+  function initializeSorting() {
+    console.log('🔧 Initializing sorting...');
+    attachSorting();
+  }
+
+  // Initialize page when DOM is ready
+  function initPage() {
+    console.log('📄 Initializing page...');
+    initializeSorting();
+    loadData();
+  }
+
+  // Wait for DOM
+  if (document.readyState === 'loading') {
+    console.log('⏳ Waiting for DOM to load...');
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    console.log('✅ DOM already loaded');
+    initPage();
+  }
+</script>
+<script src="mobile-enhancements.js"></script>
+</body>
+</html>

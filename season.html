@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Season Overview - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .back-nav {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .back-nav a {
+    padding: 0.5rem 1rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-right: 1rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+  
+  .back-nav a:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .season-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .season-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  }
+  
+  .season-header h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .season-header p {
+    margin: 0 0 2rem 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .season-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  
+  .summary-item {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  .summary-number {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .summary-label {
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+  
+  .leaders-awards-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .leaders-section, .awards-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+  }
+  
+  .leaders-section::before, .awards-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .leaders-section h3, .awards-section h3 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 1.5rem;
+    font-size: 1.3em;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .leaders-table, .awards-table {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .leaders-table th, .leaders-table td,
+  .awards-table th, .awards-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e1e5e9;
+  }
+  
+  .leaders-table th, .awards-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .leaders-table tr:nth-child(even),
+  .awards-table tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  .leaders-table tr:hover,
+  .awards-table tr:hover {
+    background: #e8f4fd;
+  }
+  
+  .leaders-table a, .awards-table a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  .leaders-table a:hover, .awards-table a:hover {
+    color: #4c63d2;
+    text-decoration: underline;
+  }
+  
+  .stat-value {
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  .view-switcher {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .view-switcher button {
+    padding: 0.8rem 2rem;
+    margin: 0 0.5rem;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: white;
+    color: #667eea;
+  }
+  
+  .view-switcher button.active {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  .view-switcher button:not(.active):hover {
+    background: #f8f9fa;
+    transform: translateY(-1px);
+  }
+  
+  /* Game Results and Standings Styling */
+  .game-results-section, .standings-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+  }
+  
+  .game-results-section::before, .standings-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .game-results-section h3, .standings-section h3 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 1.5rem;
+    font-size: 1.3em;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  /* Stats Table */
+  .stats-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+  }
+  
+  .stats-table-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0;
+    background: white;
+  }
+  
+  th, td {
+    border: none;
+    border-bottom: 1px solid #e1e5e9;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  th {
+    cursor: pointer;
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  th:hover {
+    background: #5a6fd8;
+  }
+  
+  th.asc::after { content: " ▲"; }
+  th.desc::after { content: " ▼"; }
+  
+  tbody tr:hover {
+    background: #f8f9fa;
+  }
+  
+  tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  tbody tr:nth-child(even):hover {
+    background: #e8f4fd;
+  }
+  
+  table a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  table a:hover {
+    color: #4c63d2;
+    text-decoration: underline;
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .season-header {
+      padding: 2rem 1rem;
+    }
+    
+    .season-header h1 {
+      font-size: 2rem;
+    }
+    
+    .leaders-awards-container {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .view-switcher button {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.9rem;
+      margin: 0.25rem;
+    }
+    
+    .season-summary {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .back-nav a {
+      display: block;
+      margin: 0.25rem 0;
+      text-align: center;
+    }
+    
+    .season-summary {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8em;
+    }
+    
+    .view-switcher button {
+      display: block;
+      width: 100%;
+      margin: 0.25rem 0;
+    }
+  }
+  
+  /* Loading state */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .loading::before {
+    content: "⏳";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+<div class="page-container">
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">⚾ Mountainside Aces</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+
+  <div class="season-header">
+    <h1 id="seasonTitle">Season Overview</h1>
+    <p id="seasonDescription">Detailed statistics and awards for the season</p>
+    
+    <div class="season-summary" id="seasonSummary">
+      <!-- Summary items will be generated dynamically -->
+    </div>
+  </div>
+
+  <div class="leaders-awards-container">
+    <div class="leaders-section">
+      <h3 id="leadersTitle">Season Leaders</h3>
+      <table class="leaders-table" id="leadersTable">
+        <thead>
+          <tr>
+            <th>Statistic</th>
+            <th>Player</th>
+            <th class="stat-value">Value</th>
+          </tr>
+        </thead>
+        <tbody id="leadersTableBody">
+          <!-- Leaders will be generated dynamically -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="awards-section">
+      <h3>Season Awards</h3>
+      <table class="awards-table">
+        <thead>
+          <tr>
+            <th>Award</th>
+            <th>Player</th>
+            <th>Team</th>
+          </tr>
+        </thead>
+        <tbody id="awardsTableBody">
+          <!-- Awards will be generated dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Game Results and Standings will be inserted here dynamically -->
+
+  <div class="view-switcher">
+    <button id="battingViewBtn" onclick="switchView('batting')" class="active">Batting Stats</button>
+    <button id="pitchingViewBtn" onclick="switchView('pitching')">Pitching Stats</button>
+  </div>
+
+  <div class="stats-table-container">
+    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
+    <table id="seasonStatsTable">
+      <thead id="tableHead">
+        <!-- Headers will be generated dynamically -->
+      </thead>
+      <tbody>
+        <!-- Rows generated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let currentYear = "";
+let currentSeason = "";
+let currentView = 'batting';
+let allBattingData = [];
+let allPitchingData = [];
+let allAwards = [];
+let allGames = [];
+let seasonBattingData = [];
+let seasonPitchingData = [];
+let seasonAwards = [];
+let currentSort = { column: null, dir: "asc" };
+
+// Get season from URL
+const params = new URLSearchParams(window.location.search);
+currentYear = params.get("year");
+currentSeason = params.get("season");
+
+if (!currentYear || !currentSeason) {
+  document.body.innerHTML = '<div class="page-container"><h1>Error: Season not specified</h1><p><a href="seasons.html">Return to all seasons</a></p></div>';
+} else {
+  loadSeasonData();
+}
+
+async function loadSeasonData() {
+  try {
+    // Show loading state
+    document.getElementById("seasonSummary").innerHTML = '<div class="loading">Loading season data...</div>';
+    
+    // Load all data including games
+    const [battingResponse, pitchingResponse, awardsResponse, gamesResponse] = await Promise.all([
+      fetch("data.json"),
+      fetch("pitching.json"),
+      fetch("awards.json"),
+      fetch("games.json")
+    ]);
+    
+    if (!battingResponse.ok) throw new Error('Failed to load data.json');
+    
+    allBattingData = cleanBattingData(await battingResponse.json());
+    allPitchingData = pitchingResponse.ok ? cleanPitchingData(await pitchingResponse.json()) : [];
+    allAwards = awardsResponse.ok ? await awardsResponse.json() : [];
+    allGames = gamesResponse.ok ? await gamesResponse.json() : [];
+    
+    // Filter for this season
+    seasonBattingData = allBattingData.filter(p => p.year === currentYear && p.season === currentSeason);
+    seasonPitchingData = allPitchingData.filter(p => p.year === currentYear && p.season === currentSeason);
+    seasonAwards = allAwards.filter(a => a.Year === currentYear && a.Season === currentSeason);
+    
+    if (seasonBattingData.length === 0 && seasonPitchingData.length === 0) {
+      document.body.innerHTML = `
+        <div class="page-container">
+          <h1>Season "${currentYear} ${currentSeason}" not found</h1>
+          <p><a href="seasons.html">Return to all seasons</a></p>
+        </div>
+      `;
+      return;
+    }
+    
+    initializePage();
+    
+  } catch (error) {
+    console.error("Error loading season data:", error);
+    document.body.innerHTML = `
+      <div class="page-container">
+        <h1>Error loading season data</h1>
+        <p>Could not load statistics. Please check that data files are available.</p>
+        <p><a href="seasons.html">Return to all seasons</a></p>
+      </div>
+    `;
+  }
+}
+
+function cleanBattingData(data) {
+  return data.map(p => ({
+    ...p,
+    name: p.name ? p.name.trim() : "",
+    team: p.team ? p.team.trim() : "",
+    season: p.season ? p.season.trim() : "",
+    year: p.year ? String(p.year).trim() : "",
+    games: Number(p.games) || 0,
+    atBats: Number(p.atBats) || 0,
+    hits: Number(p.hits) || 0,
+    runs: Number(p.runs) || 0,
+    walks: Number(p.walks) || 0,
+    AcesWar: p.AcesWar === "N/A" || !p.AcesWar ? "N/A" : Number(p.AcesWar),
+    Sub: p.Sub || p.sub || ""
+  }));
+}
+
+function cleanPitchingData(data) {
+  return data.map(p => ({
+    ...p,
+    name: p.name ? p.name.trim() : "",
+    team: p.team ? p.team.trim() : "",
+    season: p.season ? p.season.trim() : "",
+    year: p.year ? String(p.year).trim() : "",
+    games: Number(p.games) || 0,
+    IP: parseFloat(p.IP) || 0,
+    runsAllowed: Number(p["runs allowed"]) || 0,
+    ERA: p.ERA === "N/A" || !p.ERA ? "N/A" : Number(p.ERA)
+  }));
+}
+
+function initializePage() {
+  document.getElementById("seasonTitle").textContent = `${currentYear} ${currentSeason} Season`;
+  
+  renderSeasonSummary();
+  renderAwards();
+  renderStandings();
+  renderGameResults();
+  switchView('batting');
+}
+
+function renderSeasonSummary() {
+  const uniquePlayers = new Set([...seasonBattingData.map(p => p.name), ...seasonPitchingData.map(p => p.name)]);
+  const uniqueTeams = new Set([...seasonBattingData.map(p => p.team), ...seasonPitchingData.map(p => p.team)].filter(t => t.toLowerCase() !== "kings"));
+  
+  // Calculate team games from games.json for this season
+  const seasonGames = allGames.filter(g => g.year === currentYear && g.season === currentSeason);
+  const regularSeasonGames = seasonGames.filter(g => g.game_type === 'Regular');
+  const playoffGames = seasonGames.filter(g => g.game_type === 'Playoff');
+  
+  const totalTeamGames = seasonGames.length;
+  const totalAtBats = seasonBattingData.reduce((sum, p) => sum + p.atBats, 0);
+  const totalHits = seasonBattingData.reduce((sum, p) => sum + p.hits, 0);
+  const leagueBA = totalAtBats > 0 ? (totalHits / totalAtBats).toFixed(3) : ".000";
+  
+  // Create games display with breakdown
+  let gamesDisplay = `${totalTeamGames}`;
+  if (regularSeasonGames.length > 0 && playoffGames.length > 0) {
+    gamesDisplay += ` (${regularSeasonGames.length} Regular, ${playoffGames.length} Playoff)`;
+  } else if (regularSeasonGames.length > 0) {
+    gamesDisplay += ` (${regularSeasonGames.length} Regular Season)`;
+  } else if (playoffGames.length > 0) {
+    gamesDisplay += ` (${playoffGames.length} Playoff)`;
+  }
+  
+  const summaryHTML = `
+    <div class="summary-item">
+      <div class="summary-number">${uniquePlayers.size}</div>
+      <div class="summary-label">Players</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-number">${uniqueTeams.size}</div>
+      <div class="summary-label">Teams</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-number" style="font-size: ${gamesDisplay.length > 15 ? '1.3em' : '1.8em'};">${gamesDisplay}</div>
+      <div class="summary-label">Games</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-number">${leagueBA}</div>
+      <div class="summary-label">League BA</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-number">${seasonAwards.length}</div>
+      <div class="summary-label">Awards</div>
+    </div>
+  `;
+  
+  document.getElementById("seasonSummary").innerHTML = summaryHTML;
+}
+
+function renderAwards() {
+  const tbody = document.getElementById("awardsTableBody");
+  
+  if (seasonAwards.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3">No awards data available for this season</td></tr>';
+    return;
+  }
+  
+  // Sort awards by importance/type
+  const sortedAwards = seasonAwards.sort((a, b) => {
+    const order = ['Team MVP', 'All Aces', 'Gold Glove', 'Team of the Year', 'Rookie of the Year'];
+    const aIndex = order.indexOf(a.Award);
+    const bIndex = order.indexOf(b.Award);
+    
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    return a.Award.localeCompare(b.Award);
+  });
+  
+  sortedAwards.forEach(award => {
+    const playerLink = award.Player ? 
+      `<a href="player.html?name=${encodeURIComponent(award.Player)}">${award.Player}</a>` : 
+      '';
+    const teamLink = award.Team ?
+      `<a href="team.html?team=${encodeURIComponent(award.Team)}">${award.Team}</a>` :
+      '';
+    
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${award.Award}</strong></td>
+        <td>${playerLink}</td>
+        <td>${teamLink}</td>
+      </tr>
+    `;
+  });
+}
+
+function renderGameResults() {
+  // Filter games for this season
+  const seasonGames = allGames.filter(g => g.year === currentYear && g.season === currentSeason);
+  
+  if (seasonGames.length === 0) return;
+  
+  // Add game results section after standings
+  const standingsSection = document.querySelector('.standings-section');
+  
+  const gameResultsHTML = `
+    <div class="game-results-section" style="margin-top: 2rem;">
+      <h3>Game Results</h3>
+      <div id="gameResults" style="padding: 1.5rem;">
+        ${renderGameResultsTable(seasonGames)}
+      </div>
+    </div>
+  `;
+  
+  if (standingsSection) {
+    standingsSection.insertAdjacentHTML('afterend', gameResultsHTML);
+  }
+}
+
+function renderGameResultsTable(games) {
+  if (games.length === 0) return '<p>No games found for this season.</p>';
+  
+  // Separate regular season and playoff games
+  const regularSeasonGames = games.filter(g => g.game_type === 'Regular');
+  const playoffGames = games.filter(g => g.game_type === 'Playoff');
+  
+  let html = '';
+  
+  // Regular Season Games
+  if (regularSeasonGames.length > 0) {
+    html += `
+      <h4>Regular Season (${regularSeasonGames.length} games)</h4>
+      <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+        <table style="width: 100%; font-size: 0.9em;">
+          <thead style="position: sticky; top: 0; background-color: #667eea;">
+            <tr>
+              <th style="padding: 5px; color: white;">Date</th>
+              <th style="padding: 5px; color: white;">Home Team</th>
+              <th style="padding: 5px; color: white;">Score</th>
+              <th style="padding: 5px; color: white;">Away Team</th>
+              <th style="padding: 5px; color: white;">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${regularSeasonGames.map(game => renderGameRow(game)).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  
+  // Playoff Games
+  if (playoffGames.length > 0) {
+    html += `
+      <h4>Playoffs (${playoffGames.length} games)</h4>
+      <div style="max-height: 300px; overflow-y: auto;">
+        <table style="width: 100%; font-size: 0.9em;">
+          <thead style="position: sticky; top: 0; background-color: #667eea;">
+            <tr>
+              <th style="padding: 5px; color: white;">Date</th>
+              <th style="padding: 5px; color: white;">Home Team</th>
+              <th style="padding: 5px; color: white;">Score</th>
+              <th style="padding: 5px; color: white;">Away Team</th>
+              <th style="padding: 5px; color: white;">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${playoffGames.map(game => renderGameRow(game)).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  
+  return html;
+}
+
+function renderGameRow(game) {
+  const homeScore = game["home score"];
+  const awayScore = game["away score"];
+  const forfeit = game.forfeit === "Yes" ? " (Forfeit)" : "";
+  
+  // Handle W/L scores
+  let scoreDisplay;
+  if (homeScore === "W" && awayScore === "L") {
+    scoreDisplay = "W - L";
+  } else if (homeScore === "L" && awayScore === "W") {
+    scoreDisplay = "L - W";
+  } else if (game.winner === "Tie") {
+    scoreDisplay = `${homeScore} - ${awayScore} (Tie)`;
+  } else {
+    scoreDisplay = `${homeScore} - ${awayScore}`;
+  }
+  
+  // Check if teams have pages (filter out teams like KPMG, DILFs, etc.)
+  const homeTeamLink = shouldShowTeamLink(game["home team"]) ? 
+    `<a href="team.html?team=${encodeURIComponent(game["home team"])}">${game["home team"]}</a>` : 
+    game["home team"];
+    
+  const awayTeamLink = shouldShowTeamLink(game["away team"]) ? 
+    `<a href="team.html?team=${encodeURIComponent(game["away team"])}">${game["away team"]}</a>` : 
+    game["away team"];
+  
+  return `
+    <tr>
+      <td style="padding: 5px;">${game.date}</td>
+      <td style="padding: 5px;">${homeTeamLink}</td>
+      <td style="padding: 5px; text-align: center; font-weight: bold;">${scoreDisplay}${forfeit}</td>
+      <td style="padding: 5px;">${awayTeamLink}</td>
+      <td style="padding: 5px; font-weight: bold;">${game.winner}</td>
+    </tr>
+  `;
+}
+
+function renderStandings() {
+  const seasonGames = allGames.filter(g => g.year === currentYear && g.season === currentSeason);
+  
+  if (seasonGames.length === 0) return;
+  
+  // Add standings section after awards
+  const awardsContainer = document.querySelector('.leaders-awards-container');
+  
+  const standingsHTML = `
+    <div class="standings-section" style="margin-top: 2rem;">
+      <h3>Standings</h3>
+      <div id="standings" style="padding: 1.5rem;">
+        ${renderStandingsTable(seasonGames)}
+      </div>
+    </div>
+  `;
+  
+  awardsContainer.insertAdjacentHTML('afterend', standingsHTML);
+}
+
+function renderStandingsTable(games) {
+  const regularSeasonGames = games.filter(g => g.game_type === 'Regular');
+  const playoffGames = games.filter(g => g.game_type === 'Playoff');
+  
+  let html = '';
+  
+  // Regular Season Standings
+  if (regularSeasonGames.length > 0) {
+    const regularStandings = calculateStandings(regularSeasonGames);
+    html += `
+      <h4>Regular Season Standings</h4>
+      <table style="width: 100%; margin-bottom: 20px;">
+        <thead>
+          <tr style="background-color: #667eea;">
+            <th style="padding: 8px; text-align: left; color: white;">Team</th>
+            <th style="padding: 8px; color: white;">Wins</th>
+            <th style="padding: 8px; color: white;">Losses</th>
+            <th style="padding: 8px; color: white;">Ties</th>
+            <th style="padding: 8px; color: white;">Win%</th>
+            <th style="padding: 8px; color: white;">Games</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${regularStandings.map((team, index) => `
+            <tr style="${index % 2 === 0 ? 'background-color: #fafafa;' : ''}">
+              <td style="padding: 8px; font-weight: bold;">${shouldShowTeamLink(team.name) ? 
+                `<a href="team.html?team=${encodeURIComponent(team.name)}">${team.name}</a>` : 
+                team.name}</td>
+              <td style="padding: 8px; text-align: center;">${team.wins}</td>
+              <td style="padding: 8px; text-align: center;">${team.losses}</td>
+              <td style="padding: 8px; text-align: center;">${team.ties}</td>
+              <td style="padding: 8px; text-align: center;">${team.winPct}</td>
+              <td style="padding: 8px; text-align: center;">${team.games}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  // Playoff Results Summary
+  if (playoffGames.length > 0) {
+    const playoffStandings = calculateStandings(playoffGames);
+    html += `
+      <h4>Playoff Performance</h4>
+      <table style="width: 100%;">
+        <thead>
+          <tr style="background-color: #667eea;">
+            <th style="padding: 8px; text-align: left; color: white;">Team</th>
+            <th style="padding: 8px; color: white;">Wins</th>
+            <th style="padding: 8px; color: white;">Losses</th>
+            <th style="padding: 8px; color: white;">Ties</th>
+            <th style="padding: 8px; color: white;">Win%</th>
+            <th style="padding: 8px; color: white;">Games</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${playoffStandings.map((team, index) => `
+            <tr style="${index % 2 === 0 ? 'background-color: #fafafa;' : ''}">
+              <td style="padding: 8px; font-weight: bold;">${shouldShowTeamLink(team.name) ? 
+                `<a href="team.html?team=${encodeURIComponent(team.name)}">${team.name}</a>` : 
+                team.name}</td>
+              <td style="padding: 8px; text-align: center;">${team.wins}</td>
+              <td style="padding: 8px; text-align: center;">${team.losses}</td>
+              <td style="padding: 8px; text-align: center;">${team.ties}</td>
+              <td style="padding: 8px; text-align: center;">${team.winPct}</td>
+              <td style="padding: 8px; text-align: center;">${team.games}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  return html;
+}
+
+function calculateStandings(games) {
+  const teamStats = {};
+  
+  games.forEach(game => {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const winner = game.winner;
+    
+    // Initialize teams if not exists - include ALL teams from games, not just those with stats
+    if (!teamStats[homeTeam]) {
+      teamStats[homeTeam] = { name: homeTeam, wins: 0, losses: 0, ties: 0, games: 0 };
+    }
+    if (!teamStats[awayTeam]) {
+      teamStats[awayTeam] = { name: awayTeam, wins: 0, losses: 0, ties: 0, games: 0 };
+    }
+    
+    // Count games
+    teamStats[homeTeam].games++;
+    teamStats[awayTeam].games++;
+    
+    // Count results
+    if (winner === "Tie") {
+      teamStats[homeTeam].ties++;
+      teamStats[awayTeam].ties++;
+    } else if (winner === homeTeam) {
+      teamStats[homeTeam].wins++;
+      teamStats[awayTeam].losses++;
+    } else if (winner === awayTeam) {
+      teamStats[awayTeam].wins++;
+      teamStats[homeTeam].losses++;
+    } else if (winner.includes("Forfeit")) {
+      // Handle forfeit cases
+      const actualWinner = winner.replace("Forfeit - ", "").replace("Tie", "");
+      if (actualWinner && actualWinner !== "Tie") {
+        if (actualWinner === homeTeam) {
+          teamStats[homeTeam].wins++;
+          teamStats[awayTeam].losses++;
+        } else if (actualWinner === awayTeam) {
+          teamStats[awayTeam].wins++;
+          teamStats[homeTeam].losses++;
+        }
+      } else {
+        teamStats[homeTeam].ties++;
+        teamStats[awayTeam].ties++;
+      }
+    }
+  });
+  
+  // Calculate win percentage and sort
+  const standings = Object.values(teamStats).map(team => {
+    const totalDecidedGames = team.wins + team.losses;
+    team.winPct = totalDecidedGames > 0 ? (team.wins / totalDecidedGames).toFixed(3) : '.000';
+    return team;
+  });
+  
+  // Sort by win percentage (descending), then by wins (descending)
+  standings.sort((a, b) => {
+    if (parseFloat(b.winPct) !== parseFloat(a.winPct)) {
+      return parseFloat(b.winPct) - parseFloat(a.winPct);
+    }
+    return b.wins - a.wins;
+  });
+  
+  return standings;
+}
+
+// Helper function to determine if a team should have a clickable link
+function shouldShowTeamLink(teamName) {
+  // Only show links for teams that have dedicated team pages
+  // Filter out historical teams like KPMG, DILFs, etc. that don't have current team pages
+  const teamsWithPages = new Set([
+    ...seasonBattingData.map(p => p.team),
+    ...seasonPitchingData.map(p => p.team)
+  ].filter(t => t && t.toLowerCase() !== "kings"));
+  
+  return teamsWithPages.has(teamName);
+}
+
+function switchView(view) {
+  currentView = view;
+  
+  // Update button styles
+  const battingBtn = document.getElementById('battingViewBtn');
+  const pitchingBtn = document.getElementById('pitchingViewBtn');
+  
+  if (view === 'batting') {
+    battingBtn.classList.add('active');
+    pitchingBtn.classList.remove('active');
+  } else {
+    pitchingBtn.classList.add('active');
+    battingBtn.classList.remove('active');
+  }
+  
+  renderLeaders();
+  renderStatsTable();
+}
+
+function renderLeaders() {
+  const leadersTitle = document.getElementById('leadersTitle');
+  const tbody = document.getElementById('leadersTableBody');
+  
+  if (currentView === 'batting') {
+    leadersTitle.textContent = 'Batting Leaders';
+    renderBattingLeaders(tbody);
+  } else {
+    leadersTitle.textContent = 'Pitching Leaders';
+    renderPitchingLeaders(tbody);
+  }
+}
+
+function renderBattingLeaders(tbody) {
+  if (seasonBattingData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3">No batting data available</td></tr>';
+    return;
+  }
+  
+  const qualifyingBatters = seasonBattingData.filter(p => p.atBats >= 20);
+  
+  // Calculate leaders
+  const leaders = {
+    'Games': seasonBattingData.reduce((prev, curr) => curr.games > prev.games ? curr : prev, {games: -1}),
+    'At Bats': seasonBattingData.reduce((prev, curr) => curr.atBats > prev.atBats ? curr : prev, {atBats: -1}),
+    'Hits': seasonBattingData.reduce((prev, curr) => curr.hits > prev.hits ? curr : prev, {hits: -1}),
+    'Runs': seasonBattingData.reduce((prev, curr) => curr.runs > prev.runs ? curr : prev, {runs: -1}),
+    'Walks': seasonBattingData.reduce((prev, curr) => curr.walks > prev.walks ? curr : prev, {walks: -1}),
+    'Batting Average': qualifyingBatters.reduce((prev, curr) => {
+      const currBA = curr.atBats > 0 ? curr.hits / curr.atBats : 0;
+      const prevBA = prev.atBats > 0 ? prev.hits / prev.atBats : 0;
+      return currBA > prevBA ? curr : prev;
+    }, {atBats: 0, hits: 0}),
+    'AcesBPI': seasonBattingData.reduce((prev, curr) => {
+      const currWAR = curr.AcesWar !== "N/A" && !isNaN(curr.AcesWar) ? Number(curr.AcesWar) : -Infinity;
+      const prevWAR = prev.AcesWar !== "N/A" && !isNaN(prev.AcesWar) ? Number(prev.AcesWar) : -Infinity;
+      return currWAR > prevWAR ? curr : prev;
+    }, {AcesWar: -Infinity})
+  };
+  
+  tbody.innerHTML = '';
+  Object.entries(leaders).forEach(([stat, player]) => {
+    if (!player.name) return;
+    
+    let value = '';
+    switch(stat) {
+      case 'Games': value = player.games; break;
+      case 'At Bats': value = player.atBats; break;
+      case 'Hits': value = player.hits; break;
+      case 'Runs': value = player.runs; break;
+      case 'Walks': value = player.walks; break;
+      case 'Batting Average': value = player.atBats > 0 ? (player.hits / player.atBats).toFixed(3) : '.000'; break;
+      case 'AcesBPI': value = player.AcesWar !== "N/A" ? Number(player.AcesWar).toFixed(2) : 'N/A'; break;
+    }
+    
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${stat}</strong></td>
+        <td><a href="player.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+        <td class="stat-value">${value}</td>
+      </tr>
+    `;
+  });
+}
+
+function renderPitchingLeaders(tbody) {
+  if (seasonPitchingData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3">No pitching data available</td></tr>';
+    return;
+  }
+  
+  const qualifyingPitchers = seasonPitchingData.filter(p => p.IP >= 10);
+  
+  // Calculate leaders
+  const leaders = {
+    'Games': seasonPitchingData.reduce((prev, curr) => curr.games > prev.games ? curr : prev, {games: -1}),
+    'Innings Pitched': seasonPitchingData.reduce((prev, curr) => curr.IP > prev.IP ? curr : prev, {IP: -1}),
+    'Runs Allowed': seasonPitchingData.reduce((prev, curr) => curr.runsAllowed > prev.runsAllowed ? curr : prev, {runsAllowed: -1}),
+    'Best ERA': qualifyingPitchers.reduce((prev, curr) => {
+      const currERA = curr.ERA !== "N/A" && !isNaN(curr.ERA) ? Number(curr.ERA) : Infinity;
+      const prevERA = prev.ERA !== "N/A" && !isNaN(prev.ERA) ? Number(prev.ERA) : Infinity;
+      return currERA < prevERA ? curr : prev;
+    }, {ERA: Infinity})
+  };
+  
+  tbody.innerHTML = '';
+  Object.entries(leaders).forEach(([stat, player]) => {
+    if (!player.name) return;
+    
+    let value = '';
+    switch(stat) {
+      case 'Games': value = player.games; break;
+      case 'Innings Pitched': value = player.IP.toFixed(1); break;
+      case 'Runs Allowed': value = player.runsAllowed; break;
+      case 'Best ERA': value = player.ERA !== "N/A" ? Number(player.ERA).toFixed(2) : 'N/A'; break;
+    }
+    
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${stat}</strong></td>
+        <td><a href="pitcher.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+        <td class="stat-value">${value}</td>
+      </tr>
+    `;
+  });
+}
+
+function renderStatsTable() {
+  const tableHead = document.getElementById('tableHead');
+  const tbody = document.querySelector('#seasonStatsTable tbody');
+  
+  if (currentView === 'batting') {
+    // Batting table headers
+    tableHead.innerHTML = `
+      <tr>
+        <th data-field="name">Name</th>
+        <th data-field="team">Team</th>
+        <th data-field="games">Games</th>
+        <th data-field="atBats">At Bats</th>
+        <th data-field="hits">Hits</th>
+        <th data-field="runs">Runs</th>
+        <th data-field="walks">Walks</th>
+        <th data-field="AcesWar">AcesBPI</th>
+        <th data-field="BA">BA</th>
+        <th data-field="OBP">OBP</th>
+        <th data-field="Sub">Sub</th>
+      </tr>
+    `;
+    
+    tbody.innerHTML = '';
+    seasonBattingData.forEach(p => {
+      const BA = p.atBats > 0 ? (p.hits / p.atBats).toFixed(3) : ".000";
+      const OBP = (p.atBats + p.walks) > 0
+        ? ((p.hits + p.walks) / (p.atBats + p.walks)).toFixed(3)
+        : ".000";
+      const AcesWar = p.AcesWar !== "N/A" && !isNaN(p.AcesWar)
+        ? Number(p.AcesWar).toFixed(2)
+        : "N/A";
+
+      tbody.innerHTML += `
+        <tr>
+          <td><a href="player.html?name=${encodeURIComponent(p.name)}">${p.name}</a></td>
+          <td><a href="team.html?team=${encodeURIComponent(p.team)}">${p.team}</a></td>
+          <td>${p.games}</td>
+          <td>${p.atBats}</td>
+          <td>${p.hits}</td>
+          <td>${p.runs}</td>
+          <td>${p.walks}</td>
+          <td>${AcesWar}</td>
+          <td>${BA}</td>
+          <td>${OBP}</td>
+          <td>${p.Sub || ""}</td>
+        </tr>
+      `;
+    });
+  } else {
+    // Pitching table headers
+    tableHead.innerHTML = `
+      <tr>
+        <th data-field="name">Name</th>
+        <th data-field="team">Team</th>
+        <th data-field="games">Games</th>
+        <th data-field="IP">Innings Pitched</th>
+        <th data-field="runsAllowed">Runs Allowed</th>
+        <th data-field="ERA">ERA</th>
+      </tr>
+    `;
+    
+    tbody.innerHTML = '';
+    seasonPitchingData.forEach(p => {
+      const ERA = p.ERA !== "N/A" && !isNaN(p.ERA)
+        ? Number(p.ERA).toFixed(2)
+        : "N/A";
+
+      tbody.innerHTML += `
+        <tr>
+          <td><a href="pitcher.html?name=${encodeURIComponent(p.name)}">${p.name}</a></td>
+          <td><a href="team.html?team=${encodeURIComponent(p.team)}">${p.team}</a></td>
+          <td>${p.games}</td>
+          <td>${p.IP.toFixed(1)}</td>
+          <td>${p.runsAllowed}</td>
+          <td>${ERA}</td>
+        </tr>
+      `;
+    });
+  }
+  
+  attachSorting();
+}
+
+function attachSorting() {
+  const headers = document.querySelectorAll("#seasonStatsTable th");
+  headers.forEach((th, idx) => {
+    th.onclick = () => sortTable(idx, th.getAttribute("data-field"));
+  });
+}
+
+function sortTable(columnIndex, field) {
+  const table = document.getElementById("seasonStatsTable");
+  const rows = Array.from(table.rows).slice(1);
+
+  let dir = currentSort.column === field && currentSort.dir === "asc" ? "desc" : "asc";
+  currentSort = { column: field, dir };
+
+  rows.sort((a, b) => {
+    let x = a.cells[columnIndex].innerText.trim();
+    let y = b.cells[columnIndex].innerText.trim();
+
+    // Handle special cases
+    if (field === "AcesWar" || field === "ERA") {
+      if (x === "N/A" && y !== "N/A") return 1;
+      if (y === "N/A" && x !== "N/A") return -1;
+      if (x === "N/A" && y === "N/A") return 0;
+    }
+
+    // Handle IP field (innings pitched can have decimals)
+    if (field === "IP") {
+      let xNum = parseFloat(x);
+      let yNum = parseFloat(y);
+      if (!isNaN(xNum) && !isNaN(yNum)) {
+        return dir === "asc" ? xNum - yNum : yNum - xNum;
+      }
+    }
+
+    // Try parsing as numbers first
+    let xNum = parseFloat(x.replace(/,/g, ""));
+    let yNum = parseFloat(y.replace(/,/g, ""));
+
+    if (!isNaN(xNum) && !isNaN(yNum)) {
+      return dir === "asc" ? xNum - yNum : yNum - xNum;
+    }
+
+    // Fall back to string comparison
+    return dir === "asc" ? x.localeCompare(y) : y.localeCompare(x);
+  });
+
+  // Re-append sorted rows
+  rows.forEach(row => table.tBodies[0].appendChild(row));
+
+  // Update sort indicators
+  document.querySelectorAll("#seasonStatsTable th").forEach(th => th.classList.remove("asc", "desc"));
+  table.rows[0].cells[columnIndex].classList.add(dir);
+}
+</script>
+    <script src="team-colors.js"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Head-to-Head Grid - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .summary-stats {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .summary-stats::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .summary-stats h3 {
+    margin: 0 0 1.5rem 0;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .stat-item {
+    background: #f8f9fa;
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  
+  .stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .stat-subtext {
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 0.3rem;
+  }
+  
+  .legend {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    margin-bottom: 2rem;
+  }
+  
+  .legend-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+  }
+  
+  .h2h-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .h2h-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    z-index: 10;
+  }
+  
+  .h2h-scroll {
+    overflow-x: auto;
+    margin-top: 4px;
+  }
+  
+  .h2h-grid {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 600px;
+    background-color: white;
+  }
+  
+  .h2h-grid th,
+  .h2h-grid td {
+    border: 1px solid #e9ecef;
+    padding: 12px 8px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+  
+  .h2h-grid th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .h2h-grid .row-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    min-width: 70px;
+    font-size: 0.8rem;
+    max-width: 70px;
+    overflow: hidden;
+  }
+  
+  .h2h-grid .corner-cell {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 15;
+  }
+  
+  .team-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  
+  .team-header img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  
+  .team-row-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+  }
+  
+  .team-row-header .vs-text {
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+    opacity: 0.9;
+  }
+  
+  .team-row-header .team-info {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+  }
+  
+  .team-row-header img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+  }
+  
+  .diagonal-cell {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-style: italic;
+    font-weight: 500;
+  }
+  
+  .h2h-cell {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 90px;
+  }
+  
+  .h2h-cell:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    transform: scale(1.05);
+  }
+  
+  .h2h-record {
+    font-weight: bold;
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  .h2h-details {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  
+  .winning-record {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+  }
+  
+  .losing-record {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+  }
+  
+  .tied-record {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+  }
+  
+  .no-games {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-style: italic;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .nav-container {
+      flex-direction: column;
+    }
+    
+    .nav-link {
+      display: block;
+      text-align: center;
+      width: 100%;
+      max-width: 200px;
+    }
+    
+    .h2h-grid th,
+    .h2h-grid td {
+      padding: 8px 6px;
+      font-size: 0.8rem;
+    }
+    
+    .team-header {
+      gap: 4px;
+    }
+    
+    .team-header img {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .team-row-header img {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .legend-container {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .page-header h1 {
+      font-size: 1.5rem;
+    }
+    
+    .h2h-grid th,
+    .h2h-grid td {
+      padding: 6px 4px;
+      font-size: 0.75rem;
+    }
+    
+    .team-header img {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .team-row-header img {
+      width: 14px;
+      height: 14px;
+    }
+  }
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">⚔️ Head-to-Head Grid</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item active">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Head-to-Head Results Grid</h1>
+    <p>Complete matchup records between teams (2022+)</p>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link active">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+
+  </div>
+
+  <div class="summary-stats" id="summaryStats">
+    <h3>League Head-to-Head Summary (2022+)</h3>
+    <div class="stats-grid" id="statsGrid">
+      <!-- Stats will be populated dynamically -->
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-container">
+      <div class="legend-item">
+        <div class="legend-color winning-record" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);"></div>
+        <span>Winning Record</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color tied-record" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);"></div>
+        <span>Even Record</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color losing-record" style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);"></div>
+        <span>Losing Record</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color no-games" style="background-color: #f8f9fa;"></div>
+        <span>No Games</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color diagonal-cell" style="background-color: #f8f9fa;"></div>
+        <span>Same Team</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2h-container">
+    <div class="h2h-scroll">
+      <table class="h2h-grid" id="h2hGrid">
+        <!-- Grid will be populated dynamically -->
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let allBattingData = [];
+let allGames = [];
+let teams = [];
+
+// Function to get team logo path
+function getTeamLogoPath(teamName) {
+  // Convert team name to lowercase and replace spaces with underscores for filename
+  const logoFileName = teamName.toLowerCase().replace(/\s+/g, '_') + '.png';
+  return `logos/${logoFileName}`;
+}
+
+// Function to create team header with logo
+function createTeamHeader(teamName) {
+  return `
+    <div class="team-header">
+      <img src="${getTeamLogoPath(teamName)}" alt="${teamName}" onerror="this.style.display='none'">
+      <div>${teamName}</div>
+    </div>
+  `;
+}
+
+// Function to create team row header with logo
+function createTeamRowHeader(teamName) {
+  return `
+    <div class="team-row-header">
+      <div class="vs-text">vs</div>
+      <div class="team-info">
+        <img src="${getTeamLogoPath(teamName)}" alt="${teamName}" onerror="this.style.display='none'">
+        <div>${teamName}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Load batting data and games data
+Promise.all([
+  fetch("data.json").then(res => res.json()),
+  fetch("games.json").then(res => res.ok ? res.json() : [])
+])
+  .then(([battingData, gamesData]) => {
+    allBattingData = battingData.map(p => ({
+      ...p,
+      name: p.name ? p.name.trim() : "",
+      team: p.team ? p.team.trim() : ""
+    }));
+    
+    allGames = gamesData;
+    
+    // Get teams that have pages (teams with batting data, excluding "Kings")
+    teams = [...new Set(allBattingData.map(p => p.team))]
+      .filter(team => team && team.toLowerCase() !== "kings")
+      .sort();
+    
+    generateH2HGrid();
+    generateSummaryStats();
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    document.getElementById("h2hGrid").innerHTML = 
+      '<tr><td>Error loading head-to-head data. Please check that data files are available.</td></tr>';
+  });
+
+function generateH2HGrid() {
+  const table = document.getElementById('h2hGrid');
+  
+  // Create header row with teams across the top
+  let headerRow = '<tr><th class="corner-cell">vs Team</th>';
+  teams.forEach(team => {
+    headerRow += `<th>${createTeamHeader(team)}</th>`;
+  });
+  headerRow += '</tr>';
+  
+  // Create data rows with team headers
+  let dataRows = '';
+  teams.forEach(vsTeam => {
+    let row = `<tr><td class="row-header">${createTeamRowHeader(vsTeam)}</td>`;
+    
+    teams.forEach(firstTeam => {
+      if (firstTeam === vsTeam) {
+        // Diagonal cell (same team)
+        row += '<td class="diagonal-cell">—</td>';
+      } else {
+        // Calculate H2H record from firstTeam's perspective against vsTeam
+        const h2h = calculateHeadToHead(firstTeam, vsTeam);
+        const cellClass = getCellClass(h2h, firstTeam);
+        const cellContent = formatCellContent(h2h, firstTeam, vsTeam);
+        
+        row += `<td class="h2h-cell ${cellClass}" onclick="showH2HDetails('${firstTeam}', '${vsTeam}')">${cellContent}</td>`;
+      }
+    });
+    
+    row += '</tr>';
+    dataRows += row;
+  });
+  
+  table.innerHTML = headerRow + dataRows;
+}
+
+function calculateHeadToHead(team1, team2) {
+  // Filter games where these two teams played each other, only including 2022 and later
+  const headToHeadGames = allGames.filter(game => {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const gameYear = parseInt(game.year);
+    
+    // Only include games from 2022 onwards
+    const isRecentGame = gameYear >= 2022;
+    const isMatchup = (homeTeam === team1 && awayTeam === team2) ||
+                     (homeTeam === team2 && awayTeam === team1);
+    
+    return isMatchup && isRecentGame;
+  });
+  
+  if (headToHeadGames.length === 0) {
+    return null;
+  }
+  
+  let team1Wins = 0, team2Wins = 0, ties = 0;
+  
+  headToHeadGames.forEach(game => {
+    const winner = game.winner;
+    
+    // Handle different winner formats
+    let actualWinner = winner;
+    if (winner && winner.includes("Forfeit")) {
+      actualWinner = winner.replace("Forfeit - ", "").replace("Tie", "");
+    }
+    
+    if (actualWinner === "Tie") {
+      ties++;
+    } else if (actualWinner === team1) {
+      team1Wins++;
+    } else if (actualWinner === team2) {
+      team2Wins++;
+    }
+  });
+  
+  return {
+    team1: team1,
+    team2: team2,
+    team1Wins: team1Wins,
+    team2Wins: team2Wins,
+    ties: ties,
+    totalGames: team1Wins + team2Wins + ties
+  };
+}
+
+function getCellClass(h2h, perspective) {
+  if (!h2h) return 'no-games';
+  
+  const perspectiveWins = h2h.team1 === perspective ? h2h.team1Wins : h2h.team2Wins;
+  const opponentWins = h2h.team1 === perspective ? h2h.team2Wins : h2h.team1Wins;
+  
+  if (perspectiveWins > opponentWins) {
+    return 'winning-record';
+  } else if (perspectiveWins < opponentWins) {
+    return 'losing-record';
+  } else {
+    return 'tied-record';
+  }
+}
+
+function formatCellContent(h2h, team1, team2) {
+  if (!h2h) {
+    return '<div class="h2h-record">—</div><div class="h2h-details">No games</div>';
+  }
+  
+  // Show record from team1's perspective (row team)
+  const team1Wins = h2h.team1 === team1 ? h2h.team1Wins : h2h.team2Wins;
+  const team2Wins = h2h.team1 === team1 ? h2h.team2Wins : h2h.team1Wins;
+  
+  const record = h2h.ties > 0 ? 
+    `${team1Wins}-${team2Wins}-${h2h.ties}` : 
+    `${team1Wins}-${team2Wins}`;
+  
+  return `<div class="h2h-record">${record}</div><div class="h2h-details">${h2h.totalGames} games</div>`;
+}
+
+function showH2HDetails(team1, team2) {
+  // Redirect to team comparison page with these teams pre-selected
+  window.location.href = `team_compare.html?team1=${encodeURIComponent(team1)}&team2=${encodeURIComponent(team2)}`;
+}
+
+function generateSummaryStats() {
+  const statsGrid = document.getElementById('statsGrid');
+  
+  // Calculate summary statistics
+  let totalMatchups = 0;
+  let totalGames = 0;
+  let competitiveMatchups = 0; // Matchups with games played
+  let mostGamesMatchup = { teams: '', games: 0 };
+  let biggestRivalryLead = { team: '', opponent: '', wins: 0, losses: 0 };
+  
+  teams.forEach(team1 => {
+    teams.forEach(team2 => {
+      if (team1 !== team2) {
+        totalMatchups++;
+        const h2h = calculateHeadToHead(team1, team2);
+        
+        if (h2h && h2h.totalGames > 0) {
+          if (totalMatchups % 2 === 0) { // Only count each matchup once
+            competitiveMatchups++;
+            totalGames += h2h.totalGames;
+            
+            if (h2h.totalGames > mostGamesMatchup.games) {
+              mostGamesMatchup = {
+                teams: `${team1} vs ${team2}`,
+                games: h2h.totalGames
+              };
+            }
+          }
+          
+          // Check for biggest rivalry lead (difference in wins)
+          const team1Wins = h2h.team1 === team1 ? h2h.team1Wins : h2h.team2Wins;
+          const team2Wins = h2h.team1 === team1 ? h2h.team2Wins : h2h.team1Wins;
+          const leadDifference = Math.abs(team1Wins - team2Wins);
+          
+          if (leadDifference > Math.abs(biggestRivalryLead.wins - biggestRivalryLead.losses)) {
+            if (team1Wins > team2Wins) {
+              biggestRivalryLead = {
+                team: team1,
+                opponent: team2,
+                wins: team1Wins,
+                losses: team2Wins
+              };
+            } else if (team2Wins > team1Wins) {
+              biggestRivalryLead = {
+                team: team2,
+                opponent: team1,
+                wins: team2Wins,
+                losses: team1Wins
+              };
+            }
+          }
+        }
+      }
+    });
+  });
+  
+  // Adjust for double counting
+  totalMatchups = totalMatchups / 2;
+  competitiveMatchups = competitiveMatchups / 2;
+  
+  const statsHTML = `
+    <div class="stat-item">
+      <div class="stat-label">Total Teams</div>
+      <div class="stat-value">${teams.length}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Possible Matchups</div>
+      <div class="stat-value">${totalMatchups}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Matchups with Games</div>
+      <div class="stat-value">${competitiveMatchups}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Total H2H Games</div>
+      <div class="stat-value">${totalGames}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Most Games Played</div>
+      <div class="stat-value">${mostGamesMatchup.games}</div>
+      <div class="stat-subtext">${mostGamesMatchup.teams}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Biggest Rivalry Lead</div>
+      <div class="stat-value">${biggestRivalryLead.wins}-${biggestRivalryLead.losses}</div>
+      <div class="stat-subtext">${biggestRivalryLead.team} over ${biggestRivalryLead.opponent}</div>
+    </div>
+  `;
+  
+  statsGrid.innerHTML = statsHTML;
+}
+</script>
+<script src="team-colors.js"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats Aggregation Tool</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .warning-box {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      background: #1976d2;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #output {
+      background: #263238;
+      color: #aed581;
+      padding: 20px;
+      border-radius: 4px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      margin-top: 20px;
+    }
+    .success { color: #4caf50; font-weight: bold; }
+    .error { color: #f44336; font-weight: bold; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #2196f3;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 Firebase Stats Aggregation Tool</h1>
+    
+    <div class="info-box">
+      <strong>What this does:</strong> Creates a new <code>aggregatedPlayerStats</code> collection that combines all player career and season stats into a single, fast-to-query collection. This will make your website 5-10x faster!
+    </div>
+
+    <div class="warning-box">
+      <strong>Before running:</strong> Make sure you have data in your Firebase <code>playerStats</code> collection. This process is safe and won't delete any existing data.
+    </div>
+
+    <div class="stats" id="statsDisplay" style="display: none;">
+      <div class="stat-card">
+        <div class="stat-number" id="playersProcessed">0</div>
+        <div class="stat-label">Players Processed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="successCount">0</div>
+        <div class="stat-label">Successful</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="errorCount">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+    </div>
+
+    <button id="aggregateBtn" onclick="runAggregation()">🚀 Aggregate All Player Stats</button>
+    <button id="verifyBtn" onclick="verifyAggregation()" style="background: #4caf50;">✓ Verify Collection</button>
+    <button onclick="clearOutput()" style="background: #757575;">Clear Output</button>
+
+    <div id="output"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDocs,
+      getDoc,
+      setDoc,
+      query,
+      where
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCAEWkrTcprzJ2KPPJu-vFJPvYOVU4ky20",
+      authDomain: "acessoftballreference-84791.firebaseapp.com",
+      projectId: "acessoftballreference-84791",
+      storageBucket: "acessoftballreference-84791.firebasestorage.app",
+      messagingSenderId: "777699560175",
+      appId: "1:777699560175:web:4092b422e7d7116352e91a"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Make functions globally available
+    window.db = db;
+    window.collection = collection;
+    window.doc = doc;
+    window.getDocs = getDocs;
+    window.getDoc = getDoc;
+    window.setDoc = setDoc;
+    window.query = query;
+    window.where = where;
+
+    log('✓ Firebase initialized successfully');
+
+    // Utility functions
+    function log(message, type = 'info') {
+      const output = document.getElementById('output');
+      const timestamp = new Date().toLocaleTimeString();
+      let prefix = '●';
+      
+      if (type === 'success') prefix = '✓';
+      if (type === 'error') prefix = '✗';
+      if (type === 'header') prefix = '═══';
+      
+      const line = `[${timestamp}] ${prefix} ${message}\n`;
+      output.textContent += line;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function updateStats(processed, success, errors) {
+      document.getElementById('statsDisplay').style.display = 'grid';
+      document.getElementById('playersProcessed').textContent = processed;
+      document.getElementById('successCount').textContent = success;
+      document.getElementById('errorCount').textContent = errors;
+    }
+
+    window.clearOutput = function() {
+      document.getElementById('output').textContent = '';
+      document.getElementById('statsDisplay').style.display = 'none';
+    };
+
+    // Main aggregation function
+    window.runAggregation = async function() {
+      const btn = document.getElementById('aggregateBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      
+      log('═══════════════════════════════════════', 'header');
+      log('Starting Player Stats Aggregation', 'header');
+      log('═══════════════════════════════════════', 'header');
+      
+      try {
+        // Get all players
+        const usersRef = window.collection(window.db, 'users');
+        const q = window.query(usersRef, window.where('role', '==', 'player'));
+        const usersSnapshot = await window.getDocs(q);
+        
+        log(`Found ${usersSnapshot.size} players to process`);
+        
+        let successCount = 0;
+        let errorCount = 0;
+        let processed = 0;
+        
+        // Process each player
+        for (const userDoc of usersSnapshot.docs) {
+          const userId = userDoc.id;
+          const userData = userDoc.data();
+          
+          try {
+            log(`Processing: ${userData.name || userId}...`);
+            processed++;
+            
+            // Get career batting stats
+            const careerStatsRef = window.doc(window.db, 'playerStats', userId, 'career', 'stats');
+            const careerStatsSnap = await window.getDoc(careerStatsRef);
+            const careerStats = careerStatsSnap.exists() ? careerStatsSnap.data() : {};
+            
+            // Get all season batting stats
+            const seasonsRef = window.collection(window.db, 'playerStats', userId, 'seasons');
+            const seasonsSnapshot = await window.getDocs(seasonsRef);
+            
+            const seasonStats = [];
+            let calculatedCareerStats = {
+              games: 0,
+              atBats: 0,
+              hits: 0,
+              runs: 0,
+              walks: 0,
+              acesWarTotal: 0,
+              acesWarCount: 0
+            };
+            
+            seasonsSnapshot.forEach(doc => {
+              const data = doc.data();
+              const games = data.games || 0;
+              const atBats = data.atBats || 0;
+              const hits = data.hits || 0;
+              const runs = data.runs || 0;
+              const walks = data.walks || 0;
+              const acesWar = data.acesWar || 0;
+              
+              // Add to career totals
+              calculatedCareerStats.games += games;
+              calculatedCareerStats.atBats += atBats;
+              calculatedCareerStats.hits += hits;
+              calculatedCareerStats.runs += runs;
+              calculatedCareerStats.walks += walks;
+              if (acesWar !== 0) {
+                calculatedCareerStats.acesWarTotal += acesWar;
+                calculatedCareerStats.acesWarCount++;
+              }
+              
+              seasonStats.push({
+                seasonId: doc.id,
+                team: data.team || '',
+                games: games,
+                atBats: atBats,
+                hits: hits,
+                runs: runs,
+                walks: walks,
+                battingAverage: atBats > 0 ? (hits / atBats) : 0,
+                onBasePercentage: (atBats + walks) > 0
+                  ? ((hits + walks) / (atBats + walks))
+                  : 0,
+                acesWar: acesWar
+              });
+            });
+            
+            // Calculate career batting average and OBP
+            const careerBattingAverage = calculatedCareerStats.atBats > 0
+              ? (calculatedCareerStats.hits / calculatedCareerStats.atBats)
+              : 0;
+            const careerOnBasePercentage = (calculatedCareerStats.atBats + calculatedCareerStats.walks) > 0
+              ? ((calculatedCareerStats.hits + calculatedCareerStats.walks) / (calculatedCareerStats.atBats + calculatedCareerStats.walks))
+              : 0;
+            const careerAcesWar = calculatedCareerStats.acesWarCount > 0
+              ? (calculatedCareerStats.acesWarTotal / calculatedCareerStats.acesWarCount)
+              : 0;
+            
+            // Get career pitching stats
+            const pitchingCareerRef = window.doc(window.db, 'pitchingStats', userId, 'career', 'stats');
+            const pitchingCareerSnap = await window.getDoc(pitchingCareerRef);
+            const pitchingCareerStats = pitchingCareerSnap.exists() ? pitchingCareerSnap.data() : {};
+            
+            // Get all season pitching stats (check if collection exists first)
+            const pitchingSeasonsRef = window.collection(window.db, 'pitchingStats', userId, 'seasons');
+            let pitchingSeasonsSnapshot;
+            let hasPitchingData = false;
+            
+            try {
+              pitchingSeasonsSnapshot = await window.getDocs(pitchingSeasonsRef);
+              hasPitchingData = !pitchingSeasonsSnapshot.empty;
+            } catch (error) {
+              // Player doesn't have pitching stats - this is OK
+              hasPitchingData = false;
+            }
+            
+            const pitchingSeasonStats = [];
+            let calculatedPitchingCareer = {
+              games: 0,
+              inningsPitched: 0,
+              earnedRuns: 0,
+              strikeouts: 0,
+              walks: 0
+            };
+            
+            if (hasPitchingData) {
+              pitchingSeasonsSnapshot.forEach(doc => {
+                const data = doc.data();
+                // Use actual field names from your Firebase
+                const games = data.games || 0;
+                const ip = data.inningsPitched || data.IP || data.ip || 0;
+                const era = data.era || data.ERA || data.earnedRunAverage || 0;
+                const runsAllowed = data.runsAllowed || 0;
+                const strikeouts = data.strikeouts || data.K || data.k || data.SO || 0;
+                const walks = data.walks || data.BB || data.bb || 0;
+                
+                // Use runsAllowed if available, otherwise calculate from ERA
+                const earnedRuns = runsAllowed > 0 ? runsAllowed : (ip > 0 && era > 0 ? (era * ip) / 7 : 0);
+                
+                // Add to career totals
+                calculatedPitchingCareer.games += games;
+                calculatedPitchingCareer.inningsPitched += ip;
+                calculatedPitchingCareer.earnedRuns += earnedRuns;
+                calculatedPitchingCareer.strikeouts += strikeouts;
+                calculatedPitchingCareer.walks += walks;
+                
+                pitchingSeasonStats.push({
+                  seasonId: doc.id,
+                  team: data.team || '',
+                  games: games,
+                  inningsPitched: ip,
+                  earnedRunAverage: era,
+                  runsAllowed: runsAllowed,
+                  strikeouts: strikeouts,
+                  walks: walks
+                });
+              });
+            }
+            
+            // Calculate career ERA
+            const careerEarnedRunAverage = calculatedPitchingCareer.inningsPitched > 0
+              ? (calculatedPitchingCareer.earnedRuns * 7) / calculatedPitchingCareer.inningsPitched
+              : 0;
+            
+            // Create aggregated document using CALCULATED career stats
+            const aggregatedData = {
+              userId: userId,
+              name: userData.name || '',
+              email: userData.email || '',
+              currentTeam: userData.currentTeam || '',
+              photoURL: userData.photoURL || '',
+              
+              // Career batting stats - CALCULATED from seasons
+              career: {
+                games: calculatedCareerStats.games,
+                atBats: calculatedCareerStats.atBats,
+                hits: calculatedCareerStats.hits,
+                runs: calculatedCareerStats.runs,
+                walks: calculatedCareerStats.walks,
+                battingAverage: careerBattingAverage,
+                onBasePercentage: careerOnBasePercentage,
+                acesWar: careerAcesWar,
+                
+                // Add pitching if available
+                pitching: {
+                  games: calculatedPitchingCareer.games,
+                  inningsPitched: calculatedPitchingCareer.inningsPitched,
+                  earnedRunAverage: careerEarnedRunAverage,
+                  runsAllowed: calculatedPitchingCareer.earnedRuns, // Total runs allowed
+                  strikeouts: calculatedPitchingCareer.strikeouts,
+                  walks: calculatedPitchingCareer.walks
+                }
+              },
+              
+              // All season batting data
+              seasons: seasonStats,
+              
+              // All season pitching data
+              pitchingSeasons: pitchingSeasonStats,
+              
+              // Metadata for queries
+              totalSeasons: seasonStats.length,
+              hasPitchingStats: pitchingSeasonStats.length > 0,
+              lastUpdated: new Date()
+            };
+            
+            // Write to aggregated collection
+            const aggregatedRef = window.doc(window.db, 'aggregatedPlayerStats', userId);
+            await window.setDoc(aggregatedRef, aggregatedData);
+            
+            log(`  ✓ ${userData.name || userId}`, 'success');
+            successCount++;
+            updateStats(processed, successCount, errorCount);
+            
+          } catch (error) {
+            log(`  ✗ Error with ${userData.name || userId}: ${error.message}`, 'error');
+            errorCount++;
+            updateStats(processed, successCount, errorCount);
+          }
+        }
+        
+        log('═══════════════════════════════════════', 'header');
+        log('Aggregation Complete!', 'header');
+        log(`✓ Successful: ${successCount} players`, 'success');
+        if (errorCount > 0) {
+          log(`✗ Errors: ${errorCount} players`, 'error');
+        }
+        log('═══════════════════════════════════════', 'header');
+        log('Next Step: Click "Verify Collection" to check results');
+        
+      } catch (error) {
+        log(`Fatal error: ${error.message}`, 'error');
+        console.error('Aggregation error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Aggregate All Player Stats';
+      }
+    };
+
+    // Verify aggregation function
+    window.verifyAggregation = async function() {
+      const btn = document.getElementById('verifyBtn');
+      btn.disabled = true;
+      
+      log('═══════════════════════════════════════', 'header');
+      log('Verifying Aggregated Collection', 'header');
+      log('═══════════════════════════════════════', 'header');
+      
+      try {
+        const statsRef = window.collection(window.db, 'aggregatedPlayerStats');
+        const snapshot = await window.getDocs(statsRef);
+        
+        log(`Found ${snapshot.size} documents in aggregatedPlayerStats collection`, 'success');
+        
+        if (snapshot.size > 0) {
+          const firstDoc = snapshot.docs[0];
+          const data = firstDoc.data();
+          
+          log('\nSample Document Structure:');
+          log(`  Player: ${data.name}`);
+          log(`  Career Games: ${data.career?.games || 0}`);
+          log(`  Career BA: ${data.career?.battingAverage?.toFixed(3) || '.000'}`);
+          log(`  Total Seasons: ${data.totalSeasons || 0}`);
+          log(`  Has Pitching: ${data.hasPitchingStats ? 'Yes' : 'No'}`);
+          
+          log('\n✓ Collection verified successfully!', 'success');
+          log('You can now update your pages to use getAllPlayerStatsOptimized()');
+        } else {
+          log('⚠ Collection is empty. Run aggregation first.', 'error');
+        }
+        
+      } catch (error) {
+        log(`Verification error: ${error.message}`, 'error');
+        console.error('Verification error:', error);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

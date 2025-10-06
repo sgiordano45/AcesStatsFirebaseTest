@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekend Preview - Mountainside Aces</title>
+<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile-enhancements.css">
+<style>
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ensure banner container is positioned correctly */
+#news-banner-container {
+  position: relative;
+  z-index: 1000;
+  width: 100%;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+  /* Add this here - Ensure banner can stick properly */
+  html, body {
+    overflow-x: hidden;
+  }
+
+  #news-banner-container {
+    position: relative;
+    z-index: 1000;
+  }
+
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  /* rest of your existing styles... */
+
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+  }
+
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  }
+
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .back-nav {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+
+  .back-nav a {
+    padding: 0.5rem 1rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-right: 1rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .back-nav a:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  .weekend-info {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    text-align: center;
+  }
+
+  .weather-module {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #90caf9;
+  }
+
+  .weather-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .weather-header h3 {
+    margin: 0;
+    color: #1565c0;
+    font-size: 1.2rem;
+  }
+
+  .weather-icon {
+    font-size: 1.5rem;
+  }
+
+  .weather-content {
+    display: grid;
+    grid-template-columns: auto 1fr 2fr;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .weather-image-section {
+    text-align: center;
+  }
+
+  .weather-image-label {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #1565c0;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .weather-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .current-weather {
+    text-align: center;
+    min-width: 200px;
+  }
+
+  .temperature {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #0d47a1;
+    margin-bottom: 0.3rem;
+  }
+
+  .weather-description {
+    font-size: 1rem;
+    color: #1565c0;
+    margin-bottom: 0.3rem;
+    text-transform: capitalize;
+  }
+
+  .weather-details {
+    font-size: 0.85rem;
+    color: #1976d2;
+    line-height: 1.3;
+  }
+
+  .forecast {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+  }
+
+  .forecast-item {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.8rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(25, 118, 210, 0.2);
+  }
+
+  .forecast-day {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #0d47a1;
+    margin-bottom: 0.3rem;
+  }
+
+  .forecast-temp {
+    font-size: 1rem;
+    color: #1565c0;
+    margin-bottom: 0.2rem;
+  }
+
+  .forecast-desc {
+    font-size: 0.7rem;
+    color: #1976d2;
+    text-transform: capitalize;
+    line-height: 1.2;
+  }
+
+  .weather-loading {
+    text-align: center;
+    color: #1976d2;
+    font-style: italic;
+  }
+
+  .weather-error {
+    text-align: center;
+    color: #d32f2f;
+    font-size: 0.9rem;
+  }
+
+  .weekend-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+    font-size: 1.2rem;
+  }
+
+  .weekend-info p {
+    margin: 0;
+    color: #666;
+    font-size: 1rem;
+  }
+
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .game-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .game-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .game-header {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .game-date {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.3rem;
+  }
+
+  .game-type {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .teams-matchup {
+    padding: 2rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .team-info {
+    flex: 1;
+    text-align: center;
+    max-width: 120px;
+  }
+
+  .team-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 0.8rem auto;
+    border: 3px solid #e1e5e9;
+    display: block;
+    object-fit: contain;
+    background: white;
+  }
+
+  .team-name {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 0.3rem;
+    line-height: 1.2;
+  }
+
+  .team-record {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+  }
+
+  .team-standing {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .vs-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 80px;
+  }
+
+  .vs-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+  }
+
+  .home-indicator {
+    font-size: 0.75rem;
+    color: #666;
+    background: #e9ecef;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .game-odds {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .odds-item {
+    text-align: center;
+    flex: 1;
+  }
+
+  .odds-team {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+  }
+
+  .odds-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+    padding: 0.3rem 0.6rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .favorite {
+    color: #28a745;
+    border-color: #28a745;
+    background: #f8fff9;
+  }
+
+  .key-players {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+  }
+
+  .key-players h4 {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    text-align: center;
+  }
+
+  .players-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .team-players {
+    text-align: center;
+  }
+
+  .team-players h5 {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0 0 0.3rem 0;
+    font-weight: 600;
+  }
+
+  .player-list {
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+
+  .player-name {
+    display: block;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .no-games {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+
+  .no-games h3 {
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .no-games p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+
+    .page-header {
+      padding: 2rem 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+
+    .weather-content {
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+    }
+
+    .weather-image-section {
+      text-align: center;
+    }
+
+    .weather-image-label {
+      font-size: 0.65rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .weather-image {
+      width: 80px;
+      height: 80px;
+    }
+
+    .current-weather {
+      min-width: auto;
+    }
+
+    .temperature {
+      font-size: 1.8rem;
+    }
+
+    .forecast {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .forecast-item {
+      padding: 0.6rem 0.3rem;
+    }
+
+    .forecast-day {
+      font-size: 0.7rem;
+    }
+
+    .forecast-temp {
+      font-size: 0.9rem;
+    }
+
+    .forecast-desc {
+      font-size: 0.65rem;
+    }
+
+    .games-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .teams-matchup {
+      padding: 1.5rem 0.8rem;
+    }
+
+    .team-logo {
+      width: 50px;
+      height: 50px;
+    }
+
+    .team-name {
+      font-size: 0.9rem;
+    }
+
+    .vs-text {
+      font-size: 1.2rem;
+    }
+
+    .game-odds {
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .odds-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0 1rem;
+    }
+  }
+  /* Missing navigation styles */
+.filters-nav {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+  border: 1px solid #e1e5e9;
+}
+
+.nav-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link {
+  padding: 0.8rem 1.5rem;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.nav-link.active {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+.nav-link.pitching {
+  border-color: #11998e;
+  color: #11998e;
+}
+
+.nav-link.pitching:hover {
+  background: #11998e;
+  color: white;
+  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+}
+
+.nav-link.batting {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.nav-link.batting:hover,
+.nav-link.batting.active {
+  background: #667eea;
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="news-banner-container"></div>
+<div class="page-container">
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a> 
+      <a href="projections.html" class="nav-link">🔮 Playoff Projection Simulator</a>
+    </nav>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">🔮 Weekend Preview</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item active">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+
+  <div class="page-header">
+    <h1>🥎 Weekend Preview</h1>
+    <p>Upcoming games and matchup analysis</p>
+  </div>
+
+  <div class="weather-module" id="weatherModule">
+    <div class="weather-loading">Loading weather forecast...</div>
+  </div>
+
+  <div class="weekend-info" id="weekendInfo">
+    <div class="loading">Loading weekend schedule...</div>
+  </div>
+
+  <div class="games-grid" id="gamesGrid">
+    <div class="loading">Loading upcoming games...</div>
+  </div>
+</div>
+
+  <!-- Include team colors script -->
+  <script src="team-colors.js"></script>
+
+  <script>
+let allGames = [];
+let playerData = [];
+let previewData = [];
+const currentSeason = "Fall";
+const currentYear = "2025";
+const today = new Date();
+
+// Weather configuration
+const WEATHER_ZIP = "07092"; // Mountainside, NJ
+const WEATHER_API_KEY = "c26153644bca587d9db1fc0256a01cf0"; // Replace with your OpenWeatherMap API key
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadWeekendData();
+  loadWeatherData();
+});
+
+async function loadWeekendData() {
+  try {
+    const [gamesResponse, playerResponse, previewResponse] = await Promise.all([
+      fetch('games.json'),
+      fetch('data.json').catch(() => ({ ok: false })),
+      fetch('previews.json').catch(() => ({ ok: false }))
+    ]);
+    
+    if (!gamesResponse.ok) throw new Error('Failed to load games data');
+    
+    allGames = await gamesResponse.json();
+    
+    if (playerResponse.ok) {
+      playerData = await playerResponse.json();
+    }
+    
+    if (previewResponse.ok) {
+      previewData = await previewResponse.json();
+    }
+    
+    generateWeekendPreview();
+    
+  } catch (error) {
+    console.error('Error loading weekend data:', error);
+    showError();
+  }
+}
+
+function parseGameDate(dateStr) {
+  return new Date(dateStr);
+}
+
+function getWeekendGames() {
+  // Get next 7 days of games
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  
+  return allGames.filter(g => {
+    const gameDate = parseGameDate(g.date);
+    const isFuture = gameDate >= today;
+    const isWithinWeek = gameDate <= nextWeek;
+    const noWinner = !g.winner || g.winner.trim() === "";
+    const isCurrentSeason = g.year === currentYear && g.season === currentSeason;
+    const isRegular = g.game_type === 'Regular';
+    
+    return isFuture && isWithinWeek && noWinner && isCurrentSeason && isRegular;
+  }).sort((a, b) => parseGameDate(a.date) - parseGameDate(b.date));
+}
+
+function calculateTeamRecord(teamName) {
+  const currentSeasonGames = allGames.filter(g => 
+    g.year === currentYear && 
+    g.season === currentSeason && 
+    g.winner && 
+    g.winner.trim() !== "" &&
+    (g["home team"] === teamName || g["away team"] === teamName)
+  );
+
+  let wins = 0, losses = 0, ties = 0;
+  currentSeasonGames.forEach(game => {
+    if (game.winner === "Tie") {
+      ties++;
+    } else if (game.winner === teamName) {
+      wins++;
+    } else {
+      losses++;
+    }
+  });
+
+  const totalDecided = wins + losses;
+  const winPct = totalDecided > 0 ? wins / totalDecided : 0;
+
+  return { wins, losses, ties, winPct };
+}
+
+function calculateTeamStanding(teamName) {
+  // Get current standings to determine team's position
+  const completedGames = allGames.filter(g => 
+    g.year === currentYear && 
+    g.season === currentSeason &&
+    parseGameDate(g.date) < today && 
+    g.winner && 
+    g.winner.trim() !== "" && 
+    g.game_type === 'Regular'
+  );
+  
+  const teamStats = {};
+  
+  completedGames.forEach(game => {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const winner = game.winner;
+
+    if (!teamStats[homeTeam]) {
+      teamStats[homeTeam] = { name: homeTeam, wins: 0, losses: 0, ties: 0 };
+    }
+    if (!teamStats[awayTeam]) {
+      teamStats[awayTeam] = { name: awayTeam, wins: 0, losses: 0, ties: 0 };
+    }
+
+    if (winner === "Tie") {
+      teamStats[homeTeam].ties++;
+      teamStats[awayTeam].ties++;
+    } else if (winner === homeTeam) {
+      teamStats[homeTeam].wins++;
+      teamStats[awayTeam].losses++;
+    } else if (winner === awayTeam) {
+      teamStats[awayTeam].wins++;
+      teamStats[homeTeam].losses++;
+    }
+  });
+
+  const standings = Object.values(teamStats).map(team => {
+    const totalDecided = team.wins + team.losses;
+    team.winPct = totalDecided > 0 ? team.wins / totalDecided : 0;
+    return team;
+  }).sort((a, b) => b.winPct - a.winPct);
+
+  const teamPosition = standings.findIndex(team => team.name === teamName) + 1;
+  return teamPosition > 0 ? teamPosition : null;
+}
+
+function getGamePreview(homeTeam, awayTeam, gameDate) {
+  return previewData.find(p => {
+    const matchesTeams = (p["home team"] === homeTeam && p["away team"] === awayTeam) ||
+                       (p.home === homeTeam && p.away === awayTeam);
+    const matchesDate = p.date === gameDate || 
+                       formatDateForComparison(p.date) === formatDateForComparison(gameDate);
+    return matchesTeams && matchesDate;
+  });
+}
+
+function formatDateForComparison(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+}
+
+function getTeamColor(teamName) {
+  // Map team names to RGB colors for faint backgrounds
+  const teamColors = {
+    'Black': '26, 26, 26',
+    'Green': '45, 125, 50', 
+    'Red': '211, 47, 47',
+    'Blue': '25, 118, 210',
+    'White': '52, 58, 64',
+    'Orange': '245, 124, 0',
+    'Silver': '117, 117, 117',
+    'Purple': '123, 31, 162',
+    'Gold': '245, 127, 23',
+    'Carolina': '75, 156, 211',
+    'Army': '101, 67, 33'
+  };
+  
+  // Since team names are just the color names, do direct lookup
+  return teamColors[teamName] || null;
+}
+
+function getTopPlayers(teamName, season = currentSeason, year = currentYear) {
+  if (!playerData || playerData.length === 0) return [];
+  
+  // Filter players for the specific team, season, year and non-subs with valid AcesWar
+  const teamPlayers = playerData.filter(player => 
+    player.team === teamName && 
+    player.season === season && 
+    player.year === year &&
+    player.sub === "No" &&
+    player.AcesWar !== "N/A" &&
+    typeof player.AcesWar === 'number'
+  );
+  
+  // Sort by AcesWar (AcesBPI) in descending order and take top 3
+  return teamPlayers
+    .sort((a, b) => b.AcesWar - a.AcesWar)
+    .slice(0, 3)
+    .map(player => player.name);
+}
+
+async function loadWeatherData() {
+  // First, try to load forecast override
+  try {
+    const forecastResponse = await fetch('forecast.json');
+    if (forecastResponse.ok) {
+      const forecastData = await forecastResponse.json();
+      if (forecastData && forecastData.length > 0 && forecastData[0].forecast) {
+        forecastOverride = forecastData[0].forecast.toLowerCase();
+        console.log('Loaded forecast override:', forecastOverride);
+      }
+    }
+  } catch (error) {
+    console.log('No forecast override file found, using default logic');
+    forecastOverride = null;
+  }
+
+  // Note: To use this, you'll need to:
+  // 1. Sign up for a free API key at https://openweathermap.org/api
+  // 2. Replace "YOUR_API_KEY_HERE" with your actual API key
+  
+  if (WEATHER_API_KEY === "YOUR_API_KEY_HERE") {
+    document.getElementById('weatherModule').innerHTML = `
+      <div class="weather-error">
+        <div class="weather-header">
+          <span class="weather-icon">🌤️</span>
+          <h3>Weather for Mountainside, NJ</h3>
+        </div>
+        <p>Weather data unavailable - API key required</p>
+        <p style="font-size: 0.8rem; margin-top: 0.5rem;">
+          To enable weather: Get a free API key from <a href="https://openweathermap.org/api" target="_blank">OpenWeatherMap</a>
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  // Check for cached weather data
+  const cachedWeather = getCachedWeather();
+  if (cachedWeather) {
+    console.log('Using cached weather data');
+    displayWeather(cachedWeather.current, cachedWeather.forecast);
+    return;
+  }
+
+  try {
+    console.log('Fetching fresh weather data from API');
+    // Get current weather and 5-day forecast
+    const [currentResponse, forecastResponse] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?zip=${WEATHER_ZIP},US&appid=${WEATHER_API_KEY}&units=imperial`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?zip=${WEATHER_ZIP},US&appid=${WEATHER_API_KEY}&units=imperial`)
+    ]);
+
+    if (!currentResponse.ok || !forecastResponse.ok) {
+      throw new Error('Weather API request failed');
+    }
+
+    const currentWeather = await currentResponse.json();
+    const forecastData = await forecastResponse.json();
+
+    // Cache the data before displaying
+    cacheWeatherData(currentWeather, forecastData);
+    
+    displayWeather(currentWeather, forecastData);
+  } catch (error) {
+    console.error('Error loading weather:', error);
+    
+    // Check if we have any cached data, even if stale
+    const staleCache = getStaleWeatherCache();
+    if (staleCache) {
+      console.log('Using stale cached weather due to API error');
+      displayWeather(staleCache.current, staleCache.forecast, true);
+      return;
+    }
+    
+    // Check if it's a rate limit error (429) vs other errors
+    const isRateLimited = error.message.includes('429') || error.message.includes('Too Many Requests');
+    
+    if (isRateLimited) {
+      document.getElementById('weatherModule').innerHTML = `
+        <div class="weather-error">
+          <div class="weather-header">
+            <span class="weather-icon">⏰</span>
+            <h3>Weather Temporarily Unavailable</h3>
+          </div>
+          <p>Daily weather data limit reached. Weather will be available again tomorrow.</p>
+          <button onclick="loadWeatherData()" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Try Again
+          </button>
+        </div>
+      `;
+    } else {
+      document.getElementById('weatherModule').innerHTML = `
+        <div class="weather-error">
+          <div class="weather-header">
+            <span class="weather-icon">⚠️</span>
+            <h3>Weather Unavailable</h3>
+          </div>
+          <p>Unable to load weather data at this time</p>
+          <button onclick="loadWeatherData()" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Try Again
+          </button>
+        </div>
+      `;
+    }
+  }
+}
+
+function getStaleWeatherCache() {
+  try {
+    const cached = localStorage.getItem('weatherData_07092');
+    if (!cached) return null;
+    
+    const data = JSON.parse(cached);
+    const now = Date.now();
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000; // 24 hours
+    
+    // Return stale data if it's less than 24 hours old
+    if (now - data.timestamp < twentyFourHoursInMs) {
+      return {
+        current: data.current,
+        forecast: data.forecast
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getCachedWeather() {
+  try {
+    const cached = localStorage.getItem('weatherData_07092');
+    if (!cached) return null;
+    
+    const data = JSON.parse(cached);
+    const now = Date.now();
+    const fourHoursInMs = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+    
+    // Check if data is less than 4 hours old
+    if (now - data.timestamp < fourHoursInMs) {
+      return {
+        current: data.current,
+        forecast: data.forecast
+      };
+    } else {
+      // Data is stale, remove it
+      localStorage.removeItem('weatherData_07092');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error reading cached weather:', error);
+    localStorage.removeItem('weatherData_07092');
+    return null;
+  }
+}
+
+function cacheWeatherData(current, forecast) {
+  try {
+    const dataToCache = {
+      timestamp: Date.now(),
+      current: current,
+      forecast: forecast
+    };
+    
+    localStorage.setItem('weatherData_07092', JSON.stringify(dataToCache));
+    console.log('Weather data cached for 4 hours');
+  } catch (error) {
+    console.error('Error caching weather data:', error);
+    // localStorage might be full or disabled, but we can continue without caching
+  }
+}
+
+function displayWeather(current, forecast, isStale = false) {
+  const weatherIcon = getWeatherIcon(current.weather[0].main);
+  
+  // Get next 3 days from forecast (skip today, get next 3 unique days)
+  const dailyForecasts = [];
+  const processedDates = new Set();
+  let sundayWeather = null;
+  
+  forecast.list.forEach(item => {
+    const date = new Date(item.dt * 1000);
+    const dateString = date.toDateString();
+    
+    // Check if this is Sunday (day 0 = Sunday)
+    if (date.getDay() === 0 && !sundayWeather) {
+      sundayWeather = item.weather[0].main.toLowerCase();
+    }
+    
+    // Skip today and only take one forecast per day
+    if (dateString !== today.toDateString() && !processedDates.has(dateString) && dailyForecasts.length < 3) {
+      processedDates.add(dateString);
+      dailyForecasts.push({
+        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        temp: Math.round(item.main.temp),
+        description: item.weather[0].description,
+        icon: getWeatherIcon(item.weather[0].main)
+      });
+    }
+  });
+
+  // Determine which weather image to show based on forecast override or Sunday's forecast
+  let weatherImageSrc, weatherImageAlt;
+  
+  if (forecastOverride) {
+    console.log('Using forecast override:', forecastOverride);
+    if (forecastOverride === 'rain') {
+      weatherImageSrc = 'rainyweather.jpg';
+      weatherImageAlt = 'Rainy weather';
+    } else if (forecastOverride === 'sunny') {
+      weatherImageSrc = 'sunnyweather.png';
+      weatherImageAlt = 'Sunny weather';
+    } else if (forecastOverride === 'default') {
+      // Use default logic - check Sunday's forecast
+      const weatherCondition = sundayWeather || current.weather[0].main.toLowerCase();
+      const isRainyWeather = weatherCondition.includes('rain') || 
+                            weatherCondition.includes('thunderstorm') || 
+                            weatherCondition.includes('storm');
+      weatherImageSrc = isRainyWeather ? 'rainyweather.jpg' : 'sunnyweather.png';
+      weatherImageAlt = isRainyWeather ? 'Rainy weather' : 'Sunny weather';
+    } else {
+      // Invalid forecast value, fall back to default logic
+      const weatherCondition = sundayWeather || current.weather[0].main.toLowerCase();
+      const isRainyWeather = weatherCondition.includes('rain') || 
+                            weatherCondition.includes('thunderstorm') || 
+                            weatherCondition.includes('storm');
+      weatherImageSrc = isRainyWeather ? 'rainyweather.jpg' : 'sunnyweather.png';
+      weatherImageAlt = isRainyWeather ? 'Rainy weather' : 'Sunny weather';
+    }
+  } else {
+    // No forecast override - use original Sunday logic
+    const weatherCondition = sundayWeather || current.weather[0].main.toLowerCase();
+    const isRainyWeather = weatherCondition.includes('rain') || 
+                          weatherCondition.includes('thunderstorm') || 
+                          weatherCondition.includes('storm');
+    weatherImageSrc = isRainyWeather ? 'rainyweather.jpg' : 'sunnyweather.png';
+    weatherImageAlt = isRainyWeather ? 'Rainy weather' : 'Sunny weather';
+  }
+
+  const staleWarning = isStale ? `
+    <div style="background: rgba(255, 193, 7, 0.2); padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; color: #856404; text-align: center;">
+      ⚠️ Showing recent weather data - current conditions may vary
+    </div>
+  ` : '';
+
+  const weatherHTML = `
+    <div class="weather-header">
+      <span class="weather-icon">${weatherIcon}</span>
+      <h3>Weather for Mountainside, NJ</h3>
+    </div>
+    ${staleWarning}
+    <div class="weather-content">
+      <div class="weather-image-section">
+        <div class="weather-image-label">Weather Bear Gameday Forecast</div>
+        <img class="weather-image" 
+             src="${weatherImageSrc}" 
+             alt="${weatherImageAlt}"
+             onerror="this.style.display='none'">
+      </div>
+      
+      <div class="current-weather">
+        <div class="temperature">${Math.round(current.main.temp)}°F</div>
+        <div class="weather-description">${current.weather[0].description}</div>
+        <div class="weather-details">
+          Feels like ${Math.round(current.main.feels_like)}°F<br>
+          Humidity: ${current.main.humidity}%<br>
+          Wind: ${Math.round(current.wind?.speed || 0)} mph
+        </div>
+      </div>
+      
+      <div class="forecast">
+        ${dailyForecasts.map(day => `
+          <div class="forecast-item">
+            <div class="forecast-day">${day.day}</div>
+            <div class="weather-icon">${day.icon}</div>
+            <div class="forecast-temp">${day.temp}°F</div>
+            <div class="forecast-desc">${day.description}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('weatherModule').innerHTML = weatherHTML;
+}
+
+function getWeatherIcon(condition) {
+  const iconMap = {
+    'Clear': '☀️',
+    'Clouds': '☁️',
+    'Rain': '🌧️',
+    'Drizzle': '🌦️',
+    'Thunderstorm': '⛈️',
+    'Snow': '❄️',
+    'Mist': '🌫️',
+    'Fog': '🌫️',
+    'Haze': '🌫️'
+  };
+  return iconMap[condition] || '🌤️';
+}
+
+function generateWeekendPreview() {
+  const weekendGames = getWeekendGames();
+  
+  // Update weekend info
+  if (weekendGames.length === 0) {
+    document.getElementById('weekendInfo').innerHTML = `
+      <h3>No Upcoming Games</h3>
+      <p>No games scheduled for the next week</p>
+    `;
+    
+    document.getElementById('gamesGrid').innerHTML = `
+      <div class="no-games">
+        <h3>No Games This Weekend</h3>
+        <p>Check back later for upcoming matchups</p>
+        <a href="current-season.html" class="back-nav" style="display: inline-block; margin-top: 1rem;">
+          View Full Schedule
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  const earliestDate = parseGameDate(weekendGames[0].date);
+  const latestDate = parseGameDate(weekendGames[weekendGames.length - 1].date);
+  
+  let dateRangeText;
+  if (earliestDate.toDateString() === latestDate.toDateString()) {
+    dateRangeText = earliestDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  } else {
+    dateRangeText = `${earliestDate.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    })} - ${latestDate.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    })}`;
+  }
+
+  document.getElementById('weekendInfo').innerHTML = `
+    <h3>Upcoming Games</h3>
+    <p>${weekendGames.length} games scheduled for ${dateRangeText}</p>
+  `;
+
+  // Generate game cards
+  const gamesHtml = weekendGames.map(game => createGameCard(game)).join('');
+  document.getElementById('gamesGrid').innerHTML = gamesHtml;
+}
+
+function createGameCard(game) {
+  const homeTeam = game["home team"];
+  const awayTeam = game["away team"];
+  const gameDate = parseGameDate(game.date);
+  
+  const homeRecord = calculateTeamRecord(homeTeam);
+  const awayRecord = calculateTeamRecord(awayTeam);
+  
+  const homeStanding = calculateTeamStanding(homeTeam);
+  const awayStanding = calculateTeamStanding(awayTeam);
+  
+  const preview = getGamePreview(homeTeam, awayTeam, game.date);
+  
+  // Format team records
+  const homeRecordText = `${homeRecord.wins}-${homeRecord.losses}${homeRecord.ties > 0 ? `-${homeRecord.ties}` : ''}`;
+  const awayRecordText = `${awayRecord.wins}-${awayRecord.losses}${awayRecord.ties > 0 ? `-${awayRecord.ties}` : ''}`;
+  
+  // Format standings
+  const homeStandingText = homeStanding ? `#${homeStanding}` : 'NR';
+  const awayStandingText = awayStanding ? `#${awayStanding}` : 'NR';
+  
+  // Format game date and time
+  let gameDateTime;
+  if (preview && preview.time) {
+    // Use time from previews.json if available
+    const dateStr = gameDate.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric'
+    });
+    gameDateTime = `${dateStr} ${preview.time}`;
+  } else {
+    // Fallback to original date formatting
+    gameDateTime = gameDate.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+
+  // Get home team color for background
+  const homeTeamColor = getTeamColor(homeTeam);
+  const cardBackgroundStyle = homeTeamColor ? 
+    `background: linear-gradient(135deg, rgba(${homeTeamColor}, 0.15) 0%, rgba(${homeTeamColor}, 0.05) 100%) !important;` : 
+    '';
+
+  // Handle odds if available
+  let oddsHtml = '';
+  if (preview && (preview["home odds"] || preview["away odds"])) {
+    const homeOdds = parseInt(preview["home odds"] || 0);
+    const awayOdds = parseInt(preview["away odds"] || 0);
+    
+    if (homeOdds !== 0 || awayOdds !== 0) {
+      const homeIsFavorite = homeOdds < 0 && (awayOdds > 0 || homeOdds > awayOdds);
+      const awayIsFavorite = awayOdds < 0 && (homeOdds > 0 || awayOdds > homeOdds);
+
+      oddsHtml = `
+        <div class="game-odds">
+          <div class="odds-item">
+            <div class="odds-team">${awayTeam}</div>
+            <div class="odds-value ${awayIsFavorite ? 'favorite' : ''}">${awayOdds > 0 ? '+' : ''}${awayOdds}</div>
+          </div>
+          <div class="odds-item">
+            <div class="odds-team">${homeTeam}</div>
+            <div class="odds-value ${homeIsFavorite ? 'favorite' : ''}">${homeOdds > 0 ? '+' : ''}${homeOdds}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Get top players for both teams
+  const homeTopPlayers = getTopPlayers(homeTeam);
+  const awayTopPlayers = getTopPlayers(awayTeam);
+  
+  // Create Key Players section if we have player data
+  let keyPlayersHtml = '';
+  if (homeTopPlayers.length > 0 || awayTopPlayers.length > 0) {
+    keyPlayersHtml = `
+      <div class="key-players">
+        <h4>Key Players</h4>
+        <div class="players-grid">
+          <div class="team-players">
+            <h5>${awayTeam}</h5>
+            <div class="player-list">
+              ${awayTopPlayers.length > 0 ? 
+                awayTopPlayers.map(player => `<span class="player-name">${player}</span>`).join('') :
+                '<span class="player-name">No data available</span>'
+              }
+            </div>
+          </div>
+          <div class="team-players">
+            <h5>${homeTeam}</h5>
+            <div class="player-list">
+              ${homeTopPlayers.length > 0 ? 
+                homeTopPlayers.map(player => `<span class="player-name">${player}</span>`).join('') :
+                '<span class="player-name">No data available</span>'
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <a href="game-preview.html?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&date=${encodeURIComponent(game.date)}" 
+       class="game-card" style="${cardBackgroundStyle}">
+      <div class="game-header">
+        <div class="game-date">${gameDateTime}</div>
+        <div class="game-type">${game.game_type} Season</div>
+      </div>
+      
+      <div class="teams-matchup">
+        <div class="team-info">
+          <img class="team-logo" 
+               src="logos/${awayTeam.toLowerCase().replace(/\s+/g, '_')}.png" 
+               alt="${awayTeam} logo" 
+               onerror="this.style.display='none'">
+          <div class="team-name">${awayTeam}</div>
+          <div class="team-record">${awayRecordText}</div>
+          <div class="team-standing">${awayStandingText} in standings</div>
+        </div>
+        
+        <div class="vs-section">
+          <div class="vs-text">@</div>
+          <div class="home-indicator">Home</div>
+        </div>
+        
+        <div class="team-info">
+          <img class="team-logo" 
+               src="logos/${homeTeam.toLowerCase().replace(/\s+/g, '_')}.png" 
+               alt="${homeTeam} logo" 
+               onerror="this.style.display='none'">
+          <div class="team-name">${homeTeam}</div>
+          <div class="team-record">${homeRecordText}</div>
+          <div class="team-standing">${homeStandingText} in standings</div>
+        </div>
+      </div>
+      
+      ${oddsHtml}
+      ${keyPlayersHtml}
+    </a>
+  `;
+}
+
+function showError() {
+  document.getElementById('weekendInfo').innerHTML = `
+    <h3>Error Loading Data</h3>
+    <p>Unable to load weekend games. Please try again later.</p>
+  `;
+  
+  document.getElementById('gamesGrid').innerHTML = `
+    <div class="no-games">
+      <h3>Error Loading Games</h3>
+      <p>There was an error loading the weekend schedule.</p>
+    </div>
+  `;
+}
+</script>
+ <script src="banner.js?v=3"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>

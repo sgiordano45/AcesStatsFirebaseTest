@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Leaders - Aces Stats</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .page-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .page-header p {
+    margin: 1rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .filters-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .nav-link.pitching {
+    border-color: #11998e;
+    color: #11998e;
+  }
+  
+  .nav-link.pitching:hover {
+    background: #11998e;
+    color: white;
+  }
+  
+  .leaders-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+  }
+  
+  .leader-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .leader-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .leader-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  }
+  
+  .leader-section h3 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 1.5rem;
+    font-size: 1.3em;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  
+  .leader-table {
+    width: 100%;
+    margin: 0;
+    background: white;
+  }
+  
+  .leader-table th,
+  .leader-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e1e5e9;
+  }
+  
+  .leader-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+  }
+  
+  .leader-table tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  .leader-table tr:hover {
+    background: #e8f4fd;
+  }
+  
+  .leader-table a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  .leader-table a:hover {
+    color: #4c63d2;
+    text-decoration: underline;
+  }
+  
+  .rank {
+    text-align: center;
+    font-weight: bold;
+    color: #666;
+    width: 60px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  }
+  
+  .stat-value {
+    text-align: center;
+    font-weight: bold;
+    min-width: 80px;
+    color: #333;
+  }
+  
+  .minimum-note {
+    font-style: italic;
+    color: #666;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.9em;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+  }
+  
+  /* Achievement badges for top performers */
+  .rank-1 .rank {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #333;
+    font-weight: 700;
+  }
+  
+  .rank-1 .rank::after {
+    content: " 🥇";
+  }
+  
+  .rank-2 .rank {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+    color: #333;
+    font-weight: 700;
+  }
+  
+  .rank-2 .rank::after {
+    content: " 🥈";
+  }
+  
+  .rank-3 .rank {
+    background: linear-gradient(135deg, #cd7f32 0%, #daa560 100%);
+    color: white;
+    font-weight: 700;
+  }
+  
+  .rank-3 .rank::after {
+    content: " 🥉";
+  }
+  
+  /* Loading state */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border: 1px solid #e1e5e9;
+  }
+  
+  .loading::before {
+    content: "⏳";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 1rem;
+    }
+    
+    .page-header {
+      padding: 2rem 1rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+    
+    .nav-container {
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .nav-link {
+      padding: 10px 15px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .leaders-container {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .leader-section h3 {
+      padding: 1rem;
+      font-size: 1.2em;
+    }
+    
+    .leader-table th,
+    .leader-table td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .leader-table th,
+    .leader-table td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8em;
+    }
+    
+    .leader-section h3 {
+      font-size: 1.1em;
+      padding: 0.75rem;
+    }
+  }
+</style>
+  <link rel="stylesheet" href="mobile-enhancements.css">
+</head>
+<body>
+<div class="page-container">
+  <div class="page-header">
+    <h1>Batting Career Leaders</h1>
+    <p>Top 10 all-time leaders in major batting categories</p>
+  </div>
+
+  <div class="filters-nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-link">🏠 Home</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
+      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-link">🏆 All Teams</a>
+      <a href="players.html" class="nav-link">👤 All Players</a>
+      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+      <a href="leaders.html" class="nav-link active">📊 Career Leaders</a>
+      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+      <a href="pictures.html" class="nav-link">📷 Gallery</a>
+      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+    </nav>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-container">
+    <div class="mobile-nav-header">
+      <div class="mobile-nav-title">📊 Career Leaders</div>
+      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+    </div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
+      <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
+      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
+      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
+      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
+      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
+      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
+      <a href="leaders.html" class="mobile-nav-item active">📊 Career Leaders</a>
+      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
+      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
+      <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
+      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
+	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+    </nav>
+  </div>
+
+
+  <div id="leaders-container" class="leaders-container">
+    <div class="loading">Loading career leaders data...</div>
+  </div>
+</div>
+
+<script>
+let allData = [];
+
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+    allData = cleanData(data);
+    generateLeaderboards();
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    document.getElementById("leaders-container").innerHTML = 
+      '<div class="loading">Error loading statistics data. Please check that data.json is available.</div>';
+  });
+
+function cleanData(data) {
+  return data.map(p => ({
+    ...p,
+    name: p.name ? p.name.trim() : "",
+    team: p.team ? p.team.trim() : "",
+    games: Number(p.games) || 0,
+    atBats: Number(p.atBats) || 0,
+    hits: Number(p.hits) || 0,
+    runs: Number(p.runs) || 0,
+    walks: Number(p.walks) || 0,
+    AcesWar: p.AcesWar === "N/A" || !p.AcesWar ? "N/A" : Number(p.AcesWar)
+  }));
+}
+
+function aggregatePlayerStats() {
+  const playerStats = {};
+  
+  allData.forEach(p => {
+    if (!p.name) return;
+    
+    if (!playerStats[p.name]) {
+      playerStats[p.name] = {
+        name: p.name,
+        games: 0,
+        atBats: 0,
+        hits: 0,
+        runs: 0,
+        walks: 0,
+        plateAppearances: 0,
+        acesWarValues: []
+      };
+    }
+    
+    playerStats[p.name].games += p.games;
+    playerStats[p.name].atBats += p.atBats;
+    playerStats[p.name].hits += p.hits;
+    playerStats[p.name].runs += p.runs;
+    playerStats[p.name].walks += p.walks;
+    playerStats[p.name].plateAppearances += (p.atBats + p.walks);
+    
+    if (p.AcesWar !== "N/A" && !isNaN(p.AcesWar)) {
+      playerStats[p.name].acesWarValues.push(Number(p.AcesWar));
+    }
+  });
+  
+  // Calculate derived stats
+  return Object.values(playerStats).map(p => ({
+    ...p,
+    battingAverage: p.atBats > 0 ? p.hits / p.atBats : 0,
+    onBasePercentage: p.plateAppearances > 0 ? (p.hits + p.walks) / p.plateAppearances : 0,
+    avgAcesWar: p.acesWarValues.length > 0 ? 
+      p.acesWarValues.reduce((a, b) => a + b, 0) / p.acesWarValues.length : 0
+  }));
+}
+
+function generateLeaderboards() {
+  const players = aggregatePlayerStats();
+  const container = document.getElementById("leaders-container");
+  
+  // Define leaderboard categories with stat icons
+  const categories = [
+    {
+      title: "Games Played",
+      icon: "🎮",
+      stat: "games",
+      format: (val) => val.toString(),
+      minimum: 0
+    },
+    {
+      title: "At-Bats",
+      icon: "⚾",
+      stat: "atBats", 
+      format: (val) => val.toString(),
+      minimum: 0
+    },
+    {
+      title: "Hits",
+      icon: "🏏",
+      stat: "hits",
+      format: (val) => val.toString(), 
+      minimum: 0
+    },
+    {
+      title: "Runs Scored",
+      icon: "🏃",
+      stat: "runs",
+      format: (val) => val.toString(),
+      minimum: 0
+    },
+    {
+      title: "Walks",
+      icon: "🚶",
+      stat: "walks",
+      format: (val) => val.toString(),
+      minimum: 0
+    },
+    {
+      title: "Batting Average",
+      icon: "📊",
+      stat: "battingAverage",
+      format: (val) => val.toFixed(3),
+      minimum: 40,
+      minimumField: "plateAppearances",
+      minimumNote: "Minimum 40 plate appearances"
+    },
+    {
+      title: "On-Base Percentage",
+      icon: "🎯",
+      stat: "onBasePercentage",
+      format: (val) => val.toFixed(3),
+      minimum: 40,
+      minimumField: "plateAppearances", 
+      minimumNote: "Minimum 40 plate appearances"
+    },
+    {
+      title: "AcesBPI (Average)",
+      icon: "⭐",
+      stat: "avgAcesWar",
+      format: (val) => val.toFixed(2),
+      minimum: 0,
+      filter: (p) => p.acesWarValues.length > 0
+    }
+  ];
+  
+  let html = '';
+  categories.forEach(category => {
+    const leaderHTML = generateLeaderTable(players, category);
+    html += leaderHTML;
+  });
+  
+  container.innerHTML = html;
+}
+
+function generateLeaderTable(players, category) {
+  // Filter players based on minimum requirements
+  let qualifyingPlayers = players.filter(p => {
+    if (category.filter && !category.filter(p)) return false;
+    if (category.minimumField) {
+      return p[category.minimumField] >= category.minimum;
+    }
+    return p[category.stat] >= category.minimum;
+  });
+  
+  // Sort by the stat (descending)
+  qualifyingPlayers.sort((a, b) => b[category.stat] - a[category.stat]);
+  
+  // Take top 10
+  const top10 = qualifyingPlayers.slice(0, 10);
+  
+  let html = `
+    <div class="leader-section">
+      <h3>${category.icon} ${category.title}</h3>
+      ${category.minimumNote ? `<div class="minimum-note">${category.minimumNote}</div>` : ''}
+      <table class="leader-table">
+        <thead>
+          <tr>
+            <th class="rank">Rank</th>
+            <th>Player</th>
+            <th class="stat-value">${category.title}</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  top10.forEach((player, index) => {
+    const rank = index + 1;
+    const statValue = category.format(player[category.stat]);
+    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+    
+    html += `
+      <tr class="${rankClass}">
+        <td class="rank">${rank}</td>
+        <td><a href="player.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+        <td class="stat-value">${statValue}</td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  return html;
+}
+</script>
+  <script src="team-colors.js"></script>
+ <script src="mobile-enhancements.js"></script>
+</body>
+</html>
