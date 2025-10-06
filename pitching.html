@@ -389,7 +389,7 @@
   <!-- Loading Indicator -->
   <div id="loadingIndicator" style="display: none;">
     Loading pitching statistics...<br>
-    <small>Fetching data from 10 seasons (this may take 10-15 seconds)</small>
+    <small>Fetching data from aggregated collection</small>
   </div>
 
   <div class="summary">
@@ -457,62 +457,38 @@
 </div>
 
 <script type="module">
-  // Import Firebase functions
+  // Import Firebase functions - UPDATED to use optimized aggregated collection
   import { 
-    getSeasonPitchingStats,
-    getAllSeasons
+    getAllPlayerStatsOptimized
   } from './firebase-data.js';
 
   // Global variables
   let allData = [];
   let currentSort = { column: null, dir: "asc" };
-  
-  // Cache configuration
-  const CACHE_KEY = 'pitchingStatsCache';
-  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
   // Helper function to capitalize strings
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
-  // Cache functions
-  function getCachedData() {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return null;
-      
-      const { data, timestamp } = JSON.parse(cached);
-      const age = Date.now() - timestamp;
-      
-      if (age > CACHE_DURATION) {
-        console.log('⏰ Cache expired, will fetch fresh data');
-        localStorage.removeItem(CACHE_KEY);
-        return null;
-      }
-      
-      console.log(`✅ Using cached data (age: ${(age / 1000 / 60).toFixed(1)} minutes)`);
-      return data;
-    } catch (error) {
-      console.error('❌ Cache read error:', error);
-      return null;
+  // Helper function to format player names from firstname_lastname to First Last
+  function formatPlayerName(name) {
+    if (!name) return "";
+    
+    // If name already has spaces, just capitalize each word
+    if (name.includes(' ')) {
+      return name.split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
     }
-  }
-
-  function setCachedData(data) {
-    try {
-      const cacheObject = {
-        data: data,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-      console.log(`💾 Cached ${data.length} records`);
-    } catch (error) {
-      if (error.name === 'QuotaExceededError') {
-        console.warn('⚠️ localStorage quota exceeded, clearing cache');
-        localStorage.removeItem(CACHE_KEY);
-      } else {
-        console.error('❌ Cache write error:', error);
-      }
+    
+    // If name has underscores, replace with spaces and capitalize
+    if (name.includes('_')) {
+      return name.split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
     }
+    
+    // Otherwise just capitalize the single name
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
   function showLoadingIndicator() {
@@ -525,127 +501,109 @@
     if (indicator) indicator.style.display = 'none';
   }
 
-  // Load data from Firebase (with caching)
+  // Load data from Firebase using optimized aggregated collection
   async function loadData() {
-    const startTime = performance.now();
-    console.log('🔄 Starting data load...');
+    const loadStartTime = performance.now();
+    console.log('📊 Loading pitching data from aggregated collection...');
     console.time('Total Load Time');
     
-    // Check cache first
-    const cachedData = getCachedData();
-    if (cachedData) {
-      allData = cachedData;
-      hideLoadingIndicator();
-      populateFilters();
-      renderTable(allData);
-      const loadTime = (performance.now() - startTime).toFixed(0);
-      console.log(`✅ Loaded from cache in ${loadTime}ms`);
-      console.timeEnd('Total Load Time');
-      return;
-    }
-    
-    // Show loading indicator for fresh data fetch
     showLoadingIndicator();
     
     try {
-      // Performance timing
-      const timings = {};
+      console.time('Fetch Aggregated Data');
+      const players = await getAllPlayerStatsOptimized();
+      console.timeEnd('Fetch Aggregated Data');
+      console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
       
-      // 1. Get all seasons
-      const t1 = performance.now();
-      const seasons = await getAllSeasons();
-      timings.fetchSeasons = performance.now() - t1;
-      console.log(`✅ Fetched: ${seasons?.length || 0} seasons (${timings.fetchSeasons.toFixed(0)}ms)`);
-      
-      if (!seasons || seasons.length === 0) {
-        throw new Error('No seasons found');
+      if (!players || players.length === 0) {
+        console.warn('⚠️ No player data found');
+        document.getElementById('totalsText').textContent = 'No player data available.';
+        hideLoadingIndicator();
+        return;
       }
       
-      // 2. Fetch pitching stats for each season
-      const t2 = performance.now();
-      const allStatsPromises = seasons.map(season => 
-        getSeasonPitchingStats(season.id).then(stats => ({
-          seasonId: season.id,
-          year: season.year,
-          season: season.season,
-          stats: stats || []
-        }))
-      );
-      
-      const seasonStats = await Promise.all(allStatsPromises);
-      timings.fetchAllStats = performance.now() - t2;
-      console.log(`✅ Fetched all season stats (${timings.fetchAllStats.toFixed(0)}ms)`);
-      
-      // 3. Flatten and add season context
-      const t3 = performance.now();
+      // Flatten pitching season data for pitching stats table
+      console.time('Process Pitching Data');
       const allStats = [];
-      seasonStats.forEach(seasonData => {
-        if (seasonData.stats && seasonData.stats.length > 0) {
-          console.log(`📊 Season ${seasonData.year} ${seasonData.season}: ${seasonData.stats.length} records`);
-          seasonData.stats.forEach(stat => {
+      
+      players.forEach(player => {
+        // Check if player has pitching seasons data
+        if (player.pitchingSeasons && Array.isArray(player.pitchingSeasons)) {
+          player.pitchingSeasons.forEach(season => {
+            // Parse year and season from seasonId (e.g., "2025-fall")
+            let year = "";
+            let seasonName = "";
+            
+            if (season.seasonId) {
+              const parts = season.seasonId.split('-');
+              if (parts.length === 2) {
+                year = parts[0];
+                seasonName = parts[1];
+              }
+            }
+            
+            // Map pitching stats with proper field names
+            // ERA is stored as earnedRunAverage in aggregated collection
+            let eraValue = "N/A";
+            if (season.earnedRunAverage !== undefined && season.earnedRunAverage !== null && season.earnedRunAverage !== "N/A") {
+              eraValue = Number(season.earnedRunAverage);
+            }
+            
             allStats.push({
-              ...stat,
-              year: seasonData.year,
-              season: seasonData.season,
-              seasonId: seasonData.seasonId
+              name: formatPlayerName(player.name || player.displayName || player.userId),
+              team: capitalize(season.team || player.currentTeam || ""),
+              year: year,
+              season: capitalize(seasonName),
+              games: Number(season.games) || 0,
+              IP: typeof season.inningsPitched === 'number' ? season.inningsPitched.toString() : 
+                  (season.inningsPitched || "0"),
+              runsAllowed: Number(season.runsAllowed) || 0,
+              ERA: eraValue,
+              id: player.userId || "",
+              seasonId: season.seasonId || ""
             });
           });
         }
       });
-      timings.processData = performance.now() - t3;
       
-      console.log(`✅ Total records: ${allStats.length}`);
+      console.log(`✅ Processed ${allStats.length} pitching season records from ${players.length} players`);
       
-      // Log sample data to see property names
-      if (allStats.length > 0) {
-        console.log('📊 Sample Firebase data:', allStats[0]);
-        console.log('🔑 Available properties:', Object.keys(allStats[0]));
+      // Debug: Check ERA values
+      const erasFound = allStats.filter(s => s.ERA !== "N/A");
+      const erasNA = allStats.filter(s => s.ERA === "N/A");
+      console.log(`📊 ERA Stats: ${erasFound.length} with values, ${erasNA.length} N/A`);
+      if (erasFound.length > 0) {
+        console.log('📊 Sample ERA values:', erasFound.slice(0, 3).map(s => ({ 
+          name: s.name, 
+          ERA: s.ERA, 
+          IP: s.IP 
+        })));
       }
       
-      // 4. Map to expected format
-      allData = allStats.map(p => {
-        // Check for different possible property names for pitching stats
-        const ipValue = p.inningsPitched || p.IP || p.ip || 0;
-        const runsValue = p.runsAllowed || p.runs_allowed || p.runs || 0;
-        const eraValue = p.era || p.ERA || "N/A";
-        
-        return {
-          name: p.playerName || p.displayName || p.playerId || p.id || "",
-          team: capitalize(p.team || p.teamId || ""),
-          year: p.year ? p.year.toString() : "",
-          season: capitalize(p.season || ""),
-          games: Number(p.games) || 0,
-          IP: typeof ipValue === 'number' ? ipValue.toString() : (ipValue || "0"),
-          runsAllowed: Number(runsValue) || 0,
-          ERA: eraValue === "N/A" || eraValue === null || eraValue === undefined ? "N/A" : Number(eraValue),
-          id: p.id || ""
-        };
-      });
+      if (allStats.length === 0) {
+        console.warn('⚠️ No pitching data found in aggregated collection');
+        document.getElementById('totalsText').textContent = 'No pitching data available.';
+        hideLoadingIndicator();
+        return;
+      }
       
-      console.log(`✅ Mapped records: ${allData.length}`);
+      allData = allStats;
+      console.timeEnd('Process Pitching Data');
       
-      // Cache the results
-      setCachedData(allData);
-      
-      // Performance summary
-      const t4 = performance.now();
-      timings.renderUI = t4 - t3 - timings.processData;
-      timings.total = t4 - startTime;
-      
-      console.log('\n📊 Performance Breakdown:');
-      console.log(`Fetch Seasons:        ${timings.fetchSeasons.toFixed(0)}ms (${(timings.fetchSeasons/timings.total*100).toFixed(1)}%)`);
-      console.log(`Fetch All Stats:      ${timings.fetchAllStats.toFixed(0)}ms (${(timings.fetchAllStats/timings.total*100).toFixed(1)}%)`);
-      console.log(`Process Data:         ${timings.processData.toFixed(0)}ms (${(timings.processData/timings.total*100).toFixed(1)}%)`);
-      console.log(`Render UI:            ${timings.renderUI.toFixed(0)}ms (${(timings.renderUI/timings.total*100).toFixed(1)}%)`);
-      console.log(`Total:                ${timings.total.toFixed(0)}ms\n`);
-      
+      // Hide loading indicator
       hideLoadingIndicator();
+      
+      console.time('Render UI');
       populateFilters();
       renderTable(allData);
+      console.timeEnd('Render UI');
+      
+      const loadEndTime = performance.now();
       console.timeEnd('Total Load Time');
+      console.log(`✅ Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
       
     } catch (error) {
-      console.error("❌ Error loading data:", error);
+      console.error('❌ Error loading data:', error);
       hideLoadingIndicator();
       document.body.innerHTML = `
         <div class="page-container">
@@ -930,7 +888,7 @@
 
   // Initialize page when DOM is ready
   function initPage() {
-    console.log('📄 Initializing page...');
+    console.log('🔄 Initializing page...');
     initializeSorting();
     loadData();
   }

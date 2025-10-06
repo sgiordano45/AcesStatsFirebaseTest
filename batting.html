@@ -395,10 +395,9 @@
 <script type="module">
   console.log('🔄 Script started - checking Firebase imports...');
   
-  // Import Firebase helper functions
-  import { 
-    getSeasonPlayerStats,
-    getAllSeasons
+  // Optimized (FAST)
+  import {
+    getAllPlayerStatsOptimized
   } from './firebase-data.js';
   
   console.log('✅ Firebase imports successful!');
@@ -411,67 +410,94 @@
   // Helper function for capitalization
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
-  // Cache management
-  const CACHE_KEY = 'battingStatsCache';
-  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-  function getCachedData() {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return null;
-      
-      const { data, timestamp } = JSON.parse(cached);
-      const age = Date.now() - timestamp;
-      
-      if (age > CACHE_DURATION) {
-        console.log('🗑️ Cache expired, will fetch fresh data');
-        localStorage.removeItem(CACHE_KEY);
-        return null;
-      }
-      
-      console.log(`✅ Using cached data (age: ${(age / 1000 / 60).toFixed(1)} minutes)`);
-      return data;
-    } catch (error) {
-      console.error('❌ Error reading cache:', error);
-      return null;
-    }
-  }
-
-  function setCachedData(data) {
-    try {
-      const cacheObject = {
-        data: data,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-      console.log('💾 Data cached successfully');
-    } catch (error) {
-      console.error('❌ Error writing cache:', error);
-      // If quota exceeded, clear cache and try again
-      if (error.name === 'QuotaExceededError') {
-        localStorage.removeItem(CACHE_KEY);
-        console.log('🗑️ Cache cleared due to quota exceeded');
-      }
-    }
-  }
-
-  function clearCache() {
-    localStorage.removeItem(CACHE_KEY);
-    console.log('🗑️ Cache cleared');
-  }
-
-  // Load data from Firebase
-  async function loadData() {
-    const loadStartTime = performance.now();
-    console.log('🔄 Loading batting data from Firebase...');
-    console.time('Total Load Time');
+  // Helper function to format player names from firstname_lastname to First Last
+  function formatPlayerName(name) {
+    if (!name) return "";
     
-    try {
-      // Check cache first
-      const cachedData = getCachedData();
-      if (cachedData) {
-        console.log('⚡ Loading from cache...');
-        allPlayerData = cachedData;
+    // If name already has spaces, just capitalize each word
+    if (name.includes(' ')) {
+      return name.split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    
+    // If name has underscores, replace with spaces and capitalize
+    if (name.includes('_')) {
+      return name.split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    
+    // Otherwise just capitalize the single name
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  }
+
+
+
+    // Load data from Firebase using optimized aggregated collection
+    async function loadData() {
+      const loadStartTime = performance.now();
+      console.log('Loading batting data from aggregated collection...');
+      console.time('Total Load Time');
+      
+      try {
+        console.time('Fetch Aggregated Data');
+        const players = await getAllPlayerStatsOptimized();
+        console.timeEnd('Fetch Aggregated Data');
+        console.log(`Loaded ${players?.length || 0} players from aggregated collection`);
+        
+        if (!players || players.length === 0) {
+          console.warn('No player data found');
+          document.getElementById('totalsText').textContent = 'No player data available.';
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('totalsText').style.display = 'block';
+          return;
+        }
+        
+        // Flatten season data for batting stats table
+        console.time('Process Data');
+        const allStats = [];
+        
+        players.forEach(player => {
+          if (player.seasons && Array.isArray(player.seasons)) {
+            player.seasons.forEach(season => {
+              // Parse year and season from seasonId (e.g., "2025-fall")
+              let year = "";
+              let seasonName = "";
+              
+              if (season.seasonId) {
+                const parts = season.seasonId.split('-');
+                if (parts.length === 2) {
+                  year = parts[0];
+                  seasonName = parts[1];
+                }
+              }
+              
+              allStats.push({
+                name: formatPlayerName(player.name || player.displayName || player.userId),
+                team: capitalize(season.team || player.currentTeam || ""),
+                year: year,
+                season: capitalize(seasonName),
+                games: Number(season.games) || 0,
+                atBats: Number(season.atBats) || 0,
+                hits: Number(season.hits) || 0,
+                runs: Number(season.runs) || 0,
+                walks: Number(season.walks) || 0,
+                AcesWar: typeof season.acesWar === 'number' ? season.acesWar :
+                         (season.acesWar === "N/A" ? "N/A" : Number(season.acesWar) || 0),
+                BA: season.battingAverage || 0,
+                OBP: season.onBasePercentage || 0,
+                sub: season.sub || "No",
+                id: player.userId || "",
+                seasonId: season.seasonId || ""
+              });
+            });
+          }
+        });
+        
+        console.log(`Processed ${allStats.length} season records from ${players.length} players`);
+        allPlayerData = allStats;
+        console.timeEnd('Process Data');
         
         // Hide loading indicator and show data
         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -482,161 +508,27 @@
         if (totalsText) totalsText.style.display = 'block';
         if (leadersText) leadersText.style.display = 'block';
         
+        console.time('Render UI');
         populateFilters();
         filterAndDisplayStats();
         updateSummary();
+        console.timeEnd('Render UI');
         
         const loadEndTime = performance.now();
-        console.log(`✅ Page loaded from cache in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
         console.timeEnd('Total Load Time');
-        return;
-      }
-      
-      // No cache, fetch from Firebase
-      console.log('📡 No cache found, fetching from Firebase...');
-      
-      // Time: Get all seasons
-      console.time('Fetch Seasons');
-      const seasons = await getAllSeasons();
-      console.timeEnd('Fetch Seasons');
-      console.log(`✅ Fetched: ${seasons?.length || 0} seasons`);
-      
-      if (!seasons || seasons.length === 0) {
-        console.warn('⚠️ No seasons found');
-        document.getElementById('totalsText').textContent = 'No season data available.';
-        return;
-      }
-      
-      // Time: Fetch player stats for each season
-      console.log('🔄 Fetching batting stats for all seasons...');
-      console.time('Fetch All Season Stats');
-      const seasonStatsStartTime = performance.now();
-      
-      const allStatsPromises = seasons.map(season => 
-        getSeasonPlayerStats(season.id).then(stats => ({
-          seasonId: season.id,
-          year: season.year,
-          season: season.season,
-          stats: stats || []
-        }))
-      );
-      
-      const seasonStats = await Promise.all(allStatsPromises);
-      const seasonStatsEndTime = performance.now();
-      console.timeEnd('Fetch All Season Stats');
-      console.log(`⏱️  Fetched stats from ${seasons.length} seasons in ${(seasonStatsEndTime - seasonStatsStartTime).toFixed(0)}ms (avg: ${((seasonStatsEndTime - seasonStatsStartTime) / seasons.length).toFixed(0)}ms per season)`);
-      
-      // Time: Flatten and process data
-      console.time('Process Data');
-      const allStats = [];
-      seasonStats.forEach(seasonData => {
-        if (seasonData.stats && seasonData.stats.length > 0) {
-          console.log(`📊 Season ${seasonData.year} ${seasonData.season}: ${seasonData.stats.length} player records`);
-          
-          seasonData.stats.forEach(stat => {
-            allStats.push({
-              ...stat,
-              year: seasonData.year,
-              season: seasonData.season,
-              seasonId: seasonData.seasonId
-            });
-          });
+        console.log(`Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+        
+      } catch (error) {
+        console.error('Error loading data:', error);
+        const totalsEl = document.getElementById('totalsText');
+        if (totalsEl) {
+          totalsEl.textContent = 'Error loading data. Please refresh the page.';
+          totalsEl.style.display = 'block';
         }
-      });
-      
-      console.log(`✅ Total player stat records: ${allStats.length}`);
-      
-      // Log sample data structure
-      if (allStats.length > 0) {
-        console.log('📊 Sample Firebase player stat:', allStats[0]);
-        console.log('🔑 Available properties:', Object.keys(allStats[0]));
-        
-        // Check for AcesBPI/AcesWar specifically
-        const sample = allStats[0];
-        console.log('🎯 Checking AcesBPI properties:');
-        console.log('  - acesBPI:', sample.acesBPI);
-        console.log('  - AcesWar:', sample.AcesWar);
-        console.log('  - acesWar:', sample.acesWar);
-        console.log('  - acesbpi:', sample.acesbpi);
-        console.log('  - aceswar:', sample.aceswar);
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
       }
-      
-      // Map Firebase data to expected format
-      allPlayerData = allStats.map(p => {
-        // Firebase uses 'acesWar' (lowercase 'a'), but we store as 'AcesWar' for consistency with existing code
-        const acesWarValue = p.acesWar || p.acesBPI || p.AcesWar || p.acesbpi || p.aceswar || 0;
-        
-        return {
-          // Player identifiers
-          name: p.playerName || p.displayName || p.playerId || p.id,
-          team: capitalize(p.team || p.teamId || ""),
-          
-          // Season context
-          year: p.year ? p.year.toString() : "",
-          season: capitalize(p.season || ""),
-          
-          // Stats - convert to numbers
-          games: Number(p.games) || 0,
-          atBats: Number(p.atBats) || 0,
-          hits: Number(p.hits) || 0,
-          runs: Number(p.runs) || 0,
-          walks: Number(p.walks) || 0,
-          
-          // Calculated stats - AcesWar is the internal name, displayed as AcesBPI
-          AcesWar: typeof acesWarValue === 'number' ? acesWarValue : (acesWarValue === "N/A" ? "N/A" : Number(acesWarValue) || 0),
-          BA: p.battingAverage || p.BA || 0,
-          OBP: p.onBasePercentage || p.OBP || 0,
-          
-          // Sub field (Firebase might not track this)
-          sub: p.sub || "No",
-          
-          // Preserve ID
-          id: p.id || ""
-        };
-      });
-      
-      console.log('✅ Mapped player data:', allPlayerData.length);
-      if (allPlayerData.length > 0) {
-        console.log('📊 Sample mapped player:', allPlayerData[0]);
-      }
-      console.timeEnd('Process Data');
-      
-      // Cache the processed data
-      setCachedData(allPlayerData);
-      
-      // Time: Render UI
-      console.time('Render UI');
-      
-      // Hide loading indicator and show data
-      const loadingIndicator = document.getElementById('loadingIndicator');
-      const totalsText = document.getElementById('totalsText');
-      const leadersText = document.getElementById('leadersText');
-      
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
-      if (totalsText) totalsText.style.display = 'block';
-      if (leadersText) leadersText.style.display = 'block';
-      
-      populateFilters();
-      filterAndDisplayStats();
-      updateSummary();
-      console.timeEnd('Render UI');
-      
-      const loadEndTime = performance.now();
-      const totalLoadTime = loadEndTime - loadStartTime;
-      console.timeEnd('Total Load Time');
-      console.log(`✅ Page loaded successfully in ${totalLoadTime.toFixed(0)}ms (${(totalLoadTime / 1000).toFixed(2)}s)`);
-      
-    } catch (error) {
-      console.error('❌ Error loading data:', error);
-      const totalsEl = document.getElementById('totalsText');
-      if (totalsEl) {
-        totalsEl.textContent = 'Error loading data. Please refresh the page.';
-        totalsEl.style.display = 'block';
-      }
-      const loadingIndicator = document.getElementById('loadingIndicator');
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
     }
-  }
 
   // Populate year and season filters
   function populateFilters() {
