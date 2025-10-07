@@ -714,8 +714,8 @@
               hits: Number(season.hits) || 0,
               runs: Number(season.runs) || 0,
               walks: Number(season.walks) || 0,
-              AcesWar: typeof season.acesWar === 'number' ? season.acesWar :
-                       (season.acesWar === "N/A" ? "N/A" : Number(season.acesWar) || 0),
+              AcesWar: typeof season.acesBPI === 'number' ? season.acesBPI :
+                       (season.acesBPI === "N/A" ? "N/A" : Number(season.acesBPI) || 0),
               BA: season.battingAverage || 0,
               OBP: season.onBasePercentage || 0,
               sub: season.sub || "No"
