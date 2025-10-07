@@ -463,21 +463,27 @@
       // Flatten all season data for processing
       console.time('Process Player Data');
       const flattenedData = [];
-      
+
       players.forEach(player => {
         if (player.seasons && Array.isArray(player.seasons)) {
           player.seasons.forEach(season => {
-            // Parse year and season from seasonId
+            // Parse year and season from seasonId using the new format
+            // Format: "2024-fall-gold" or "2024-fall-white-sub"
             let year = "";
             let seasonName = "";
             
             if (season.seasonId) {
               const parts = season.seasonId.split('-');
-              if (parts.length === 2) {
-                year = parts[0];
-                seasonName = parts[1];
+              if (parts.length >= 2) {
+                year = parts[0];           // "2024"
+                seasonName = parts[1];     // "fall"
+                // parts[2] onwards is the team name (which we get from season.team field)
               }
             }
+            
+            // Fallback: try to get year and season from the season object directly
+            if (!year && season.year) year = season.year;
+            if (!seasonName && season.season) seasonName = season.season;
             
             flattenedData.push({
               name: formatPlayerName(player.name || player.displayName || player.userId),

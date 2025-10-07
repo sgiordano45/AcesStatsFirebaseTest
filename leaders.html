@@ -368,44 +368,61 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { getAllPlayerStatsOptimized } from './firebase-data.js';
+
 let allData = [];
 
-fetch("data.json")
-  .then(res => res.json())
-  .then(data => {
-    allData = cleanData(data);
-    generateLeaderboards();
-  })
-  .catch(error => {
-    console.error("Error loading data:", error);
-    document.getElementById("leaders-container").innerHTML = 
-      '<div class="loading">Error loading statistics data. Please check that data.json is available.</div>';
-  });
-
-function cleanData(data) {
-  return data.map(p => ({
-    ...p,
-    name: p.name ? p.name.trim() : "",
-    team: p.team ? p.team.trim() : "",
-    games: Number(p.games) || 0,
-    atBats: Number(p.atBats) || 0,
-    hits: Number(p.hits) || 0,
-    runs: Number(p.runs) || 0,
-    walks: Number(p.walks) || 0,
-    AcesWar: p.AcesWar === "N/A" || !p.AcesWar ? "N/A" : Number(p.AcesWar)
-  }));
+function formatPlayerName(name) {
+  if (!name) return "";
+  
+  // If name already has spaces, capitalize each word
+  if (name.includes(' ')) {
+    return name.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  // If name has underscores, replace with spaces and capitalize
+  if (name.includes('_')) {
+    return name.split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  // Otherwise just capitalize the single name
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-function aggregatePlayerStats() {
-  const playerStats = {};
+// Helper function to capitalize strings
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+async function loadData() {
+  const loadStartTime = performance.now();
+  console.log('📊 Loading career leaders data from aggregated collection...');
   
-  allData.forEach(p => {
-    if (!p.name) return;
+  try {
+    console.time('Fetch Aggregated Data');
+    const players = await getAllPlayerStatsOptimized();
+    console.timeEnd('Fetch Aggregated Data');
     
-    if (!playerStats[p.name]) {
-      playerStats[p.name] = {
-        name: p.name,
+    console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
+    
+    if (!players || players.length === 0) {
+      console.warn('⚠️ No player data found');
+      document.getElementById("leaders-container").innerHTML = 
+        '<div class="loading">No player data available.</div>';
+      return;
+    }
+    
+    // Aggregate career stats for each player
+    console.time('Process Career Stats');
+    const careerStats = players.map(player => {
+      const career = {
+        name: formatPlayerName(player.name || player.displayName || player.userId),
         games: 0,
         atBats: 0,
         hits: 0,
@@ -414,32 +431,50 @@ function aggregatePlayerStats() {
         plateAppearances: 0,
         acesWarValues: []
       };
-    }
+      
+      if (player.seasons && Array.isArray(player.seasons)) {
+        player.seasons.forEach(season => {
+          career.games += Number(season.games) || 0;
+          career.atBats += Number(season.atBats) || 0;
+          career.hits += Number(season.hits) || 0;
+          career.runs += Number(season.runs) || 0;
+          career.walks += Number(season.walks) || 0;
+          career.plateAppearances += (Number(season.atBats) || 0) + (Number(season.walks) || 0);
+          
+          // Collect AcesBPI values
+          const acesBPI = Number(season.acesBPI);
+          if (!isNaN(acesBPI) && acesBPI !== 0) {
+            career.acesWarValues.push(acesBPI);
+          }
+        });
+      }
+      
+      // Calculate derived stats
+      career.battingAverage = career.atBats > 0 ? career.hits / career.atBats : 0;
+      career.onBasePercentage = career.plateAppearances > 0 ? 
+        (career.hits + career.walks) / career.plateAppearances : 0;
+      career.avgAcesWar = career.acesWarValues.length > 0 ? 
+        career.acesWarValues.reduce((a, b) => a + b, 0) / career.acesWarValues.length : 0;
+      
+      return career;
+    });
     
-    playerStats[p.name].games += p.games;
-    playerStats[p.name].atBats += p.atBats;
-    playerStats[p.name].hits += p.hits;
-    playerStats[p.name].runs += p.runs;
-    playerStats[p.name].walks += p.walks;
-    playerStats[p.name].plateAppearances += (p.atBats + p.walks);
+    allData = careerStats;
+    console.timeEnd('Process Career Stats');
     
-    if (p.AcesWar !== "N/A" && !isNaN(p.AcesWar)) {
-      playerStats[p.name].acesWarValues.push(Number(p.AcesWar));
-    }
-  });
-  
-  // Calculate derived stats
-  return Object.values(playerStats).map(p => ({
-    ...p,
-    battingAverage: p.atBats > 0 ? p.hits / p.atBats : 0,
-    onBasePercentage: p.plateAppearances > 0 ? (p.hits + p.walks) / p.plateAppearances : 0,
-    avgAcesWar: p.acesWarValues.length > 0 ? 
-      p.acesWarValues.reduce((a, b) => a + b, 0) / p.acesWarValues.length : 0
-  }));
+    const loadEndTime = performance.now();
+    console.log(`✅ Total load time: ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+    
+    generateLeaderboards();
+    
+  } catch (error) {
+    console.error("❌ Error loading data:", error);
+    document.getElementById("leaders-container").innerHTML = 
+      '<div class="loading">Error loading career leaders data. Please try again.</div>';
+  }
 }
 
 function generateLeaderboards() {
-  const players = aggregatePlayerStats();
   const container = document.getElementById("leaders-container");
   
   // Define leaderboard categories with stat icons
@@ -460,7 +495,7 @@ function generateLeaderboards() {
     },
     {
       title: "Hits",
-      icon: "🏏",
+      icon: "🎯",
       stat: "hits",
       format: (val) => val.toString(), 
       minimum: 0
@@ -509,7 +544,7 @@ function generateLeaderboards() {
   
   let html = '';
   categories.forEach(category => {
-    const leaderHTML = generateLeaderTable(players, category);
+    const leaderHTML = generateLeaderTable(allData, category);
     html += leaderHTML;
   });
   
@@ -569,6 +604,9 @@ function generateLeaderTable(players, category) {
   
   return html;
 }
+
+// Initialize on page load
+loadData();
 </script>
   <script src="team-colors.js"></script>
  <script src="mobile-enhancements.js"></script>
