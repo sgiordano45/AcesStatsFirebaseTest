@@ -175,9 +175,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-  
-  .award-type-header {
     position: relative;
   }
   
@@ -255,7 +252,6 @@
     opacity: 0.3;
   }
   
-  /* Loading state */
   .loading {
     text-align: center;
     padding: 3rem;
@@ -275,7 +271,6 @@
     to { transform: rotate(360deg); }
   }
   
-  /* Mobile responsive adjustments */
   @media (max-width: 768px) {
     .page-container {
       padding: 1rem;
@@ -344,10 +339,9 @@
     }
   }
 </style>
-  <link rel="stylesheet" href="mobile-enhancements.css">
+<link rel="stylesheet" href="mobile-enhancements.css">
 </head>
 <body>
-  <!-- Mobile Navigation -->
   <div class="mobile-nav-container">
     <div class="mobile-nav-header">
       <div class="mobile-nav-title">🏅 League Awards</div>
@@ -355,7 +349,7 @@
     </div>
     <nav class="mobile-nav-menu" id="mobileNavMenu">
       <a href="index.html" class="mobile-nav-item">🏠 Home</a>
-      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="current-season.html" class="mobile-nav-item">🏂 Current Season</a>
       <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
       <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
       <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
@@ -369,77 +363,119 @@
       <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
       <a href="team_compare.html" class="mobile-nav-item">🆚 Team Comparison</a>
       <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
-	  <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
+      <a href="pictures.html" class="mobile-nav-item">📷 Gallery</a>
     </nav>
   </div>
-<div class="page-container">
-  <div class="page-header">
-    <h1>League Awards</h1>
-    <p>Browse award winners across all seasons and award categories</p>
-  </div>
+  
+  <div class="page-container">
+    <div class="page-header">
+      <h1>League Awards</h1>
+      <p>Browse award winners across all seasons and award categories</p>
+    </div>
 
-  <div class="filters-nav">
-    <nav class="nav-container">
-      <a href="index.html" class="nav-link">🏠 Home</a>
-      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
-      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
-      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
-      <a href="teams.html" class="nav-link">🏆 All Teams</a>
-      <a href="players.html" class="nav-link">👤 All Players</a>
-      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
-      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
-      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
-      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
-      <a href="pictures.html" class="nav-link">📷 Gallery</a>
-      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
-    </nav>
-  </div>
-
-
-      <div class="filter-group">
-        <label for="seasonFilter">Season:</label>
-        <select id="seasonFilter">
-          <option value="All">All Seasons</option>
-        </select>
-      </div>
+    <div class="filters-nav">
+      <nav class="nav-container">
+        <a href="index.html" class="nav-link">🏠 Home</a>
+        <a href="current-season.html" class="nav-link">🏂 Current Season</a>
+        <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
+        <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+        <a href="teams.html" class="nav-link">🏆 All Teams</a>
+        <a href="players.html" class="nav-link">👤 All Players</a>
+        <a href="seasons.html" class="nav-link">📅 All Seasons</a>
+        <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
+        <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+        <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
+        <a href="pictures.html" class="nav-link">📷 Gallery</a>
+        <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+      </nav>
       
-      <div class="filter-group">
-        <label for="awardTypeFilter">Award Type:</label>
-        <select id="awardTypeFilter">
-          <option value="All">All Awards</option>
-        </select>
+      <div class="awards-filters">
+        <div class="filter-group">
+          <label for="yearFilter">Year:</label>
+          <select id="yearFilter">
+            <option value="All">All Years</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="seasonFilter">Season:</label>
+          <select id="seasonFilter">
+            <option value="All">All Seasons</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="awardTypeFilter">Award Type:</label>
+          <select id="awardTypeFilter">
+            <option value="All">All Awards</option>
+          </select>
+        </div>
       </div>
+    </div>
+
+    <div id="awards-content" class="awards-content">
+      <div class="loading">Loading awards data...</div>
     </div>
   </div>
 
-  <div id="awards-content" class="awards-content">
-    <div class="loading">Loading awards data...</div>
-  </div>
-</div>
+<script type="module">
+import { db, collection, getDocs } from './firebase-config.js';
 
-<script>
 let allAwards = [];
 let allStats = [];
 
-Promise.all([
-  fetch("awards.json").then(res => res.json()),
-  fetch("data.json").then(res => res.json())
-])
-.then(([awards, stats]) => {
-  allAwards = awards.filter(award => award.Award && award.Award.trim() !== "");
-  allStats = stats;
-  populateFilters();
-  renderAwards();
-})
-.catch(error => {
-  console.error("Error loading data:", error);
-  document.getElementById("awards-content").innerHTML = 
-    '<div class="no-awards">Error loading awards data. Please check that the data files are available.</div>';
-});
+async function loadData() {
+  try {
+    console.log('Loading awards from Firestore...');
+    
+    // Load awards collection
+    const awardsSnapshot = await getDocs(collection(db, 'awards'));
+    allAwards = [];
+    
+    awardsSnapshot.forEach(doc => {
+      const data = doc.data();
+      // Convert Firestore format to match original JSON structure
+      allAwards.push({
+        Award: data.category || data.Award,
+        Player: data.playerName || data.Player,
+        Team: data.team || data.Team,
+        Position: data.position || data.Position,
+        Year: data.year || (data.seasonId ? data.seasonId.split('-')[0] : ''),
+        Season: data.season || (data.seasonId ? data.seasonId.split('-')[1].charAt(0).toUpperCase() + data.seasonId.split('-')[1].slice(1) : ''),
+        seasonId: data.seasonId
+      });
+    });
+    
+    // Filter out any awards without a category/Award
+    allAwards = allAwards.filter(award => award.Award && award.Award.trim() !== "");
+    
+    console.log(`Loaded ${allAwards.length} awards from Firestore`);
+    
+    // Load stats collection (for player verification if needed)
+    const statsSnapshot = await getDocs(collection(db, 'aggregatedPlayerStats'));
+    allStats = [];
+    
+    statsSnapshot.forEach(doc => {
+      allStats.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    console.log(`Loaded ${allStats.length} player stats from Firestore`);
+    
+    populateFilters();
+    renderAwards();
+  } catch (error) {
+    console.error("Error loading data from Firestore:", error);
+    document.getElementById("awards-content").innerHTML = 
+      '<div class="no-awards">Error loading awards data. Please check your connection and try again.</div>';
+  }
+}
 
 function populateFilters() {
   // Populate year filter
-  const years = [...new Set(allAwards.map(a => a.Year))].sort((a, b) => b - a);
+  const years = [...new Set(allAwards.map(a => a.Year).filter(y => y))].sort((a, b) => b - a);
   const yearFilter = document.getElementById("yearFilter");
   years.forEach(year => {
     const option = document.createElement("option");
@@ -449,7 +485,7 @@ function populateFilters() {
   });
 
   // Populate season filter
-  const seasons = [...new Set(allAwards.map(a => a.Season))].sort();
+  const seasons = [...new Set(allAwards.map(a => a.Season).filter(s => s))].sort();
   const seasonFilter = document.getElementById("seasonFilter");
   seasons.forEach(season => {
     const option = document.createElement("option");
@@ -558,7 +594,6 @@ function renderAwards() {
 }
 
 function getAwardIcon(awardType) {
-  // Define award icons mapping to PNG files with fallback emojis
   const awardIcons = {
     'Team MVP': 'team_mvp.png',
     'All Aces': 'all_aces.png',
@@ -578,7 +613,6 @@ function getAwardIcon(awardType) {
     'Mr. Streaman Award for Excellence': 'mr_streaman_award_for_excellence.png'
   };
 
-  // Fallback emojis for awards without PNG files or if PNG fails to load
   const fallbackEmojis = {
     'Team MVP': '👑',
     'All Aces': '⭐',
@@ -592,7 +626,7 @@ function getAwardIcon(awardType) {
     'Captain of the Year': '🎖️',
     'Al Pineda Good Guy Award': '🤝',
     'Iron Man Award': '💯',
-    'Sub of the Year': '🏅',
+    'Sub of the Year': '🅾️',
     'Andrew Streaman Boner Award': '🎪',
     'Erik Lund Perservenance Award': '⚡',
     'Mr. Streaman Award for Excellence': '🌟'
@@ -608,12 +642,11 @@ function getAwardIcon(awardType) {
 }
 
 function renderAwardTypeTable(awardType, awards) {
-  // Sort awards within type
   awards.sort((a, b) => {
     if (a.Position && b.Position && a.Position !== b.Position) {
       return a.Position.localeCompare(b.Position);
     }
-    return a.Player.localeCompare(b.Player);
+    return (a.Player || '').localeCompare(b.Player || '');
   });
 
   const awardIcon = getAwardIcon(awardType);
@@ -663,9 +696,12 @@ function renderAwardTypeTable(awardType, awards) {
 
   return html;
 }
+
+// Load data when page loads
+loadData();
 </script>
 
-  <script src="team-colors.js"></script>
- <script src="mobile-enhancements.js"></script>
+<script src="team-colors.js"></script>
+<script src="mobile-enhancements.js"></script>
 </body>
 </html>
