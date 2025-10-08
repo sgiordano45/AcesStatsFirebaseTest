@@ -26,6 +26,81 @@ function userIdToName(userId) {
 }
 
 // ============================================
+// NEW: SEASON OBJECT HELPERS
+// ============================================
+
+/**
+ * Get a specific season's stats from player data
+ * @param {Object} playerData - Player object from aggregatedPlayerStats
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @returns {Object|null} Season stats or null if not found
+ */
+export function getSeasonFromPlayer(playerData, seasonId) {
+  if (!playerData || !playerData.seasons) {
+    return null;
+  }
+  return playerData.seasons[seasonId] || null;
+}
+
+/**
+ * Get a specific season's pitching stats from player data
+ * @param {Object} playerData - Player object from aggregatedPlayerStats
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @returns {Object|null} Season pitching stats or null if not found
+ */
+export function getPitchingSeasonFromPlayer(playerData, seasonId) {
+  if (!playerData || !playerData.pitchingSeasons) {
+    return null;
+  }
+  return playerData.pitchingSeasons[seasonId] || null;
+}
+
+/**
+ * Get all season IDs for a player (sorted by most recent first)
+ * @param {Object} playerData - Player object from aggregatedPlayerStats
+ * @returns {Array<string>} Array of season IDs
+ */
+export function getPlayerSeasonIds(playerData) {
+  if (!playerData || !playerData.seasons) {
+    return [];
+  }
+  // Sort season IDs in reverse chronological order
+  return Object.keys(playerData.seasons).sort().reverse();
+}
+
+/**
+ * Convert seasons object to array format (for backwards compatibility)
+ * @param {Object} playerData - Player object from aggregatedPlayerStats
+ * @returns {Array} Array of season objects with seasonId included
+ */
+export function seasonsObjectToArray(playerData) {
+  if (!playerData || !playerData.seasons) {
+    return [];
+  }
+  
+  return Object.entries(playerData.seasons).map(([seasonId, stats]) => ({
+    seasonId,
+    ...stats
+  })).sort((a, b) => b.seasonId.localeCompare(a.seasonId)); // Most recent first
+}
+
+/**
+ * Convert pitching seasons object to array format
+ * @param {Object} playerData - Player object from aggregatedPlayerStats
+ * @returns {Array} Array of pitching season objects with seasonId included
+ */
+export function pitchingSeasonsObjectToArray(playerData) {
+  if (!playerData || !playerData.pitchingSeasons) {
+    return [];
+  }
+  
+  return Object.entries(playerData.pitchingSeasons).map(([seasonId, stats]) => ({
+    seasonId,
+    ...stats
+  })).sort((a, b) => b.seasonId.localeCompare(a.seasonId));
+}
+
+// ============================================
 // NEW: OPTIMIZED AGGREGATED STATS FUNCTIONS
 // ============================================
 
@@ -90,6 +165,86 @@ export async function getPlayerStatsOptimized(userId) {
 }
 
 /**
+ * Get ALL players' stats for a specific season from aggregated collection (OPTIMIZED!)
+ * This replaces the old getSeasonPlayerStats function
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @returns {Array} Array of player stats for that season
+ */
+export async function getSeasonPlayerStatsOptimized(seasonId) {
+  try {
+    const statsRef = collection(db, 'aggregatedPlayerStats');
+    const snapshot = await getDocs(statsRef);
+    
+    const players = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Check if player has stats for this season
+      if (data.seasons && data.seasons[seasonId]) {
+        players.push({
+          id: doc.id,
+          playerId: doc.id,
+          playerName: data.name,
+          name: data.name,
+          email: data.email,
+          currentTeam: data.currentTeam,
+          photoURL: data.photoURL,
+          // Include the specific season stats
+          ...data.seasons[seasonId],
+          seasonId: seasonId
+        });
+      }
+    });
+    
+    console.log(`✓ Found ${players.length} players with stats for season ${seasonId}`);
+    return players;
+    
+  } catch (error) {
+    console.error(`Error fetching season stats for ${seasonId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Get ALL pitching stats for a season from aggregated collection (OPTIMIZED!)
+ * This replaces the old getSeasonPitchingStats function
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @returns {Array} Array of pitching stats for that season
+ */
+export async function getSeasonPitchingStatsOptimized(seasonId) {
+  try {
+    const statsRef = collection(db, 'aggregatedPlayerStats');
+    const snapshot = await getDocs(statsRef);
+    
+    const players = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Check if player has pitching stats for this season
+      if (data.pitchingSeasons && data.pitchingSeasons[seasonId]) {
+        players.push({
+          id: doc.id,
+          playerId: doc.id,
+          playerName: data.name,
+          name: data.name,
+          email: data.email,
+          currentTeam: data.currentTeam,
+          photoURL: data.photoURL,
+          // Include the specific season pitching stats
+          ...data.pitchingSeasons[seasonId],
+          seasonId: seasonId
+        });
+      }
+    });
+    
+    console.log(`✓ Found ${players.length} players with pitching stats for season ${seasonId}`);
+    return players;
+    
+  } catch (error) {
+    console.error(`Error fetching pitching stats for ${seasonId}:`, error);
+    return [];
+  }
+}
+
+/**
  * Search players by name using aggregated collection (OPTIMIZED)
  * @param {string} searchTerm - Name to search for
  * @returns {Array} Matching players with stats
@@ -127,19 +282,22 @@ export async function searchPlayersOptimized(searchTerm) {
  * Get top players by a specific stat from aggregated collection (OPTIMIZED)
  * @param {string} statPath - Path to stat (e.g., 'career.battingAverage')
  * @param {number} limitCount - Number of top players to return
+ * @param {number} minGames - Minimum games played to qualify (default: 0)
  * @returns {Array} Top players sorted by stat
  */
-export async function getTopPlayersByStat(statPath, limitCount = 10) {
+export async function getTopPlayersByStat(statPath, limitCount = 10, minGames = 0) {
   try {
     const statsRef = collection(db, 'aggregatedPlayerStats');
-    
-    // Note: Firestore orderBy requires an index for nested fields
-    // For now, we'll get all and sort client-side
     const snapshot = await getDocs(statsRef);
     
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      // Filter by minimum games if specified
+      if (minGames > 0 && (!data.career || data.career.games < minGames)) {
+        return;
+      }
+      
       players.push({
         id: doc.id,
         ...data,
@@ -164,6 +322,38 @@ export async function getTopPlayersByStat(statPath, limitCount = 10) {
     
   } catch (error) {
     console.error(`Error fetching top players by ${statPath}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Get top players for a specific season and stat (OPTIMIZED!)
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @param {string} statName - Stat name (e.g., 'battingAverage', 'hits', 'runs')
+ * @param {number} limitCount - Number of top players to return
+ * @param {number} minAtBats - Minimum at-bats to qualify (default: 0)
+ * @returns {Array} Top players for that season sorted by stat
+ */
+export async function getTopSeasonPlayersByStat(seasonId, statName, limitCount = 10, minAtBats = 0) {
+  try {
+    const seasonPlayers = await getSeasonPlayerStatsOptimized(seasonId);
+    
+    // Filter by minimum at-bats if specified
+    const qualifiedPlayers = minAtBats > 0 
+      ? seasonPlayers.filter(p => (p.atBats || 0) >= minAtBats)
+      : seasonPlayers;
+    
+    // Sort by the stat
+    qualifiedPlayers.sort((a, b) => {
+      const aVal = a[statName] || 0;
+      const bVal = b[statName] || 0;
+      return bVal - aVal; // Descending
+    });
+    
+    return qualifiedPlayers.slice(0, limitCount);
+    
+  } catch (error) {
+    console.error(`Error fetching top players for season ${seasonId} by ${statName}:`, error);
     return [];
   }
 }
@@ -345,7 +535,8 @@ export async function getPlayerSeasonStats(userId, seasonId) {
 }
 
 /**
- * Get ALL players' stats for a specific season
+ * Get ALL players' stats for a specific season (ORIGINAL - SLOWER)
+ * Use getSeasonPlayerStatsOptimized() for better performance
  * @param {string} seasonId - Season ID (e.g., "2025-fall")
  * @returns {Array} Array of player stats
  */
@@ -422,7 +613,8 @@ export async function getPlayerSeasonPitching(userId, seasonId) {
 }
 
 /**
- * Get ALL pitching stats for a season
+ * Get ALL pitching stats for a season (ORIGINAL - SLOWER)
+ * Use getSeasonPitchingStatsOptimized() for better performance
  * @param {string} seasonId - Season ID
  * @returns {Array} Array of pitching stats
  */
@@ -591,6 +783,3 @@ export async function getCurrentSeason() {
     ...seasonDoc.data()
   };
 }
-
-// Export utility functions too
-export { nameToUserId, userIdToName };
