@@ -633,541 +633,737 @@
     </div>
   </div>
 
-  <script>
-    let allGames = [];
-    let playerData = [];
-    let pitchingData = [];
-    let previewData = [];
-    
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const homeTeam = urlParams.get('home');
-    const awayTeam = urlParams.get('away');
-    const gameDate = urlParams.get('date');
+  <script type="module">
+      // ========================================
+      // GAME PREVIEW - CONVERTED TO FIREBASE + OBJECT-KEYED SEASONS
+      // ========================================
+      // Replace the entire <script> section in game-preview.html with this code
+      // Make sure to add type="module" to the script tag: <script type="module">
 
-    if (!homeTeam || !awayTeam || !gameDate) {
-      document.body.innerHTML = `
-        <div class="container">
-          <h1>Error: Missing game information</h1>
-          <p><a href="current-season.html">Return to current season</a></p>
-        </div>
-      `;
-    } else {
-      loadGamePreviewData();
-    }
+      import {
+        getSeasonPlayerStatsOptimized,
+        getSeasonPitchingStatsOptimized,
+        getSeasonGames,
+        getCurrentSeason,
+        getAllSeasons
+      } from './firebase-data.js';
 
-    async function loadGamePreviewData() {
-      try {
-        const [gamesResponse, playerResponse, pitchingResponse, previewResponse] = await Promise.all([
-          fetch('games.json', { headers: { 'Accept': 'application/json; charset=utf-8' } }),
-          fetch('data.json', { headers: { 'Accept': 'application/json; charset=utf-8' } }),
-          fetch('pitching.json', { headers: { 'Accept': 'application/json; charset=utf-8' } }),
-          fetch('previews.json', { headers: { 'Accept': 'application/json; charset=utf-8' } }).catch(() => ({ ok: false })) // Gracefully handle if previews.json doesn't exist yet
-        ]);
-        
-        if (!gamesResponse.ok) throw new Error('Failed to load games data');
-        if (!playerResponse.ok) throw new Error('Failed to load player data');
-        if (!pitchingResponse.ok) throw new Error('Failed to load pitching data');
-        
-        allGames = await gamesResponse.json();
-        playerData = await playerResponse.json();
-        pitchingData = await pitchingResponse.json();
+      let allGames = [];
+      let playerData = [];
+      let pitchingData = [];
+      let previewData = [];
 
-        // Load preview data if available
-        if (previewResponse.ok) {
-          previewData = await previewResponse.json();
-        }
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const homeTeam = urlParams.get('home');
+      const awayTeam = urlParams.get('away');
+      const gameDate = urlParams.get('date');
 
-        generateGamePreview();
-
-      } catch (error) {
-        console.error('Error loading data:', error);
+      if (!homeTeam || !awayTeam || !gameDate) {
         document.body.innerHTML = `
           <div class="container">
-            <h1>Error loading game preview data</h1>
-            <p>Please try again later.</p>
+            <h1>Error: Missing game information</h1>
             <p><a href="current-season.html">Return to current season</a></p>
           </div>
         `;
-      }
-    }
-
-    function generateGamePreview() {
-      // Update header
-      document.getElementById('gameInfo').textContent = `${awayTeam} @ ${homeTeam} - ${gameDate}`;
-      
-      // Update team names and logos
-      document.getElementById('awayTeamName').textContent = awayTeam;
-      document.getElementById('homeTeamName').textContent = homeTeam;
-      
-      // Set team logos
-      const awayLogo = document.getElementById('awayTeamLogo');
-      const homeLogo = document.getElementById('homeTeamLogo');
-      
-      // Convert team names to lowercase for logo files
-      const awayLogoPath = `logos/${awayTeam.toLowerCase()}.png`;
-      const homeLogoPath = `logos/${homeTeam.toLowerCase()}.png`;
-      
-      awayLogo.src = awayLogoPath;
-      awayLogo.alt = `${awayTeam} logo`;
-      
-      homeLogo.src = homeLogoPath;
-      homeLogo.alt = `${homeTeam} logo`;
-
-      // Calculate current season records
-      const currentSeasonGames = allGames.filter(g => 
-        g.year === "2025" && g.season === "Fall" && g.winner && g.winner.trim() !== ""
-      );
-
-      const homeRecord = calculateTeamRecord(homeTeam, currentSeasonGames);
-      const awayRecord = calculateTeamRecord(awayTeam, currentSeasonGames);
-
-      document.getElementById('homeTeamRecord').textContent = 
-        `${homeRecord.wins}-${homeRecord.losses}${homeRecord.ties > 0 ? `-${homeRecord.ties}` : ''} (${(homeRecord.winPct * 100).toFixed(1)}%)`;
-      
-      document.getElementById('awayTeamRecord').textContent = 
-        `${awayRecord.wins}-${awayRecord.losses}${awayRecord.ties > 0 ? `-${awayRecord.ties}` : ''} (${(awayRecord.winPct * 100).toFixed(1)}%)`;
-
-      // Update game details
-      document.getElementById('gameDetails').innerHTML = `
-        <strong>Date:</strong> ${gameDate} | <strong>Type:</strong> Regular Season
-      `;
-
-      // Generate Peters Preview
-      generatePetersPreview(homeTeam, awayTeam, gameDate);
-      
-      // Generate head-to-head record
-      generateHeadToHeadRecord(homeTeam, awayTeam);
-      
-      // Generate key players
-      generateKeyPlayers(homeTeam, awayTeam);
-      
-      // Generate team comparisons
-      generateBattingComparison(homeTeam, awayTeam);
-      generatePitchingComparison(homeTeam, awayTeam);
-      
-      // Generate historical matchups
-      generateHistoricalMatchups(homeTeam, awayTeam);
-    }
-
-    // Helper function to fix character encoding issues
-    function cleanText(text) {
-      if (!text) return text;
-      
-      return text
-        // Fix smart/curly apostrophes and quotes
-        .replace(/['']/g, "'")  // Replace smart apostrophes with regular ones
-        .replace(/[""]/g, '"')  // Replace smart quotes with regular ones
-        // Fix any other common encoding issues
-        .replace(/â€™/g, "'")   // Another common apostrophe encoding issue
-        .replace(/â€œ/g, '"')   // Opening smart quote
-        .replace(/â€/g, '"')    // Closing smart quote
-        .replace(/â€"/g, "—")   // Em dash
-        .replace(/â€"/g, "–");  // En dash
-    }
-
-    function generatePetersPreview(homeTeam, awayTeam, gameDate) {
-      // Find matching preview - handle both field name formats and flexible date matching
-      const preview = previewData.find(p => {
-        const matchesTeams = (p["home team"] === homeTeam && p["away team"] === awayTeam) ||
-                           (p.home === homeTeam && p.away === awayTeam);
-        const matchesDate = p.date === gameDate || 
-                           formatDateForComparison(p.date) === formatDateForComparison(gameDate);
-        return matchesTeams && matchesDate;
-      });
-
-      // Hide the entire Peters Preview section if no preview or blank preview text
-      const petersSection = document.querySelector('.section:has(.peters-preview-header)');
-      
-      if (!preview || !preview.preview || preview.preview.trim() === '') {
-        if (petersSection) {
-          petersSection.style.display = 'none';
-        }
-        return;
+      } else {
+        loadGamePreviewData();
       }
 
-      // Show the section if it was previously hidden
-      if (petersSection) {
-        petersSection.style.display = 'block';
-      }
-
-      // Parse odds to determine favorite/underdog - handle both string and number formats
-      const homeOdds = parseInt(preview["home odds"] || preview.odds?.home || 0);
-      const awayOdds = parseInt(preview["away odds"] || preview.odds?.away || 0);
-      
-      // Only show odds if they exist
-      let oddsHtml = '';
-      if (homeOdds !== 0 || awayOdds !== 0) {
-        const homeIsFavorite = homeOdds < 0 && (awayOdds > 0 || homeOdds > awayOdds);
-        const awayIsFavorite = awayOdds < 0 && (homeOdds > 0 || awayOdds > homeOdds);
-
-        oddsHtml = `
-          <div class="odds-display">
-            <div class="odds-item">
-              <div class="odds-team">${awayTeam} (Away)</div>
-              <div class="odds-value ${awayIsFavorite ? 'favorite' : ''}">${awayOdds > 0 ? '+' : ''}${awayOdds}</div>
-            </div>
-            <div class="odds-item">
-              <div style="font-size: 1.2rem; color: #666;">Money Line</div>
-            </div>
-            <div class="odds-item">
-              <div class="odds-team">${homeTeam} (Home)</div>
-              <div class="odds-value ${homeIsFavorite ? 'favorite' : ''}">${homeOdds > 0 ? '+' : ''}${homeOdds}</div>
-            </div>
-          </div>
-        `;
-      }
-
-      const previewHtml = `
-        <div class="peters-preview-content">
-          <div class="peters-preview-image" id="petersImageContainer">
-            <img src="logos/peterpreview.png" alt="Peter's Preview" onerror="this.parentElement.style.display='none'">
-          </div>
-          <div class="peters-preview-main">
-            ${oddsHtml}
-            <div class="preview-text">
-              ${cleanText(preview.preview)}
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('petersPreviewContent').innerHTML = previewHtml;
-    }
-
-    // Helper function to normalize dates for comparison
-    function formatDateForComparison(dateStr) {
-      if (!dateStr) return '';
-      
-      // Handle different date formats (M/D/YYYY, MM/DD/YYYY, YYYY-MM-DD, etc.)
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      
-      // Return in M/D/YYYY format for comparison
-      return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-    }
-
-    function calculateTeamRecord(teamName, games) {
-      const teamGames = games.filter(g => 
-        g["home team"] === teamName || g["away team"] === teamName
-      );
-
-      let wins = 0, losses = 0, ties = 0;
-
-      teamGames.forEach(game => {
-        if (game.winner === "Tie") {
-          ties++;
-        } else if (game.winner === teamName) {
-          wins++;
-        } else {
-          losses++;
-        }
-      });
-
-      const totalDecided = wins + losses;
-      const winPct = totalDecided > 0 ? wins / totalDecided : 0;
-
-      return { wins, losses, ties, winPct };
-    }
-
-    function generateKeyPlayers(homeTeam, awayTeam) {
-      const currentSeasonPlayers = playerData.filter(p => 
-        p.year === "2025" && p.season === "Fall" && p.sub === "No"
-      );
-
-      // Get top 3 players for each team by AcesWar
-      const homeTopPlayers = currentSeasonPlayers
-        .filter(p => p.team === homeTeam && p.AcesWar !== "N/A")
-        .sort((a, b) => parseFloat(b.AcesWar) - parseFloat(a.AcesWar))
-        .slice(0, 3);
-
-      const awayTopPlayers = currentSeasonPlayers
-        .filter(p => p.team === awayTeam && p.AcesWar !== "N/A")
-        .sort((a, b) => parseFloat(b.AcesWar) - parseFloat(a.AcesWar))
-        .slice(0, 3);
-
-      function createPlayerCard(player) {
-        const atBats = parseInt(player.atBats) || 0;
-        const hits = parseInt(player.hits) || 0;
-        const walks = parseInt(player.walks) || 0;
-        const runs = parseInt(player.runs) || 0;
+      async function loadGamePreviewData() {
+        const startTime = performance.now();
+        console.log('🏟️ Loading game preview data...');
         
-        const avg = atBats > 0 ? (hits / atBats).toFixed(3) : ".000";
-        const obp = (atBats + walks) > 0 ? ((hits + walks) / (atBats + walks)).toFixed(3) : ".000";
-        const acesWar = parseFloat(player.AcesWar).toFixed(1);
+        try {
+          // Helper function for capitalizing
+          const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+          
+          // Get current season from Firebase
+          const currentSeasonData = await getCurrentSeason();
+          const seasonId = currentSeasonData.id;
+          
+          console.log(`📅 Game season: ${seasonId}`);
+          
+          // Load data in parallel - following h2h_grid.html pattern for ALL games
+          const [seasons, batting, pitching, previewsResponse] = await Promise.all([
+            getAllSeasons(),
+            getSeasonPlayerStatsOptimized(seasonId),
+            getSeasonPitchingStatsOptimized(seasonId),
+            fetch('previews.json', {
+              headers: { 'Accept': 'application/json; charset=utf-8' }
+            }).catch(() => ({ ok: false }))
+          ]);
+          
+          console.log(`✅ Found ${seasons.length} seasons`);
+          
+          // Load games from ALL seasons (following h2h_grid.html pattern)
+          const gamePromises = seasons.map(async (season) => {
+            try {
+              const seasonGames = await getSeasonGames(season.id);
+              
+              // Map games to expected format
+              return seasonGames.map(g => {
+                let dateString = "";
+                if (g.date && g.date.seconds) {
+                  const dateObj = new Date(g.date.seconds * 1000);
+                  dateString = dateObj.toLocaleDateString('en-US');
+                } else if (g.date) {
+                  dateString = g.date;
+                }
+                
+                return {
+                  "home team": g.homeTeamName || capitalize(g.homeTeamId) || "",
+                  "away team": g.awayTeamName || capitalize(g.awayTeamId) || "",
+                  "home score": g.homeScore !== undefined ? g.homeScore : null,
+                  "away score": g.awayScore !== undefined ? g.awayScore : null,
+                  winner: capitalize(g.winner || ""),
+                  game_type: g.gameType || "Regular",
+                  date: dateString,
+                  year: season.year.toString(),  // ← ADD .toString() HERE
+                  season: capitalize(season.season || ""),
+                  forfeit: g.forfeit ? "Yes" : "No"
+                };
+              });
+            } catch (err) {
+              console.warn(`Could not load games for season ${season.id}:`, err);
+              return [];
+            }
+          });
+          
+          const allSeasonGames = await Promise.all(gamePromises);
+          allGames = allSeasonGames.flat();
+          
+          console.log(`✅ Fetched: ${allGames.length} total games, ${batting?.length || 0} batting records, ${pitching?.length || 0} pitching records`);
+          
+          // Games are already mapped above - no need to map again
+          // allGames already has all historical games in correct format
+          
+          // ====== MAP PLAYER DATA FROM FIREBASE ======
+          // Use spread operator to keep ALL Firebase fields including acesBPI
+          playerData = (batting || []).map(p => ({
+            ...p, // Spread all Firebase fields
+            name: p.playerName || p.name || p.id,
+            team: p.team || p.currentTeam || "",
+            year: currentSeasonData.year.toString(),
+            season: capitalize(currentSeasonData.season),
+            sub: "No"
+          }));
+          
+          // ====== MAP PITCHING DATA FROM FIREBASE ======
+          pitchingData = (pitching || []).map(p => ({
+            name: p.playerName || p.name || p.id,
+            team: p.team || p.currentTeam || "",
+            year: currentSeasonData.year.toString(),
+            season: capitalize(currentSeasonData.season),
+            games: Number(p.games) || 0,
+            IP: parseFloat(p.inningsPitched || p.IP || 0),
+            "runs allowed": Number(p.runsAllowed || 0),
+            ERA: p.earnedRunAverage || p.era || 0
+          }));
+          
+          // Load preview data if available (still from JSON)
+          if (previewsResponse.ok) {
+            previewData = await previewsResponse.json();
+          }
+          
+          const loadTime = performance.now() - startTime;
+          console.log(`✅ Data loaded in ${loadTime.toFixed(0)}ms`);
+          console.log(`📊 Games: ${allGames.length}, Players: ${playerData.length}, Pitchers: ${pitchingData.length}`);
+          
+          // Sample data for debugging
+          if (playerData.length > 0) {
+            console.log('🔍 Sample batting data:', playerData[0]);
+            console.log('🔍 Check acesBPI field:', playerData[0].acesBPI);
+          }
+          if (pitchingData.length > 0) {
+            console.log('🔍 Sample pitching data:', pitchingData[0]);
+          }
+          if (allGames.length > 0) {
+            console.log('🔍 Sample game data:', allGames[0]);
+          }
+          
+          generateGamePreview();
+          
+        } catch (error) {
+          console.error('❌ Error loading data:', error);
+          console.error('Error stack:', error.stack);
+          document.body.innerHTML = `
+            <div class="container">
+              <h1>Error loading game preview data</h1>
+              <p>Please try again later.</p>
+              <p><a href="current-season.html">Return to current season</a></p>
+            </div>
+          `;
+        }
+      }
 
-        return `
-          <div class="player-card">
-            <div class="player-name">${player.name}</div>
-            <div class="player-stats">
-              <div class="player-stat">
-                <span class="player-stat-label">AVG</span>
-                <span class="player-stat-value">${avg}</span>
+      function generateGamePreview() {
+        console.log('🎨 Generating game preview...');
+        
+        // Update header
+        document.getElementById('gameInfo').textContent = `${awayTeam} @ ${homeTeam} - ${gameDate}`;
+        
+        // Update team names and logos
+        document.getElementById('awayTeamName').textContent = awayTeam;
+        document.getElementById('homeTeamName').textContent = homeTeam;
+        
+        // Set team logos
+        const awayLogo = document.getElementById('awayTeamLogo');
+        const homeLogo = document.getElementById('homeTeamLogo');
+        
+        const awayLogoPath = `logos/${awayTeam.toLowerCase()}.png`;
+        const homeLogoPath = `logos/${homeTeam.toLowerCase()}.png`;
+        
+        awayLogo.src = awayLogoPath;
+        awayLogo.alt = `${awayTeam} logo`;
+        
+        homeLogo.src = homeLogoPath;
+        homeLogo.alt = `${homeTeam} logo`;
+
+        // Calculate current season records from Firebase games
+        const currentSeasonGames = allGames.filter(g =>
+          g.winner && g.winner.trim() !== ""
+        );
+
+        const homeRecord = calculateTeamRecord(homeTeam, currentSeasonGames);
+        const awayRecord = calculateTeamRecord(awayTeam, currentSeasonGames);
+
+        document.getElementById('homeTeamRecord').textContent =
+          `${homeRecord.wins}-${homeRecord.losses}${homeRecord.ties > 0 ? `-${homeRecord.ties}` : ''} (${(homeRecord.winPct * 100).toFixed(1)}%)`;
+        
+        document.getElementById('awayTeamRecord').textContent =
+          `${awayRecord.wins}-${awayRecord.losses}${awayRecord.ties > 0 ? `-${awayRecord.ties}` : ''} (${(awayRecord.winPct * 100).toFixed(1)}%)`;
+
+        // Update game details
+        document.getElementById('gameDetails').innerHTML = `
+          <strong>Date:</strong> ${gameDate} | <strong>Type:</strong> Regular Season
+        `;
+
+        // Generate all sections
+        generatePetersPreview(homeTeam, awayTeam, gameDate);
+        generateHeadToHeadRecord(homeTeam, awayTeam);
+        generateKeyPlayers(homeTeam, awayTeam);
+        generateBattingComparison(homeTeam, awayTeam);
+        generatePitchingComparison(homeTeam, awayTeam);
+        generateHistoricalMatchups(homeTeam, awayTeam);
+        
+        console.log('✅ Game preview generated successfully!');
+      }
+
+      // Helper function to fix character encoding issues
+      function cleanText(text) {
+        if (!text) return text;
+        
+        return text
+          .replace(/['']/g, "'")
+          .replace(/[""]/g, '"')
+          .replace(/Ã¢â‚¬â„¢/g, "'")
+          .replace(/Ã¢â‚¬Å"/g, '"')
+          .replace(/Ã¢â‚¬/g, '"')
+          .replace(/Ã¢â‚¬"/g, "—")
+          .replace(/Ã¢â‚¬"/g, "–");
+      }
+
+      function generatePetersPreview(homeTeam, awayTeam, gameDate) {
+        // Find matching preview with flexible date matching
+        const preview = previewData.find(p => {
+          const matchesTeams = (p["home team"] === homeTeam && p["away team"] === awayTeam) ||
+                             (p.home === homeTeam && p.away === awayTeam);
+          const matchesDate = p.date === gameDate ||
+                             formatDateForComparison(p.date) === formatDateForComparison(gameDate);
+          return matchesTeams && matchesDate;
+        });
+
+        const petersSection = document.querySelector('.section:has(.peters-preview-header)');
+        
+        if (!preview || !preview.preview || preview.preview.trim() === '') {
+          if (petersSection) {
+            petersSection.style.display = 'none';
+          }
+          return;
+        }
+
+        if (petersSection) {
+          petersSection.style.display = 'block';
+        }
+
+        // Parse odds
+        const homeOdds = parseInt(preview["home odds"] || preview.odds?.home || 0);
+        const awayOdds = parseInt(preview["away odds"] || preview.odds?.away || 0);
+        
+        let oddsHtml = '';
+        if (homeOdds !== 0 || awayOdds !== 0) {
+          const homeIsFavorite = homeOdds < 0 && (awayOdds > 0 || homeOdds > awayOdds);
+          const awayIsFavorite = awayOdds < 0 && (homeOdds > 0 || awayOdds > homeOdds);
+
+          oddsHtml = `
+            <div class="odds-display">
+              <div class="odds-item">
+                <div class="odds-team">${awayTeam} (Away)</div>
+                <div class="odds-value ${awayIsFavorite ? 'favorite' : ''}">${awayOdds > 0 ? '+' : ''}${awayOdds}</div>
               </div>
-              <div class="player-stat">
-                <span class="player-stat-label">OBP</span>
-                <span class="player-stat-value">${obp}</span>
+              <div class="odds-item">
+                <div style="font-size: 1.2rem; color: #666;">Money Line</div>
               </div>
-              <div class="player-stat">
-                <span class="player-stat-label">Runs</span>
-                <span class="player-stat-value">${runs}</span>
+              <div class="odds-item">
+                <div class="odds-team">${homeTeam} (Home)</div>
+                <div class="odds-value ${homeIsFavorite ? 'favorite' : ''}">${homeOdds > 0 ? '+' : ''}${homeOdds}</div>
               </div>
-              <div class="player-stat">
-                <span class="player-stat-label">AcesBPI</span>
-                <span class="player-stat-value">${acesWar}</span>
+            </div>
+          `;
+        }
+
+        const previewHtml = `
+          <div class="peters-preview-content">
+            <div class="peters-preview-image" id="petersImageContainer">
+              <img src="logos/peterpreview.png" alt="Peter's Preview" onerror="this.parentElement.style.display='none'">
+            </div>
+            <div class="peters-preview-main">
+              ${oddsHtml}
+              <div class="preview-text">
+                ${cleanText(preview.preview)}
               </div>
             </div>
           </div>
         `;
+
+        document.getElementById('petersPreviewContent').innerHTML = previewHtml;
       }
 
-      const awayPlayersHtml = awayTopPlayers.map(createPlayerCard).join('');
-      const homePlayersHtml = homeTopPlayers.map(createPlayerCard).join('');
+      function formatDateForComparison(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+      }
 
-      const keyPlayersHtml = `
-        <div class="team-stats">
-          <h4>${awayTeam} Top Players</h4>
-          ${awayPlayersHtml}
-        </div>
+      function calculateTeamRecord(teamName, games) {
+        const teamGames = games.filter(g =>
+          g["home team"] === teamName || g["away team"] === teamName
+        );
 
-        <div class="vs-label">VS</div>
+        let wins = 0, losses = 0, ties = 0;
 
-        <div class="team-stats">
-          <h4>${homeTeam} Top Players</h4>
-          ${homePlayersHtml}
-        </div>
-      `;
+        teamGames.forEach(game => {
+          if (game.winner === "Tie") {
+            ties++;
+          } else if (game.winner === teamName) {
+            wins++;
+          } else {
+            losses++;
+          }
+        });
 
-      document.getElementById('keyPlayersComparison').innerHTML = keyPlayersHtml;
-    }
+        const totalDecided = wins + losses;
+        const winPct = totalDecided > 0 ? wins / totalDecided : 0;
 
-    function generateHeadToHeadRecord(homeTeam, awayTeam) {
-      const h2hGames = allGames.filter(g => 
-        (g["home team"] === homeTeam && g["away team"] === awayTeam) ||
-        (g["home team"] === awayTeam && g["away team"] === homeTeam)
-      ).filter(g => g.winner && g.winner.trim() !== "");
+        return { wins, losses, ties, winPct };
+      }
 
-      let homeWins = 0, awayWins = 0, ties = 0;
-
-      h2hGames.forEach(game => {
-        if (game.winner === "Tie") {
-          ties++;
-        } else if (game.winner === homeTeam) {
-          homeWins++;
-        } else if (game.winner === awayTeam) {
-          awayWins++;
+      function generateKeyPlayers(homeTeam, awayTeam) {
+        console.log(`🌟 Generating key players for ${awayTeam} @ ${homeTeam}`);
+        console.log(`📊 Total players in playerData: ${playerData.length}`);
+        
+        // Calculate team games played for qualification - ONLY CURRENT SEASON
+        // Get the current season from the game date
+        const gameYear = new Date(gameDate).getFullYear();
+        const gameMonth = new Date(gameDate).getMonth() + 1;
+        const currentSeasonName = gameMonth >= 8 ? 'Fall' : 'Spring';
+        
+        console.log(`🔍 Looking for games in ${gameYear} ${currentSeasonName}`);
+        console.log(`🔍 Total games loaded: ${allGames.length}`);
+        console.log(`🔍 Sample game from allGames:`, allGames[0]);
+        
+        // Check what years we have
+        const uniqueYears = [...new Set(allGames.map(g => g.year))];
+        console.log(`🔍 Years in games:`, uniqueYears.sort());
+        
+        // Check 2025 games specifically
+        const games2025 = allGames.filter(g => g.year === "2025");
+        console.log(`🔍 Total 2025 games: ${games2025.length}`);
+        if (games2025.length > 0) {
+          console.log(`🔍 Sample 2025 game:`, games2025[0]);
         }
-      });
+        
+        // Filter ALL games to current season only
+        const currentSeasonGames = allGames.filter(g => {
+          const matches = g.year === gameYear.toString() &&
+                 g.season === currentSeasonName &&
+                 g.winner &&
+                 g.winner.trim() !== "";
+          
+          return matches;
+        });
+        
+        console.log(`📊 Current season (${gameYear} ${currentSeasonName}): ${currentSeasonGames.length} total games`);
+        
+        // Count games for each team
+        const teamGamesPlayed = {};
+        currentSeasonGames.forEach(game => {
+          const home = game["home team"];
+          const away = game["away team"];
+          teamGamesPlayed[home] = (teamGamesPlayed[home] || 0) + 1;
+          teamGamesPlayed[away] = (teamGamesPlayed[away] || 0) + 1;
+        });
+        
+        const homeTeamGames = teamGamesPlayed[homeTeam] || 0;
+        const awayTeamGames = teamGamesPlayed[awayTeam] || 0;
+        
+        // Minimum 2 AB per team game to qualify
+        const homeMinAB = homeTeamGames * 2;
+        const awayMinAB = awayTeamGames * 2;
+        
+        console.log(`📊 ${homeTeam}: ${homeTeamGames} games (current season), min ${homeMinAB} AB`);
+        console.log(`📊 ${awayTeam}: ${awayTeamGames} games (current season), min ${awayMinAB} AB`);
+        
+        // Filter players for each team
+        const homeTopPlayers = playerData
+          .filter(p => {
+            const team = p.team || p.currentTeam || "";
+            const atBats = Number(p.atBats || 0);
+            const bpi = p.acesBPI || 0;
+            
+            const teamMatch = team === homeTeam;
+            const abQualified = atBats >= homeMinAB;
+            const hasBPI = bpi !== "N/A" && bpi != null && bpi !== 0;
+            
+            if (teamMatch && !abQualified) {
+              console.log(`❌ ${p.name}: Only ${atBats} AB (need ${homeMinAB})`);
+            }
+            if (teamMatch && abQualified && !hasBPI) {
+              console.log(`❌ ${p.name}: Qualified AB but acesBPI is ${bpi}`);
+            }
+            
+            return teamMatch && abQualified && hasBPI;
+          })
+          .sort((a, b) => {
+            const aBPI = parseFloat(a.acesBPI || 0);
+            const bBPI = parseFloat(b.acesBPI || 0);
+            return bBPI - aBPI;
+          })
+          .slice(0, 3);
 
-      const totalGames = homeWins + awayWins + ties;
-      let recordText = "No previous matchups";
-      
-      if (totalGames > 0) {
-        recordText = `All-time series: ${homeTeam} ${homeWins}-${awayWins}${ties > 0 ? `-${ties}` : ''} ${awayTeam} (${totalGames} games)`;
+        const awayTopPlayers = playerData
+          .filter(p => {
+            const team = p.team || p.currentTeam || "";
+            const atBats = Number(p.atBats || 0);
+            const bpi = p.acesBPI || 0;
+            
+            const teamMatch = team === awayTeam;
+            const abQualified = atBats >= awayMinAB;
+            const hasBPI = bpi !== "N/A" && bpi != null && bpi !== 0;
+            
+            if (teamMatch && !abQualified) {
+              console.log(`❌ ${p.name}: Only ${atBats} AB (need ${awayMinAB})`);
+            }
+            if (teamMatch && abQualified && !hasBPI) {
+              console.log(`❌ ${p.name}: Qualified AB but acesBPI is ${bpi}`);
+            }
+            
+            return teamMatch && abQualified && hasBPI;
+          })
+          .sort((a, b) => {
+            const aBPI = parseFloat(a.acesBPI || 0);
+            const bBPI = parseFloat(b.acesBPI || 0);
+            return bBPI - aBPI;
+          })
+          .slice(0, 3);
+
+        console.log(`📊 ${awayTeam} qualified players:`, awayTopPlayers.length);
+        console.log(`📊 ${homeTeam} qualified players:`, homeTopPlayers.length);
+        
+        if (awayTopPlayers.length > 0) {
+          console.log(`🔍 Sample ${awayTeam} player:`, awayTopPlayers[0]);
+        }
+        if (homeTopPlayers.length > 0) {
+          console.log(`🔍 Sample ${homeTeam} player:`, homeTopPlayers[0]);
+        }
+
+        function createPlayerCard(player) {
+          const atBats = parseInt(player.atBats || 0);
+          const hits = parseInt(player.hits || 0);
+          const walks = parseInt(player.walks || 0);
+          const runs = parseInt(player.runs || 0);
+          
+          const avg = atBats > 0 ? (hits / atBats).toFixed(3) : ".000";
+          const obp = (atBats + walks) > 0 ? ((hits + walks) / (atBats + walks)).toFixed(3) : ".000";
+          const acesBPI = parseFloat(player.acesBPI || 0).toFixed(1);
+          const playerName = player.playerName || player.name || player.id || "Unknown";
+
+          return `
+            <div class="player-card">
+              <div class="player-name">${playerName}</div>
+              <div class="player-stats">
+                <div class="player-stat">
+                  <span class="player-stat-label">AVG</span>
+                  <span class="player-stat-value">${avg}</span>
+                </div>
+                <div class="player-stat">
+                  <span class="player-stat-label">OBP</span>
+                  <span class="player-stat-value">${obp}</span>
+                </div>
+                <div class="player-stat">
+                  <span class="player-stat-label">Runs</span>
+                  <span class="player-stat-value">${runs}</span>
+                </div>
+                <div class="player-stat">
+                  <span class="player-stat-label">AcesBPI</span>
+                  <span class="player-stat-value">${acesBPI}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        const awayPlayersHtml = awayTopPlayers.length > 0
+          ? awayTopPlayers.map(createPlayerCard).join('')
+          : '<div class="no-data">No qualified players found</div>';
+          
+        const homePlayersHtml = homeTopPlayers.length > 0
+          ? homeTopPlayers.map(createPlayerCard).join('')
+          : '<div class="no-data">No qualified players found</div>';
+
+        const keyPlayersHtml = `
+          <div class="team-stats">
+            <h4>${awayTeam} Top Players</h4>
+            ${awayPlayersHtml}
+          </div>
+
+          <div class="vs-label">VS</div>
+
+          <div class="team-stats">
+            <h4>${homeTeam} Top Players</h4>
+            ${homePlayersHtml}
+          </div>
+        `;
+
+        document.getElementById('keyPlayersComparison').innerHTML = keyPlayersHtml;
       }
 
-      document.getElementById('h2hSummary').innerHTML = `
-        <div class="h2h-record">${recordText}</div>
-      `;
-    }
+      function generateHeadToHeadRecord(homeTeam, awayTeam) {
+        const h2hGames = allGames.filter(g =>
+          (g["home team"] === homeTeam && g["away team"] === awayTeam) ||
+          (g["home team"] === awayTeam && g["away team"] === homeTeam)
+        ).filter(g => g.winner && g.winner.trim() !== "");
 
-    function generateBattingComparison(homeTeam, awayTeam) {
-      const currentSeasonBatting = playerData.filter(p => 
-        p.year === "2025" && p.season === "Fall" && p.sub === "No"
-      );
+        let homeWins = 0, awayWins = 0, ties = 0;
 
-      const homeStats = calculateTeamBattingStats(homeTeam, currentSeasonBatting);
-      const awayStats = calculateTeamBattingStats(awayTeam, currentSeasonBatting);
+        h2hGames.forEach(game => {
+          if (game.winner === "Tie") {
+            ties++;
+          } else if (game.winner === homeTeam) {
+            homeWins++;
+          } else if (game.winner === awayTeam) {
+            awayWins++;
+          }
+        });
 
-      const comparisonHtml = `
-        <div class="team-stats">
-          <h4>${awayTeam}</h4>
-          <div class="stat-row">
-            <span class="stat-label">Team Avg</span>
-            <span class="stat-value">${homeStats.avg > awayStats.avg ? '' : ''}.${awayStats.avg}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Runs/Game</span>
-            <span class="stat-value">${awayStats.runsPerGame}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Hits/Game</span>
-            <span class="stat-value">${awayStats.hitsPerGame}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Total Runs</span>
-            <span class="stat-value">${awayStats.totalRuns}</span>
-          </div>
-        </div>
+        const totalGames = homeWins + awayWins + ties;
+        let recordText = "No previous matchups";
+        
+        if (totalGames > 0) {
+          recordText = `All-time series: ${homeTeam} ${homeWins}-${awayWins}${ties > 0 ? `-${ties}` : ''} ${awayTeam} (${totalGames} games)`;
+        }
 
-        <div class="vs-label">VS</div>
-
-        <div class="team-stats">
-          <h4>${homeTeam}</h4>
-          <div class="stat-row">
-            <span class="stat-label">Team Avg</span>
-            <span class="stat-value">.${homeStats.avg}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Runs/Game</span>
-            <span class="stat-value">${homeStats.runsPerGame}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Hits/Game</span>
-            <span class="stat-value">${homeStats.hitsPerGame}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Total Runs</span>
-            <span class="stat-value">${homeStats.totalRuns}</span>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('battingComparison').innerHTML = comparisonHtml;
-    }
-
-    function generatePitchingComparison(homeTeam, awayTeam) {
-      const currentSeasonPitching = pitchingData.filter(p => 
-        p.year === "2025" && p.season === "Fall"
-      );
-
-      const homeStats = calculateTeamPitchingStats(homeTeam, currentSeasonPitching);
-      const awayStats = calculateTeamPitchingStats(awayTeam, currentSeasonPitching);
-
-      const comparisonHtml = `
-        <div class="team-stats">
-          <h4>${awayTeam}</h4>
-          <div class="stat-row">
-            <span class="stat-label">Team ERA</span>
-            <span class="stat-value">${awayStats.era}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Innings</span>
-            <span class="stat-value">${awayStats.totalIP}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Runs Allowed</span>
-            <span class="stat-value">${awayStats.totalRunsAllowed}</span>
-          </div>
-        </div>
-
-        <div class="vs-label">VS</div>
-
-        <div class="team-stats">
-          <h4>${homeTeam}</h4>
-          <div class="stat-row">
-            <span class="stat-label">Team ERA</span>
-            <span class="stat-value">${homeStats.era}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Innings</span>
-            <span class="stat-value">${homeStats.totalIP}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Runs Allowed</span>
-            <span class="stat-value">${homeStats.totalRunsAllowed}</span>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('pitchingComparison').innerHTML = comparisonHtml;
-    }
-
-    function calculateTeamBattingStats(teamName, battingData) {
-      const teamPlayers = battingData.filter(p => p.team === teamName);
-      
-      if (teamPlayers.length === 0) {
-        return { avg: "000", runsPerGame: "0.0", hitsPerGame: "0.0", totalRuns: 0 };
+        document.getElementById('h2hSummary').innerHTML = `
+          <div class="h2h-record">${recordText}</div>
+        `;
       }
 
-      const totalAtBats = teamPlayers.reduce((sum, p) => sum + (Number(p.atBats) || 0), 0);
-      const totalHits = teamPlayers.reduce((sum, p) => sum + (Number(p.hits) || 0), 0);
-      const totalRuns = teamPlayers.reduce((sum, p) => sum + (Number(p.runs) || 0), 0);
-      const totalGames = Math.max(...teamPlayers.map(p => Number(p.games) || 0));
+      function generateBattingComparison(homeTeam, awayTeam) {
+        const homeStats = calculateTeamBattingStats(homeTeam, playerData);
+        const awayStats = calculateTeamBattingStats(awayTeam, playerData);
 
-      const avg = totalAtBats > 0 ? Math.round((totalHits / totalAtBats) * 1000) : 0;
-      const runsPerGame = totalGames > 0 ? (totalRuns / totalGames).toFixed(1) : "0.0";
-      const hitsPerGame = totalGames > 0 ? (totalHits / totalGames).toFixed(1) : "0.0";
+        const comparisonHtml = `
+          <div class="team-stats">
+            <h4>${awayTeam}</h4>
+            <div class="stat-row">
+              <span class="stat-label">Team Avg</span>
+              <span class="stat-value">.${awayStats.avg}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Runs/Game</span>
+              <span class="stat-value">${awayStats.runsPerGame}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Hits/Game</span>
+              <span class="stat-value">${awayStats.hitsPerGame}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Runs</span>
+              <span class="stat-value">${awayStats.totalRuns}</span>
+            </div>
+          </div>
 
-      return {
-        avg: avg.toString().padStart(3, '0'),
-        runsPerGame,
-        hitsPerGame,
-        totalRuns
-      };
-    }
+          <div class="vs-label">VS</div>
 
-    function calculateTeamPitchingStats(teamName, pitchingData) {
-      const teamPitchers = pitchingData.filter(p => p.team === teamName);
-      
-      if (teamPitchers.length === 0) {
-        return { era: "N/A", totalIP: "0.0", totalRunsAllowed: 0 };
+          <div class="team-stats">
+            <h4>${homeTeam}</h4>
+            <div class="stat-row">
+              <span class="stat-label">Team Avg</span>
+              <span class="stat-value">.${homeStats.avg}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Runs/Game</span>
+              <span class="stat-value">${homeStats.runsPerGame}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Hits/Game</span>
+              <span class="stat-value">${homeStats.hitsPerGame}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Runs</span>
+              <span class="stat-value">${homeStats.totalRuns}</span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('battingComparison').innerHTML = comparisonHtml;
       }
 
-      const totalIP = teamPitchers.reduce((sum, p) => sum + (parseFloat(p.IP) || 0), 0);
-      const totalRunsAllowed = teamPitchers.reduce((sum, p) => sum + (Number(p["runs allowed"]) || 0), 0);
+      function generatePitchingComparison(homeTeam, awayTeam) {
+        const homeStats = calculateTeamPitchingStats(homeTeam, pitchingData);
+        const awayStats = calculateTeamPitchingStats(awayTeam, pitchingData);
 
-      const era = totalIP > 0 ? ((totalRunsAllowed * 7) / totalIP).toFixed(2) : "N/A";
+        const comparisonHtml = `
+          <div class="team-stats">
+            <h4>${awayTeam}</h4>
+            <div class="stat-row">
+              <span class="stat-label">Team ERA</span>
+              <span class="stat-value">${awayStats.era}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Innings</span>
+              <span class="stat-value">${awayStats.totalIP}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Runs Allowed</span>
+              <span class="stat-value">${awayStats.totalRunsAllowed}</span>
+            </div>
+          </div>
 
-      return {
-        era,
-        totalIP: totalIP.toFixed(1),
-        totalRunsAllowed
-      };
-    }
+          <div class="vs-label">VS</div>
 
-    function generateHistoricalMatchups(homeTeam, awayTeam) {
-      const matchups = allGames.filter(g => 
-        (g["home team"] === homeTeam && g["away team"] === awayTeam) ||
-        (g["home team"] === awayTeam && g["away team"] === homeTeam)
-      ).filter(g => g.winner && g.winner.trim() !== "")
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+          <div class="team-stats">
+            <h4>${homeTeam}</h4>
+            <div class="stat-row">
+              <span class="stat-label">Team ERA</span>
+              <span class="stat-value">${homeStats.era}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Innings</span>
+              <span class="stat-value">${homeStats.totalIP}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Runs Allowed</span>
+              <span class="stat-value">${homeStats.totalRunsAllowed}</span>
+            </div>
+          </div>
+        `;
 
-      if (matchups.length === 0) {
-        document.getElementById('historyContent').innerHTML = 
-          '<div class="no-data">No previous matchups found between these teams.</div>';
-        return;
+        document.getElementById('pitchingComparison').innerHTML = comparisonHtml;
       }
 
-      const tableHtml = `
-        <table class="history-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Home Team</th>
-              <th>Score</th>
-              <th>Away Team</th>
-              <th>Winner</th>
-              <th>Season</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${matchups.map(game => {
-              const isWinner = (team) => game.winner === team ? 'winner-highlight' : '';
-              const forfeit = game.forfeit === "Yes" ? " (Forfeit)" : "";
-              
-              return `
-                <tr>
-                  <td>${game.date}</td>
-                  <td class="${isWinner(game["home team"])}">${game["home team"]}</td>
-                  <td>${game["home score"]} - ${game["away score"]}${forfeit}</td>
-                  <td class="${isWinner(game["away team"])}">${game["away team"]}</td>
-                  <td class="winner-highlight">${game.winner}</td>
-                  <td>${game.season} ${game.year}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-        <div style="margin-top: 1rem; text-align: center; color: #666; font-size: 0.9rem;">
-          Showing ${matchups.length} previous matchup${matchups.length !== 1 ? 's' : ''}
-        </div>
-      `;
+      function calculateTeamBattingStats(teamName, battingData) {
+        const teamPlayers = battingData.filter(p => {
+          const team = p.team || p.currentTeam || "";
+          return team === teamName;
+        });
+        
+        if (teamPlayers.length === 0) {
+          return { avg: "000", runsPerGame: "0.0", hitsPerGame: "0.0", totalRuns: 0 };
+        }
 
-      document.getElementById('historyContent').innerHTML = tableHtml;
-    }
+        const totalAtBats = teamPlayers.reduce((sum, p) => sum + (Number(p.atBats || 0)), 0);
+        const totalHits = teamPlayers.reduce((sum, p) => sum + (Number(p.hits || 0)), 0);
+        const totalRuns = teamPlayers.reduce((sum, p) => sum + (Number(p.runs || 0)), 0);
+        const totalGames = Math.max(...teamPlayers.map(p => Number(p.games || 0)));
+
+        const avg = totalAtBats > 0 ? Math.round((totalHits / totalAtBats) * 1000) : 0;
+        const runsPerGame = totalGames > 0 ? (totalRuns / totalGames).toFixed(1) : "0.0";
+        const hitsPerGame = totalGames > 0 ? (totalHits / totalGames).toFixed(1) : "0.0";
+
+        return {
+          avg: avg.toString().padStart(3, '0'),
+          runsPerGame,
+          hitsPerGame,
+          totalRuns
+        };
+      }
+
+      function calculateTeamPitchingStats(teamName, pitchingData) {
+        const teamPitchers = pitchingData.filter(p => {
+          const team = p.team || p.currentTeam || "";
+          return team === teamName;
+        });
+        
+        if (teamPitchers.length === 0) {
+          return { era: "N/A", totalIP: "0.0", totalRunsAllowed: 0 };
+        }
+
+        const totalIP = teamPitchers.reduce((sum, p) => sum + parseFloat(p.inningsPitched || p.IP || 0), 0);
+        const totalRunsAllowed = teamPitchers.reduce((sum, p) => sum + (Number(p.runsAllowed || p["runs allowed"] || 0)), 0);
+
+        const era = totalIP > 0 ? ((totalRunsAllowed * 7) / totalIP).toFixed(2) : "N/A";
+
+        return {
+          era,
+          totalIP: totalIP.toFixed(1),
+          totalRunsAllowed
+        };
+      }
+
+      function generateHistoricalMatchups(homeTeam, awayTeam) {
+        const matchups = allGames.filter(g =>
+          (g["home team"] === homeTeam && g["away team"] === awayTeam) ||
+          (g["home team"] === awayTeam && g["away team"] === homeTeam)
+        ).filter(g => g.winner && g.winner.trim() !== "")
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (matchups.length === 0) {
+          document.getElementById('historyContent').innerHTML =
+            '<div class="no-data">No previous matchups found between these teams.</div>';
+          return;
+        }
+
+        const tableHtml = `
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Home Team</th>
+                <th>Score</th>
+                <th>Away Team</th>
+                <th>Winner</th>
+                <th>Season</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${matchups.map(game => {
+                const isWinner = (team) => game.winner === team ? 'winner-highlight' : '';
+                const forfeit = game.forfeit === "Yes" ? " (Forfeit)" : "";
+                
+                return `
+                  <tr>
+                    <td>${game.date}</td>
+                    <td class="${isWinner(game["home team"])}">${game["home team"]}</td>
+                    <td>${game["home score"]} - ${game["away score"]}${forfeit}</td>
+                    <td class="${isWinner(game["away team"])}">${game["away team"]}</td>
+                    <td class="winner-highlight">${game.winner}</td>
+                    <td>${game.season} ${game.year}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          <div style="margin-top: 1rem; text-align: center; color: #666; font-size: 0.9rem;">
+            Showing ${matchups.length} previous matchup${matchups.length !== 1 ? 's' : ''}
+          </div>
+        `;
+
+        document.getElementById('historyContent').innerHTML = tableHtml;
+      }
   </script>
-
   <script src="team-colors.js"></script>
  <script src="mobile-enhancements.js"></script>
 </body>
