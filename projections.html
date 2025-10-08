@@ -355,12 +355,16 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import {
+      getSeasonGames as fetchSeasonGames,
+      getCurrentSeason
+    } from './firebase-data.js';
+
     let allGames = [];
     let currentProjectionMethod = 'winPct';
-    const currentSeason = "Fall";
-    const currentYear = "2025";
     const today = new Date();
+    let currentSeasonData = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', loadData);
@@ -381,12 +385,61 @@
 
     async function loadData() {
       try {
-        const response = await fetch('games.json');
-        if (!response.ok) throw new Error('Failed to load games data');
-        allGames = await response.json();
-        console.log(`Loaded ${allGames.length} games`);
+        console.log('📊 Loading season data from Firebase...');
+        
+        // Helper function for capitalizing
+        const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+        
+        // Get current season
+        currentSeasonData = await getCurrentSeason();
+        console.log('✅ Current season:', currentSeasonData);
+        
+        const seasonId = currentSeasonData.id;
+        
+        // Fetch games for current season
+        const games = await fetchSeasonGames(seasonId);
+        
+        console.log(`✅ Fetched: ${games?.length || 0} games`);
+        
+        // Map games to expected format
+        allGames = (games || []).map(g => {
+          // Convert Firebase Timestamp to readable date string
+          let dateString = "";
+          if (g.date && g.date.seconds) {
+            const dateObj = new Date(g.date.seconds * 1000);
+            dateString = dateObj.toLocaleDateString('en-US');
+          } else if (g.date) {
+            dateString = g.date;
+          }
+          
+          return {
+            "home team": g.homeTeamName || capitalize(g.homeTeamId) || "",
+            "away team": g.awayTeamName || capitalize(g.awayTeamId) || "",
+            "home score": g.homeScore !== undefined ? g.homeScore : null,
+            "away score": g.awayScore !== undefined ? g.awayScore : null,
+            winner: capitalize(g.winner || ""),
+            game_type: g.gameType === "regular" ? "Regular" :
+                       g.gameType === "playoff" ? "Playoff" :
+                       capitalize(g.gameType) || "Regular",
+            date: dateString,
+            year: currentSeasonData.year.toString(),
+            season: capitalize(currentSeasonData.season),
+            forfeit: g.forfeit ? "Yes" : "No",
+            status: g.status || "",
+            id: g.id || ""
+          };
+        });
+        
+        console.log('✅ Mapped games:', allGames.length);
+        if (allGames.length > 0) {
+          console.log('📊 Sample game:', allGames[0]);
+        }
+        
+        console.log('🎉 Data loaded successfully');
+        
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('❌ Error loading data:', error);
+        console.error('Error details:', error.message);
       }
     }
 
@@ -394,25 +447,24 @@
       return new Date(dateStr);
     }
 
-    function getSeasonGames() {
-      return allGames.filter(g => 
-        g.year === currentYear && g.season === currentSeason
-      );
+    function getCurrentSeasonGames() {
+      // All games are already from current season
+      return allGames;
     }
 
     function getCompletedGames(games) {
-      return games.filter(g => 
-        parseGameDate(g.date) < today && 
-        g.winner && 
+      return games.filter(g =>
+        parseGameDate(g.date) < today &&
+        g.winner &&
         g.winner.trim() !== "" &&
         g.game_type === 'Regular'
       );
     }
 
     function getFutureGames(games) {
-      return games.filter(g => 
-        parseGameDate(g.date) >= today || 
-        (!g.winner || g.winner.trim() === "") &&
+      return games.filter(g =>
+        (parseGameDate(g.date) >= today ||
+        (!g.winner || g.winner.trim() === "")) &&
         g.game_type === 'Regular'
       );
     }
@@ -429,14 +481,14 @@
         
         // Initialize teams
         if (!teamStats[homeTeam]) {
-          teamStats[homeTeam] = { 
-            name: homeTeam, wins: 0, losses: 0, ties: 0, 
+          teamStats[homeTeam] = {
+            name: homeTeam, wins: 0, losses: 0, ties: 0,
             runsFor: 0, runsAgainst: 0, games: 0
           };
         }
         if (!teamStats[awayTeam]) {
-          teamStats[awayTeam] = { 
-            name: awayTeam, wins: 0, losses: 0, ties: 0, 
+          teamStats[awayTeam] = {
+            name: awayTeam, wins: 0, losses: 0, ties: 0,
             runsFor: 0, runsAgainst: 0, games: 0
           };
         }
@@ -470,7 +522,7 @@
         // Pythagorean expectation
         const pythagoreanExp = 1.83; // Common for softball/baseball
         if (team.runsFor + team.runsAgainst > 0) {
-          team.pythagoreanWinPct = Math.pow(team.runsFor, pythagoreanExp) / 
+          team.pythagoreanWinPct = Math.pow(team.runsFor, pythagoreanExp) /
             (Math.pow(team.runsFor, pythagoreanExp) + Math.pow(team.runsAgainst, pythagoreanExp));
         } else {
           team.pythagoreanWinPct = 0.5;
@@ -569,12 +621,12 @@
       return simStandings;
     }
 
-    async function runProjections() {
+    function runProjections() {
       document.getElementById('runProjections').disabled = true;
       document.getElementById('runProjections').textContent = 'Running Simulations...';
       document.getElementById('results').style.display = 'none';
       
-      const seasonGames = getSeasonGames();
+      const seasonGames = getCurrentSeasonGames();
       const completedGames = getCompletedGames(seasonGames);
       const futureGames = getFutureGames(seasonGames);
       const currentStandings = calculateCurrentStandings(completedGames);
@@ -586,9 +638,9 @@
       // Initialize tracking
       currentStandings.forEach(team => {
         playoffCounts[team.name] = 0;
-        finalStandings[team.name] = { 
-          totalWins: 0, 
-          totalLosses: 0, 
+        finalStandings[team.name] = {
+          totalWins: 0,
+          totalLosses: 0,
           positions: new Array(currentStandings.length).fill(0)
         };
       });
@@ -645,7 +697,7 @@
         <table class="standings-table">
           <thead>
             <tr>
-              <th>Rank</th><th>Team</th><th>Current</th><th>Projected</th>
+              <th>Rank</th><th>Team</th><th>Current</th><th>Projected</th><th>Playoff %</th>
             </tr>
           </thead>
           <tbody>
@@ -659,6 +711,7 @@
             <td class="team-name">${team.name}</td>
             <td>${team.currentWins}-${team.currentLosses}</td>
             <td>${team.projectedWins}-${team.projectedLosses}</td>
+            <td>${team.playoffProb}%</td>
           </tr>
         `;
       });
@@ -726,7 +779,7 @@
       const scenarios = [];
       
       // Teams on the bubble
-      const bubbleTeams = projectedTeams.filter(t => 
+      const bubbleTeams = projectedTeams.filter(t =>
         parseFloat(t.playoffProb) > 10 && parseFloat(t.playoffProb) < 90
       ).slice(0, 4);
       
@@ -744,10 +797,13 @@
       const contenders = projectedTeams.slice(0, 3);
       scenarios.push(`<strong>Championship Contenders:</strong> ${contenders.map(t => t.name).join(', ')} are the top projected seeds.`);
       
-      document.getElementById('keyScenarios').innerHTML = scenarios.map(s => 
+      document.getElementById('keyScenarios').innerHTML = scenarios.map(s =>
         `<div style="margin-bottom: 1rem; padding: 0.8rem; background: #f8f9fa; border-radius: 6px;">${s}</div>`
       ).join('');
     }
+
+    // Make runProjections available globally
+    window.runProjections = runProjections;
   </script>
     <script src="team-colors.js"></script>
  <script src="mobile-enhancements.js"></script>
