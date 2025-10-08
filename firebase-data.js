@@ -135,6 +135,44 @@ export async function getAllPlayerStatsOptimized() {
   }
 }
 
+// ADD THIS FUNCTION to firebase-data.js after getAllPlayerStatsOptimized
+
+/**
+ * Get all pitching stats from aggregated collection (OPTIMIZED - FAST!)
+ * Uses single collection instead of subcollections
+ * FAST: 1-50 reads vs 100-500 reads with original function
+ * @returns {Array} Array of player objects with complete pitching stats
+ */
+export async function getAllPitchingStatsOptimized() {
+  try {
+    const statsRef = collection(db, 'aggregatedPlayerStats');
+    const snapshot = await getDocs(statsRef);
+    
+    const pitchers = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Only include players who have pitching data
+      if (data.pitchingSeasons && Object.keys(data.pitchingSeasons).length > 0) {
+        pitchers.push({
+          id: doc.id,
+          ...data,
+          playerId: doc.id,
+          playerName: data.name
+        });
+      }
+    });
+    
+    console.log(`✓ Loaded ${pitchers.length} pitchers from aggregated collection (optimized)`);
+    return pitchers;
+    
+  } catch (error) {
+    console.error('Error fetching aggregated pitching stats:', error);
+    console.log('Falling back to original method...');
+    return [];
+  }
+}
+
+
 /**
  * Get single player's complete stats from aggregated collection (OPTIMIZED - FAST!)
  * FAST: 1 read vs 10-20 reads with original function
@@ -164,9 +202,13 @@ export async function getPlayerStatsOptimized(userId) {
   }
 }
 
+// REPLACE these functions in firebase-data.js
+// The issue: Season keys include team names like "2025-fall-orange"
+// Solution: Use startsWith() to match any key beginning with the season
+
 /**
- * Get ALL players' stats for a specific season from aggregated collection (OPTIMIZED!)
- * This replaces the old getSeasonPlayerStats function
+ * Get ALL players' stats for a specific season from aggregated collection (FIXED!)
+ * Handles team-specific season keys like "2025-fall-orange", "2025-fall-blue"
  * @param {string} seasonId - Season ID (e.g., "2025-fall")
  * @returns {Array} Array of player stats for that season
  */
@@ -178,19 +220,38 @@ export async function getSeasonPlayerStatsOptimized(seasonId) {
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
       // Check if player has stats for this season
-      if (data.seasons && data.seasons[seasonId]) {
+      if (!data.seasons) return;
+      
+      // Find season keys that start with the seasonId (e.g., "2025-fall")
+      // This matches "2025-fall-orange", "2025-fall-blue", etc.
+      const matchingKeys = Object.keys(data.seasons).filter(key =>
+        key.startsWith(seasonId)
+      );
+      
+      // If player has stats for this season (any team)
+      if (matchingKeys.length > 0) {
+        // Use the first matching key (player's most recent team for this season)
+        const seasonKey = matchingKeys[0];
+        const seasonStats = data.seasons[seasonKey];
+        
+        // Extract team from the season key (e.g., "2025-fall-orange" -> "orange")
+        const teamFromKey = seasonKey.split('-').slice(2).join('-');
+        
         players.push({
           id: doc.id,
           playerId: doc.id,
-          playerName: data.name,
-          name: data.name,
-          email: data.email,
-          currentTeam: data.currentTeam,
-          photoURL: data.photoURL,
+          playerName: data.name || data.displayName || doc.id,
+          name: data.name || data.displayName || doc.id,
+          email: data.email || '',
+          currentTeam: data.currentTeam || teamFromKey || '',
+          team: seasonStats.team || data.currentTeam || teamFromKey || '',
+          photoURL: data.photoURL || '',
           // Include the specific season stats
-          ...data.seasons[seasonId],
-          seasonId: seasonId
+          ...seasonStats,
+          seasonId: seasonId,
+          seasonKey: seasonKey // Keep track of full key for debugging
         });
       }
     });
@@ -205,8 +266,8 @@ export async function getSeasonPlayerStatsOptimized(seasonId) {
 }
 
 /**
- * Get ALL pitching stats for a season from aggregated collection (OPTIMIZED!)
- * This replaces the old getSeasonPitchingStats function
+ * Get ALL pitching stats for a season from aggregated collection (FIXED!)
+ * Handles team-specific season keys like "2025-fall-orange", "2025-fall-blue"
  * @param {string} seasonId - Season ID (e.g., "2025-fall")
  * @returns {Array} Array of pitching stats for that season
  */
@@ -218,19 +279,37 @@ export async function getSeasonPitchingStatsOptimized(seasonId) {
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
       // Check if player has pitching stats for this season
-      if (data.pitchingSeasons && data.pitchingSeasons[seasonId]) {
+      if (!data.pitchingSeasons) return;
+      
+      // Find season keys that start with the seasonId
+      const matchingKeys = Object.keys(data.pitchingSeasons).filter(key =>
+        key.startsWith(seasonId)
+      );
+      
+      // If player has pitching stats for this season (any team)
+      if (matchingKeys.length > 0) {
+        // Use the first matching key
+        const seasonKey = matchingKeys[0];
+        const seasonStats = data.pitchingSeasons[seasonKey];
+        
+        // Extract team from the season key
+        const teamFromKey = seasonKey.split('-').slice(2).join('-');
+        
         players.push({
           id: doc.id,
           playerId: doc.id,
-          playerName: data.name,
-          name: data.name,
-          email: data.email,
-          currentTeam: data.currentTeam,
-          photoURL: data.photoURL,
+          playerName: data.name || data.displayName || doc.id,
+          name: data.name || data.displayName || doc.id,
+          email: data.email || '',
+          currentTeam: data.currentTeam || teamFromKey || '',
+          team: seasonStats.team || data.currentTeam || teamFromKey || '',
+          photoURL: data.photoURL || '',
           // Include the specific season pitching stats
-          ...data.pitchingSeasons[seasonId],
-          seasonId: seasonId
+          ...seasonStats,
+          seasonId: seasonId,
+          seasonKey: seasonKey
         });
       }
     });
