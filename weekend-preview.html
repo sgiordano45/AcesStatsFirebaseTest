@@ -735,7 +735,8 @@ body {
   // Weather configuration
 const WEATHER_ZIP = "07092"; // Mountainside, NJ
 const WEATHER_API_KEY = "c26153644bca587d9db1fc0256a01cf0"; // Replace with your OpenWeatherMap API key
-
+let forecastOverride = null;
+	  
   // Mobile menu toggle
   function toggleMobileMenu() {
     const menu = document.getElementById('mobileNavMenu');
