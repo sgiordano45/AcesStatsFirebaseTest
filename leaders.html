@@ -364,12 +364,12 @@
 
 
   <div id="leaders-container" class="leaders-container">
-    <div class="loading">Loading career leaders data...</div>
+    <div class="loading">Loading career leaders from optimized collection...</div>
   </div>
 </div>
 
 <script type="module">
-import { getAllPlayerStatsOptimized } from './firebase-data.js';
+import { getAllPlayerStatsOptimized, seasonsObjectToArray } from './firebase-data.js';
 
 let allData = [];
 
@@ -432,8 +432,12 @@ async function loadData() {
         acesWarValues: []
       };
       
-      if (player.seasons && Array.isArray(player.seasons)) {
-        player.seasons.forEach(season => {
+      // NEW: Check if seasons is an object (object-keyed) instead of array
+      if (player.seasons && typeof player.seasons === 'object') {
+        // Convert object-keyed seasons to array for iteration
+        const seasonsArray = seasonsObjectToArray(player);
+        
+        seasonsArray.forEach(season => {
           career.games += Number(season.games) || 0;
           career.atBats += Number(season.atBats) || 0;
           career.hits += Number(season.hits) || 0;

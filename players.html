@@ -151,7 +151,6 @@
     line-height: 1.4;
   }
   
-  /* Active/Inactive section headers */
   .roster-section-header {
     background: #f8f9fa;
     padding: 10px 20px;
@@ -175,7 +174,6 @@
     border-top-color: #ffc107;
   }
   
-  /* Inactive player styling */
   .player-item.inactive .player-name {
     color: #999;
   }
@@ -217,7 +215,6 @@
     font-size: 0.95rem;
   }
   
-  /* Navigation styling */
   .filters-nav {
     background: white;
     padding: 1.5rem;
@@ -274,7 +271,6 @@
     color: white;
   }
   
-  /* Mobile responsive adjustments */
   @media (max-width: 768px) {
     .page-container {
       padding: 1rem;
@@ -348,7 +344,6 @@
 </style>
 </head>
 <body>
-  <!-- Mobile Navigation -->
   <div class="mobile-nav-container">
     <div class="mobile-nav-header">
       <div class="mobile-nav-title">👤 All Players</div>
@@ -396,9 +391,6 @@
     </nav>
   </div>
 
-
-
-
   <div id="summary" class="summary">
     <p id="totalPlayersText"></p>
     <p>Players are grouped by their most recent team assignment and split into current active roster (2025 Fall/Summer) and inactive players. Click on any player to view their detailed statistics.</p>
@@ -410,30 +402,29 @@
 </div>
 
 <script type="module">
-  // Import Firebase functions - OPTIMIZED VERSION
-  import { getAllPlayerStatsOptimized } from './firebase-data.js';
+  // UPDATED: Import Firebase data functions with season helper
+  import { 
+    getAllPlayerStatsOptimized,
+    seasonsObjectToArray
+  } from './firebase-data.js';
 
   let allData = [];
 
-  // Helper function to format player names from firstname_lastname to First Last
   function formatPlayerName(name) {
     if (!name) return "";
     
-    // If name already has spaces, just capitalize each word
     if (name.includes(' ')) {
       return name.split(' ')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ');
     }
     
-    // If name has underscores, replace with spaces and capitalize
     if (name.includes('_')) {
       return name.split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ');
     }
     
-    // Otherwise just capitalize the single name
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
@@ -441,16 +432,13 @@
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
   }
 
-  // Load player data from aggregated collection
+  // UPDATED: Load data using optimized aggregated collection with object-keyed seasons
   async function loadData() {
     const loadStartTime = performance.now();
-    console.log('📊 Loading players data from aggregated collection...');
-    console.time('Total Load Time');
+    console.log('⚡ Loading players data from aggregated collection (OPTIMIZED)...');
 
     try {
-      console.time('Fetch Aggregated Data');
       const players = await getAllPlayerStatsOptimized();
-      console.timeEnd('Fetch Aggregated Data');
       console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
 
       if (!players || players.length === 0) {
@@ -460,15 +448,27 @@
         return;
       }
 
-      // Flatten all season data for processing
-      console.time('Process Player Data');
       const flattenedData = [];
 
       players.forEach(player => {
-        if (player.seasons && Array.isArray(player.seasons)) {
-          player.seasons.forEach(season => {
-            // Parse year and season from seasonId using the new format
-            // Format: "2024-fall-gold" or "2024-fall-white-sub"
+        const playerName = formatPlayerName(player.name || player.displayName || player.userId);
+        
+        // Debug: log first player to see structure
+        if (flattenedData.length === 0) {
+          console.log('🔍 Sample player structure:', player);
+          console.log('🔍 Player seasons type:', typeof player.seasons);
+          console.log('🔍 Player seasons:', player.seasons);
+          console.log('🔍 Player keys:', Object.keys(player));
+        }
+        
+        // CRITICAL CHANGE: seasons is now an OBJECT with seasonId keys
+        if (player.seasons && typeof player.seasons === 'object') {
+          // Convert seasons object to array for processing
+          const seasonsArray = seasonsObjectToArray(player);
+          
+          seasonsArray.forEach(season => {
+            // Parse year and season from seasonId
+            // Format: "2024-fall" or "2025-spring"
             let year = "";
             let seasonName = "";
             
@@ -477,7 +477,6 @@
               if (parts.length >= 2) {
                 year = parts[0];           // "2024"
                 seasonName = parts[1];     // "fall"
-                // parts[2] onwards is the team name (which we get from season.team field)
               }
             }
             
@@ -486,7 +485,7 @@
             if (!seasonName && season.season) seasonName = season.season;
             
             flattenedData.push({
-              name: formatPlayerName(player.name || player.displayName || player.userId),
+              name: playerName,
               team: capitalize(season.team || player.currentTeam || ""),
               year: year,
               season: capitalize(seasonName),
@@ -497,20 +496,19 @@
               walks: Number(season.walks) || 0
             });
           });
+        } else {
+          // Fallback: player has no seasons data
+          console.warn('⚠️ Player has no seasons object:', playerName);
         }
       });
 
       console.log(`✅ Processed ${flattenedData.length} season records`);
       allData = flattenedData;
-      console.timeEnd('Process Player Data');
 
-      console.time('Generate UI');
       generatePlayersByTeam();
-      console.timeEnd('Generate UI');
 
       const loadEndTime = performance.now();
-      console.timeEnd('Total Load Time');
-      console.log(`✅ Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+      console.log(`🎉 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
 
     } catch (error) {
       console.error('❌ Error loading player data:', error);
@@ -520,7 +518,6 @@
   }
 
   function isPlayerActive(player) {
-    // Player is active if their most recent season is 2025 Fall only
     const year = parseInt(player.year) || 0;
     return year === 2025 && player.season === 'Fall';
   }
@@ -528,19 +525,16 @@
   function sortPlayers(players, isActive) {
     return players.sort((a, b) => {
       if (isActive) {
-        // For active players: sort by games with current team (descending), then by name
         if (b.currentTeamGames !== a.currentTeamGames) {
           return b.currentTeamGames - a.currentTeamGames;
         }
         return a.name.localeCompare(b.name);
       } else {
-        // For inactive players: sort by most recent year/season, then by name
         const yearA = parseInt(a.year) || 0;
         const yearB = parseInt(b.year) || 0;
         
         if (yearB !== yearA) return yearB - yearA;
         
-        // Fall before Summer within same year
         const seasonPriorityA = a.season === 'Fall' ? 2 : 1;
         const seasonPriorityB = b.season === 'Fall' ? 2 : 1;
         
@@ -552,13 +546,11 @@
   }
 
   function generatePlayersByTeam() {
-    // Find each player's most recent team assignment
     const playerTeams = {};
     
     allData.forEach(p => {
       if (!p.name || !p.team) return;
       
-      // Skip the "Kings" team
       if (p.team.toLowerCase() === "kings") return;
       
       if (!playerTeams[p.name]) {
@@ -576,16 +568,13 @@
         };
       }
       
-      // Keep track of most recent assignment
       const currentEntry = playerTeams[p.name];
       const currentYear = parseInt(currentEntry.year) || 0;
       const newYear = parseInt(p.year) || 0;
       
-      // Season priority: Fall > Summer (within same year)
       const currentSeasonPriority = currentEntry.season === 'Fall' ? 2 : 1;
       const newSeasonPriority = p.season === 'Fall' ? 2 : 1;
       
-      // Update to more recent team if this record is newer
       if (newYear > currentYear ||
           (newYear === currentYear && newSeasonPriority > currentSeasonPriority)) {
         currentEntry.team = p.team;
@@ -593,7 +582,6 @@
         currentEntry.season = p.season;
       }
       
-      // Accumulate career stats
       currentEntry.totalGames += p.games;
       currentEntry.totalAtBats += p.atBats;
       currentEntry.totalHits += p.hits;
@@ -601,16 +589,13 @@
       currentEntry.totalWalks += p.walks;
     });
     
-    // Calculate current team games for each player
     Object.values(playerTeams).forEach(player => {
-      // Find all games played for the player's current team
       const currentTeamData = allData.filter(p =>
         p.name === player.name && p.team === player.team
       );
       player.currentTeamGames = currentTeamData.reduce((sum, p) => sum + p.games, 0);
     });
     
-    // Group players by their most recent team
     const teamGroups = {};
     Object.values(playerTeams).forEach(player => {
       if (!teamGroups[player.team]) {
@@ -619,18 +604,14 @@
       teamGroups[player.team].push(player);
     });
     
-    // Define active teams (teams that played in 2025 Fall)
     const activeTeams = new Set(['Black', 'Blue', 'Carolina', 'Gold', 'Green', 'Orange', 'Purple', 'Red', 'Silver', 'White']);
     
-    // Separate active and inactive teams, then sort each alphabetically
     const allTeams = Object.keys(teamGroups);
     const activeTeamsList = allTeams.filter(team => activeTeams.has(team)).sort();
     const inactiveTeamsList = allTeams.filter(team => !activeTeams.has(team)).sort();
     
-    // Combine active teams first, then inactive teams
     const sortedTeams = [...activeTeamsList, ...inactiveTeamsList];
     
-    // Count active and total players
     let totalPlayers = 0;
     let activePlayers = 0;
     
@@ -641,7 +622,6 @@
       }
     });
     
-    // Update summary
     document.getElementById("totalPlayersText").textContent =
       `Total Players: ${totalPlayers} (${activePlayers} active in 2025, ${totalPlayers - activePlayers} inactive) across ${sortedTeams.length} teams`;
     
@@ -651,22 +631,18 @@
     sortedTeams.forEach(teamName => {
       const players = teamGroups[teamName];
       
-      // Split players into active and inactive
       const activePlayers = players.filter(p => isPlayerActive(p));
       const inactivePlayers = players.filter(p => !isPlayerActive(p));
       
-      // Sort each group
       sortPlayers(activePlayers, true);
       sortPlayers(inactivePlayers, false);
       
-      // Create team section
       const teamSection = document.createElement('div');
       teamSection.className = 'team-section';
       
       const teamHeader = document.createElement('div');
       teamHeader.className = 'team-header';
       
-      // Try to load team logo
       const logo = document.createElement('img');
       logo.className = 'team-logo';
       logo.src = `logos/${teamName.toLowerCase().replace(/\s+/g, '_')}.png`;
@@ -687,7 +663,6 @@
       const playersList = document.createElement('ul');
       playersList.className = 'players-list';
       
-      // Add active players section if any exist
       if (activePlayers.length > 0) {
         const activeHeader = document.createElement('li');
         activeHeader.className = 'roster-section-header active';
@@ -700,7 +675,6 @@
         });
       }
       
-      // Add inactive players section if any exist
       if (inactivePlayers.length > 0) {
         const inactiveHeader = document.createElement('li');
         inactiveHeader.className = 'roster-section-header inactive';
@@ -748,7 +722,6 @@
     return playerItem;
   }
 
-  // Initialize - load data when page loads
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadData);
   } else {
@@ -756,6 +729,6 @@
   }
 </script>
 <script src="team-colors.js"></script>
- <script src="mobile-enhancements.js"></script>
+<script src="mobile-enhancements.js"></script>
 </body>
 </html>

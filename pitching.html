@@ -362,7 +362,7 @@
     </div>
     <nav class="mobile-nav-menu" id="mobileNavMenu">
       <a href="index.html" class="mobile-nav-item">🏠 Home</a>
-      <a href="current-season.html" class="mobile-nav-item">🏂 Current Season</a>
+      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
       <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
       <a href="projections.html" class="mobile-nav-item">📈 Playoff Projections</a>
       <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
@@ -389,7 +389,7 @@
   <!-- Loading Indicator -->
   <div id="loadingIndicator" style="display: none;">
     Loading pitching statistics...<br>
-    <small>Fetching data from aggregated collection</small>
+    <small>Using optimized aggregated collection (fast!)</small>
   </div>
 
   <div class="summary">
@@ -419,7 +419,7 @@
   <div class="filters-nav">
     <nav class="nav-container">
       <a href="index.html" class="nav-link">🏠 Home</a>
-      <a href="current-season.html" class="nav-link">🏂 Current Season</a>
+      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
       <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
       <a href="pitching.html" class="nav-link pitching active">🥎 Pitching Stats</a>
       <a href="teams.html" class="nav-link">🏆 All Teams</a>
@@ -457,9 +457,10 @@
 </div>
 
 <script type="module">
-  // Import Firebase functions - UPDATED to use optimized aggregated collection
+  // UPDATED: Import Firebase functions with new helper
   import { 
-    getAllPlayerStatsOptimized
+    getAllPlayerStatsOptimized,
+    pitchingSeasonsObjectToArray
   } from './firebase-data.js';
 
   // Global variables
@@ -501,10 +502,10 @@
     if (indicator) indicator.style.display = 'none';
   }
 
-  // Load data from Firebase using optimized aggregated collection
+  // UPDATED: Load data using optimized aggregated collection with object-keyed pitching seasons
   async function loadData() {
     const loadStartTime = performance.now();
-    console.log('📊 Loading pitching data from aggregated collection...');
+    console.log('⚡ Loading pitching data from aggregated collection (OPTIMIZED)...');
     console.time('Total Load Time');
     
     showLoadingIndicator();
@@ -522,16 +523,19 @@
         return;
       }
       
-      // Flatten pitching season data for pitching stats table
+      // UPDATED: Process pitching seasons from OBJECT format (not array)
       console.time('Process Pitching Data');
       const allStats = [];
 
       players.forEach(player => {
-        // Check if player has pitching seasons data
-        if (player.pitchingSeasons && Array.isArray(player.pitchingSeasons)) {
-          player.pitchingSeasons.forEach(season => {
-            // Parse year and season from seasonId using the new format
-            // Format: "2024-fall-gold" or "2024-fall-white-sub"
+        // CRITICAL CHANGE: pitchingSeasons is now an OBJECT with seasonId keys
+        if (player.pitchingSeasons && typeof player.pitchingSeasons === 'object') {
+          // Convert pitching seasons object to array for processing
+          const pitchingSeasonsArray = pitchingSeasonsObjectToArray(player);
+          
+          pitchingSeasonsArray.forEach(season => {
+            // Parse year and season from seasonId
+            // Format: "2024-fall" or "2025-spring"
             let year = "";
             let seasonName = "";
             
@@ -540,7 +544,6 @@
               if (parts.length >= 2) {
                 year = parts[0];           // "2024"
                 seasonName = parts[1];     // "fall"
-                // parts[2] onwards is the team name (which we get from season.team field)
               }
             }
             
@@ -565,7 +568,7 @@
                   (season.inningsPitched || "0"),
               runsAllowed: Number(season.runsAllowed) || 0,
               ERA: eraValue,
-              id: player.userId || "",
+              id: player.userId || player.id || "",
               seasonId: season.seasonId || ""
             });
           });
@@ -606,7 +609,7 @@
       
       const loadEndTime = performance.now();
       console.timeEnd('Total Load Time');
-      console.log(`✅ Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+      console.log(`🎉 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
       
     } catch (error) {
       console.error('❌ Error loading data:', error);
@@ -894,7 +897,7 @@
 
   // Initialize page when DOM is ready
   function initPage() {
-    console.log('🔄 Initializing page...');
+    console.log('📄 Initializing page...');
     initializeSorting();
     loadData();
   }
