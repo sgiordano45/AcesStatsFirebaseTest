@@ -261,6 +261,55 @@
   background: #667eea;
   color: white;
 }
+      
+      /* Fix for table overflow */
+      .result-card {
+        overflow: hidden;
+      }
+
+      .standings-table {
+        width: 100%;
+        table-layout: fixed;
+        word-wrap: break-word;
+      }
+
+      .standings-table th,
+      .standings-table td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .standings-table th:first-child,
+      .standings-table td:first-child {
+        width: 80px;
+      }
+
+      .standings-table th:nth-child(2),
+      .standings-table td:nth-child(2) {
+        width: auto;
+        min-width: 120px;
+      }
+
+      .standings-table th:nth-child(3),
+      .standings-table td:nth-child(3),
+      .standings-table th:nth-child(4),
+      .standings-table td:nth-child(4),
+      .standings-table th:nth-child(5),
+      .standings-table td:nth-child(5) {
+        width: 100px;
+      }
+
+      /* Make table scrollable on small screens */
+      @media (max-width: 768px) {
+        .result-card {
+          overflow-x: auto;
+        }
+        
+        .standings-table {
+          min-width: 500px;
+        }
+      }
   </style>
   <link rel="stylesheet" href="mobile-enhancements.css">
 </head>
