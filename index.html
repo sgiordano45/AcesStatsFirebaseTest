@@ -676,673 +676,749 @@
     </section>
   </div>
 
-<script>// Global Search Functionality
-class GlobalSearch {
-  constructor() {
-    this.searchInput = document.getElementById('globalSearch');
-    this.searchResults = document.getElementById('searchResults');
-    this.clearButton = document.getElementById('clearSearch');
-    
-    // Only initialize if elements exist
-    if (!this.searchInput || !this.searchResults || !this.clearButton) {
-      console.warn('Global search elements not found');
-      return;
-    }
-    
-    this.allData = [];
-    this.allTeams = [];
-    this.allSeasons = [];
-    this.currentHighlight = -1;
-    this.searchTimeout = null;
-    
-    this.init();
-  }
-  
-  async init() {
-    await this.loadData();
-    this.bindEvents();
-  }
-  
-  async loadData() {
-    try {
-      const [battingResponse, pitchingResponse, gamesResponse, awardsResponse] = await Promise.all([
-        fetch("data.json"),
-        fetch("pitching.json").catch(() => ({ ok: false })),
-        fetch("games.json").catch(() => ({ ok: false })),
-        fetch("awards.json").catch(() => ({ ok: false }))
-      ]);
+  <script type="module">
+  // Global Search Functionality - CONVERTED TO FIREBASE
+  import {
+    getAllPlayerStatsOptimized,
+    getCurrentSeason,
+    getSeasonGames,
+    getAllSeasons
+  } from './firebase-data.js';
+
+  class GlobalSearch {
+    constructor() {
+      this.searchInput = document.getElementById('globalSearch');
+      this.searchResults = document.getElementById('searchResults');
+      this.clearButton = document.getElementById('clearSearch');
       
-      const battingData = await battingResponse.json();
-      const pitchingData = pitchingResponse.ok ? await pitchingResponse.json() : [];
-      const gamesData = gamesResponse.ok ? await gamesResponse.json() : [];
-      const awardsData = awardsResponse.ok ? await awardsResponse.json() : [];
+      // Only initialize if elements exist
+      if (!this.searchInput || !this.searchResults || !this.clearButton) {
+        console.warn('Global search elements not found');
+        return;
+      }
       
-      this.allData = this.processPlayerData(battingData, pitchingData, awardsData);
-      this.allTeams = this.processTeamData(battingData, gamesData);
-      this.allSeasons = this.processSeasonData(battingData, pitchingData, gamesData);
-      
-      console.log('Search data loaded:', {
-        players: this.allData.length,
-        teams: this.allTeams.length,
-        seasons: this.allSeasons.length
-      });
-      
-    } catch (error) {
-      console.error('Error loading search data:', error);
       this.allData = [];
       this.allTeams = [];
       this.allSeasons = [];
+      this.currentHighlight = -1;
+      this.searchTimeout = null;
+      
+      this.init();
     }
-  }
-  
-  processPlayerData(battingData, pitchingData, awardsData) {
-    const playerStats = {};
     
-    battingData.forEach(entry => {
-      if (!entry.name) return;
-      
-      const name = entry.name.trim();
-      if (!playerStats[name]) {
-        playerStats[name] = {
-          name: name,
-          teams: new Set(),
-          games: 0,
-          atBats: 0,
-          hits: 0,
-          runs: 0,
-          walks: 0,
-          mostRecentTeam: entry.team,
-          mostRecentYear: entry.year,
-          awards: 0
-        };
+    async init() {
+      await this.loadData();
+      this.bindEvents();
+    }
+    
+    async loadData() {
+      try {
+        console.log('🔍 Loading search data from Firebase...');
+        
+        const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+        
+        // Get all player stats and seasons from Firebase
+        const [allPlayerStats, seasons, awardsResponse] = await Promise.all([
+          getAllPlayerStatsOptimized(),
+          getAllSeasons(),
+          fetch('awards.json').catch(() => ({ ok: false }))
+        ]);
+        
+        console.log(`✅ Loaded ${allPlayerStats.length} players, ${seasons.length} seasons`);
+        
+        // Load games from all seasons
+        const gamePromises = seasons.map(async (season) => {
+          try {
+            const seasonGames = await getSeasonGames(season.id);
+            return seasonGames.map(g => {
+              let dateString = "";
+              if (g.date && g.date.seconds) {
+                const dateObj = new Date(g.date.seconds * 1000);
+                dateString = dateObj.toLocaleDateString('en-US');
+              } else if (g.date) {
+                dateString = g.date;
+              }
+              
+              return {
+                "home team": g.homeTeamName || capitalize(g.homeTeamId) || "",
+                "away team": g.awayTeamName || capitalize(g.awayTeamId) || "",
+                "home score": g.homeScore !== undefined ? g.homeScore : null,
+                "away score": g.awayScore !== undefined ? g.awayScore : null,
+                winner: capitalize(g.winner || ""),
+                game_type: g.gameType || "Regular",
+                date: dateString,
+                year: season.year.toString(),
+                season: capitalize(season.season || "")
+              };
+            });
+          } catch (err) {
+            console.warn(`Could not load games for season ${season.id}:`, err);
+            return [];
+          }
+        });
+        
+        const allSeasonGames = await Promise.all(gamePromises);
+        const gamesData = allSeasonGames.flat();
+        
+        console.log(`✅ Loaded ${gamesData.length} total games`);
+        
+        // Process awards if available
+        const awardsData = awardsResponse.ok ? await awardsResponse.json() : [];
+        
+        // Process data for search
+        this.allData = this.processPlayerData(allPlayerStats, awardsData);
+        this.allTeams = this.processTeamData(allPlayerStats, gamesData);
+        this.allSeasons = this.processSeasonData(seasons, gamesData);
+        
+        console.log('✅ Search data processed:', {
+          players: this.allData.length,
+          teams: this.allTeams.length,
+          seasons: this.allSeasons.length
+        });
+        
+      } catch (error) {
+        console.error('❌ Error loading search data:', error);
+        this.allData = [];
+        this.allTeams = [];
+        this.allSeasons = [];
       }
+    }
+    
+    processPlayerData(allPlayerStats, awardsData) {
+      const playerMap = {};
       
-      const player = playerStats[name];
-      player.teams.add(entry.team);
-      player.games += Number(entry.games) || 0;
-      player.atBats += Number(entry.atBats) || 0;
-      player.hits += Number(entry.hits) || 0;
-      player.runs += Number(entry.runs) || 0;
-      player.walks += Number(entry.walks) || 0;
-      
-      if (entry.year >= player.mostRecentYear) {
-        player.mostRecentTeam = entry.team;
-        player.mostRecentYear = entry.year;
-      }
-    });
-    
-    awardsData.forEach(award => {
-      if (!award.Player) return;
-      const name = award.Player.trim();
-      if (playerStats[name]) {
-        playerStats[name].awards++;
-      }
-    });
-    
-    return Object.values(playerStats).map(player => ({
-      ...player,
-      team: player.mostRecentTeam,
-      avg: player.atBats > 0 ? (player.hits / player.atBats) : 0,
-      teamCount: player.teams.size,
-      type: 'player'
-    }));
-  }
-  
-  processTeamData(battingData, gamesData) {
-    const teamStats = {};
-    
-    battingData.forEach(entry => {
-      if (!entry.team) return;
-      const team = entry.team.trim();
-      if (!teamStats[team]) {
-        teamStats[team] = {
-          name: team,
-          players: new Set(),
-          totalGames: 0,
-          wins: 0,
-          losses: 0,
-          type: 'team'
-        };
-      }
-      teamStats[team].players.add(entry.name);
-    });
-    
-    gamesData.forEach(game => {
-      const homeTeam = game["home team"];
-      const awayTeam = game["away team"];
-      const winner = game.winner;
-      
-      if (teamStats[homeTeam]) {
-        teamStats[homeTeam].totalGames++;
-        if (winner === homeTeam) {
-          teamStats[homeTeam].wins++;
-        } else if (winner !== "Tie") {
-          teamStats[homeTeam].losses++;
+      // Aggregate all player data from Firebase
+      allPlayerStats.forEach(player => {
+        const name = player.playerName || player.name || player.id;
+        if (!name) return;
+        
+        if (!playerMap[name]) {
+          playerMap[name] = {
+            name: name,
+            teams: new Set(),
+            games: 0,
+            atBats: 0,
+            hits: 0,
+            runs: 0,
+            walks: 0,
+            mostRecentTeam: player.currentTeam || "",
+            awards: 0
+          };
         }
-      }
-      
-      if (teamStats[awayTeam]) {
-        teamStats[awayTeam].totalGames++;
-        if (winner === awayTeam) {
-          teamStats[awayTeam].wins++;
-        } else if (winner !== "Tie") {
-          teamStats[awayTeam].losses++;
+        
+        const p = playerMap[name];
+        
+        // Add current team
+        if (player.currentTeam) {
+          p.teams.add(player.currentTeam);
+          p.mostRecentTeam = player.currentTeam;
         }
-      }
-    });
-    
-    return Object.values(teamStats).map(team => ({
-      ...team,
-      pct: (team.wins + team.losses) > 0 ? team.wins / (team.wins + team.losses) : 0,
-      playerCount: team.players.size
-    }));
-  }
-  
-  processSeasonData(battingData, pitchingData, gamesData) {
-    const seasonStats = {};
-    
-    battingData.forEach(entry => {
-      if (!entry.year || !entry.season) return;
-      const key = `${entry.year}_${entry.season}`;
+        
+        // Aggregate career stats
+        p.games += Number(player.careerGames || 0);
+        p.atBats += Number(player.careerAtBats || 0);
+        p.hits += Number(player.careerHits || 0);
+        p.runs += Number(player.careerRuns || 0);
+        p.walks += Number(player.careerWalks || 0);
+      });
       
-      if (!seasonStats[key]) {
+      // Add awards count
+      awardsData.forEach(award => {
+        if (!award.Player) return;
+        const name = award.Player.trim();
+        if (playerMap[name]) {
+          playerMap[name].awards++;
+        }
+      });
+      
+      return Object.values(playerMap).map(player => ({
+        ...player,
+        team: player.mostRecentTeam,
+        avg: player.atBats > 0 ? (player.hits / player.atBats) : 0,
+        teamCount: player.teams.size,
+        type: 'player'
+      }));
+    }
+    
+    processTeamData(allPlayerStats, gamesData) {
+      const teamStats = {};
+      
+      // Get teams from player data
+      allPlayerStats.forEach(player => {
+        const team = player.currentTeam;
+        if (!team) return;
+        
+        if (!teamStats[team]) {
+          teamStats[team] = {
+            name: team,
+            players: new Set(),
+            totalGames: 0,
+            wins: 0,
+            losses: 0,
+            type: 'team'
+          };
+        }
+        teamStats[team].players.add(player.playerName || player.name || player.id);
+      });
+      
+      // Add game data
+      gamesData.forEach(game => {
+        const homeTeam = game["home team"];
+        const awayTeam = game["away team"];
+        const winner = game.winner;
+        
+        if (teamStats[homeTeam]) {
+          teamStats[homeTeam].totalGames++;
+          if (winner === homeTeam) {
+            teamStats[homeTeam].wins++;
+          } else if (winner !== "Tie" && winner) {
+            teamStats[homeTeam].losses++;
+          }
+        }
+        
+        if (teamStats[awayTeam]) {
+          teamStats[awayTeam].totalGames++;
+          if (winner === awayTeam) {
+            teamStats[awayTeam].wins++;
+          } else if (winner !== "Tie" && winner) {
+            teamStats[awayTeam].losses++;
+          }
+        }
+      });
+      
+      return Object.values(teamStats).map(team => ({
+        ...team,
+        pct: (team.wins + team.losses) > 0 ? team.wins / (team.wins + team.losses) : 0,
+        playerCount: team.players.size
+      }));
+    }
+    
+    processSeasonData(seasons, gamesData) {
+      const seasonStats = {};
+      
+      seasons.forEach(season => {
+        const key = `${season.year}_${season.season}`;
         seasonStats[key] = {
-          year: entry.year,
-          season: entry.season,
+          year: season.year,
+          season: season.season,
           teams: new Set(),
           players: new Set(),
           games: 0,
           type: 'season'
         };
+      });
+      
+      // Count games per season
+      gamesData.forEach(game => {
+        const key = `${game.year}_${game.season}`;
+        if (seasonStats[key]) {
+          seasonStats[key].games++;
+          seasonStats[key].teams.add(game["home team"]);
+          seasonStats[key].teams.add(game["away team"]);
+        }
+      });
+      
+      return Object.values(seasonStats).map(season => ({
+        ...season,
+        teamCount: season.teams.size,
+        playerCount: 0 // We don't have player count per season easily accessible
+      }));
+    }
+    
+    bindEvents() {
+      this.searchInput.addEventListener('input', (e) => {
+        this.handleSearch(e.target.value);
+      });
+      
+      this.searchInput.addEventListener('keydown', (e) => {
+        this.handleKeyNavigation(e);
+      });
+      
+      this.searchInput.addEventListener('focus', () => {
+        if (this.searchInput.value.trim()) {
+          this.showResults();
+        }
+      });
+      
+      this.clearButton.addEventListener('click', () => {
+        this.clearSearch();
+      });
+      
+      document.addEventListener('click', (e) => {
+        if (!this.searchInput.contains(e.target) && !this.searchResults.contains(e.target)) {
+          this.hideResults();
+        }
+      });
+    }
+    
+    handleSearch(query) {
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
       }
       
-      seasonStats[key].teams.add(entry.team);
-      seasonStats[key].players.add(entry.name);
-    });
-    
-    gamesData.forEach(game => {
-      const key = `${game.year}_${game.season}`;
-      if (seasonStats[key]) {
-        seasonStats[key].games++;
-      }
-    });
-    
-    return Object.values(seasonStats).map(season => ({
-      ...season,
-      teamCount: season.teams.size,
-      playerCount: season.players.size
-    }));
-  }
-  
-  bindEvents() {
-    this.searchInput.addEventListener('input', (e) => {
-      this.handleSearch(e.target.value);
-    });
-    
-    this.searchInput.addEventListener('keydown', (e) => {
-      this.handleKeyNavigation(e);
-    });
-    
-    this.searchInput.addEventListener('focus', () => {
-      if (this.searchInput.value.trim()) {
-        this.showResults();
-      }
-    });
-    
-    this.clearButton.addEventListener('click', () => {
-      this.clearSearch();
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (!this.searchInput.contains(e.target) && !this.searchResults.contains(e.target)) {
+      this.clearButton.classList.toggle('show', query.length > 0);
+      
+      if (query.trim().length === 0) {
         this.hideResults();
+        return;
       }
-    });
-  }
-  
-  handleSearch(query) {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
+      
+      this.searchTimeout = setTimeout(() => {
+        this.performSearch(query.trim());
+      }, 150);
     }
     
-    this.clearButton.classList.toggle('show', query.length > 0);
-    
-    if (query.trim().length === 0) {
-      this.hideResults();
-      return;
+    performSearch(query) {
+      const results = {
+        players: this.searchPlayers(query),
+        teams: this.searchTeams(query),
+        seasons: this.searchSeasons(query)
+      };
+      
+      const shouldPrioritizeTeams = this.shouldPrioritizeTeams(query, results);
+      this.displayResults(results, query, shouldPrioritizeTeams);
     }
     
-    this.searchTimeout = setTimeout(() => {
-      this.performSearch(query.trim());
-    }, 150);
-  }
-  
-  performSearch(query) {
-    const results = {
-      players: this.searchPlayers(query),
-      teams: this.searchTeams(query),
-      seasons: this.searchSeasons(query)
-    };
+    shouldPrioritizeTeams(query, results) {
+      const q = query.toLowerCase().trim();
+      
+      return results.teams.some(team => {
+        const teamName = team.name.toLowerCase();
+        return teamName === q || teamName.startsWith(q) || q.startsWith(teamName);
+      });
+    }
     
-    const shouldPrioritizeTeams = this.shouldPrioritizeTeams(query, results);
-    this.displayResults(results, query, shouldPrioritizeTeams);
-  }
-  
-  shouldPrioritizeTeams(query, results) {
-    const q = query.toLowerCase().trim();
+    searchPlayers(query) {
+      const q = query.toLowerCase();
+      return this.allData
+        .filter(player =>
+          player.name.toLowerCase().includes(q) ||
+          player.team.toLowerCase().includes(q)
+        )
+        .slice(0, 8)
+        .map(player => ({
+          ...player,
+          type: 'player'
+        }));
+    }
     
-    return results.teams.some(team => {
-      const teamName = team.name.toLowerCase();
-      return teamName === q || teamName.startsWith(q) || q.startsWith(teamName);
-    });
-  }
-  
-  searchPlayers(query) {
-    const q = query.toLowerCase();
-    return this.allData
-      .filter(player => 
-        player.name.toLowerCase().includes(q) ||
-        player.team.toLowerCase().includes(q)
-      )
-      .slice(0, 8)
-      .map(player => ({
-        ...player,
-        type: 'player'
-      }));
-  }
-  
-  searchTeams(query) {
-    const q = query.toLowerCase();
-    return this.allTeams
-      .filter(team => team.name.toLowerCase().includes(q))
-      .slice(0, 5)
-      .map(team => ({
-        ...team,
-        type: 'team'
-      }));
-  }
-  
-  searchSeasons(query) {
-    const q = query.toLowerCase();
-    return this.allSeasons
-      .filter(season => 
-        season.year.toString().includes(query) ||
-        season.season.toLowerCase().includes(q) ||
-        `${season.year} ${season.season}`.toLowerCase().includes(q)
-      )
-      .sort((a, b) => {
-        if (a.year !== b.year) {
-          return b.year.localeCompare(a.year);
+    searchTeams(query) {
+      const q = query.toLowerCase();
+      return this.allTeams
+        .filter(team => team.name.toLowerCase().includes(q))
+        .slice(0, 5)
+        .map(team => ({
+          ...team,
+          type: 'team'
+        }));
+    }
+    
+    searchSeasons(query) {
+      const q = query.toLowerCase();
+      return this.allSeasons
+        .filter(season =>
+          season.year.toString().includes(query) ||
+          season.season.toLowerCase().includes(q) ||
+          `${season.year} ${season.season}`.toLowerCase().includes(q)
+        )
+        .sort((a, b) => {
+          if (a.year !== b.year) {
+            return b.year - a.year;
+          }
+          if (a.season === b.season) return 0;
+          return a.season === 'Fall' ? -1 : 1;
+        })
+        .slice(0, 6)
+        .map(season => ({
+          ...season,
+          type: 'season'
+        }));
+    }
+    
+    displayResults(results, query, prioritizeTeams = false) {
+      const totalResults = results.players.length + results.teams.length + results.seasons.length;
+      
+      if (totalResults === 0) {
+        this.searchResults.innerHTML = `
+          <div class="no-results">
+            No results found for "${query}"
+          </div>
+        `;
+        this.showResults();
+        return;
+      }
+      
+      let html = '';
+      
+      if (prioritizeTeams) {
+        if (results.teams.length > 0) {
+          html += this.renderTeamsSection(results.teams, query);
         }
-        if (a.season === b.season) return 0;
-        return a.season === 'Fall' ? -1 : 1;
-      })
-      .slice(0, 6)
-      .map(season => ({
-        ...season,
-        type: 'season'
-      }));
-  }
-  
-  displayResults(results, query, prioritizeTeams = false) {
-    const totalResults = results.players.length + results.teams.length + results.seasons.length;
+        if (results.players.length > 0) {
+          html += this.renderPlayersSection(results.players, query);
+        }
+      } else {
+        if (results.players.length > 0) {
+          html += this.renderPlayersSection(results.players, query);
+        }
+        if (results.teams.length > 0) {
+          html += this.renderTeamsSection(results.teams, query);
+        }
+      }
+      
+      if (results.seasons.length > 0) {
+        html += this.renderSeasonsSection(results.seasons, query);
+      }
+      
+      this.searchResults.innerHTML = html;
+      this.showResults();
+      this.bindResultEvents();
+    }
     
-    if (totalResults === 0) {
-      this.searchResults.innerHTML = `
-        <div class="no-results">
-          No results found for "${query}"
+    renderPlayersSection(players, query) {
+      return `
+        <div class="search-category">
+          <div class="category-header">Players</div>
+          ${players.map(player => `
+            <div class="search-item" data-type="player" data-name="${player.name}" data-team="${player.team}">
+              <div class="search-item-icon">👤</div>
+              <div class="search-item-content">
+                <div class="search-item-title">${this.highlightMatch(player.name, query)}</div>
+               <div class="search-item-subtitle">  <span class="team-badge-${player.team.toLowerCase()}">${player.team}</span> • ${player.games} games </div>
+              </div>
+              <div class="search-item-stats">
+                ${player.atBats > 0 ? `.${player.avg.toFixed(3).substring(2)} AVG<br>${player.hits} hits` : `${player.runs} runs`}
+              </div>
+            </div>
+          `).join('')}
         </div>
       `;
-      this.showResults();
+    }
+    
+    renderTeamsSection(teams, query) {
+      return `
+        <div class="search-category">
+          <div class="category-header">Teams</div>
+          ${teams.map(team => `
+            <div class="search-item" data-type="team" data-name="${team.name}">
+              <div class="search-item-icon">🏆</div>
+              <div class="search-item-content">
+                <div class="search-item-title team-text-${team.name.toLowerCase()}">  ${this.highlightMatch(team.name, query)}</div>
+                <div class="search-item-subtitle">${team.wins}-${team.losses} record • ${team.playerCount} players</div>
+              </div>
+              <div class="search-item-stats">
+                ${team.wins + team.losses > 0 ? `.${team.pct.toFixed(3).substring(2)} PCT` : 'New team'}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    renderSeasonsSection(seasons, query) {
+      return `
+        <div class="search-category">
+          <div class="category-header">Seasons</div>
+          ${seasons.map(season => `
+            <div class="search-item" data-type="season" data-year="${season.year}" data-season="${season.season}">
+              <div class="search-item-icon">📅</div>
+              <div class="search-item-content">
+                <div class="search-item-title">${this.highlightMatch(`${season.year} ${season.season}`, query)}</div>
+                <div class="search-item-subtitle">${season.teamCount} teams • ${season.games} games</div>
+              </div>
+              <div class="search-item-stats">
+                ${season.games} games
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    highlightMatch(text, query) {
+      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+    
+    bindResultEvents() {
+      const items = this.searchResults.querySelectorAll('.search-item');
+      items.forEach((item, index) => {
+        item.addEventListener('click', () => {
+          this.selectResult(item);
+        });
+        
+        item.addEventListener('mouseenter', () => {
+          this.currentHighlight = index;
+          this.updateHighlight();
+        });
+      });
+    }
+    
+    selectResult(item) {
+      const type = item.dataset.type;
+      
+      switch(type) {
+        case 'player':
+          const playerName = item.dataset.name;
+          window.location.href = `player.html?name=${encodeURIComponent(playerName)}`;
+          break;
+          
+        case 'team':
+          const team = item.dataset.name;
+          window.location.href = `team.html?team=${encodeURIComponent(team)}`;
+          break;
+          
+        case 'season':
+          const year = item.dataset.year;
+          const season = item.dataset.season;
+          window.location.href = `season.html?year=${year}&season=${encodeURIComponent(season)}`;
+          break;
+      }
+      
+      this.hideResults();
+      this.clearSearch();
+    }
+    
+    handleKeyNavigation(e) {
+      const items = this.searchResults.querySelectorAll('.search-item');
+      
+      switch(e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          this.currentHighlight = Math.min(this.currentHighlight + 1, items.length - 1);
+          this.updateHighlight();
+          break;
+          
+        case 'ArrowUp':
+          e.preventDefault();
+          this.currentHighlight = Math.max(this.currentHighlight - 1, -1);
+          this.updateHighlight();
+          break;
+          
+        case 'Enter':
+          e.preventDefault();
+          if (this.currentHighlight >= 0 && items[this.currentHighlight]) {
+            this.selectResult(items[this.currentHighlight]);
+          }
+          break;
+          
+        case 'Escape':
+          this.hideResults();
+          this.searchInput.blur();
+          break;
+      }
+    }
+    
+    updateHighlight() {
+      const items = this.searchResults.querySelectorAll('.search-item');
+      items.forEach((item, index) => {
+        item.classList.toggle('highlighted', index === this.currentHighlight);
+      });
+    }
+    
+    showResults() {
+      this.searchResults.classList.add('show');
+      this.currentHighlight = -1;
+    }
+    
+    hideResults() {
+      this.searchResults.classList.remove('show');
+      this.currentHighlight = -1;
+    }
+    
+    clearSearch() {
+      this.searchInput.value = '';
+      this.clearButton.classList.remove('show');
+      this.hideResults();
+      this.searchInput.focus();
+    }
+  }
+
+  // Initialize search when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    new GlobalSearch();
+  });
+  </script>
+
+  <script type="module">
+  // News Banner - CONVERTED TO FIREBASE
+  import {
+    getCurrentSeason,
+    getSeasonGames
+  } from './firebase-data.js';
+
+  const announcements = [
+    { type: 'announcement', text: '🏆 2025 Fall Playoffs starts November 16th!', className: 'news-announcement' },
+    { type: 'announcement', text: '⭐ Remember to clean up all trash after your games!', className: 'news-announcement' }
+  ];
+
+  let recentScores = [];
+  let upcomingSchedule = [];
+
+  async function loadRecentScores() {
+    try {
+      console.log('📰 Loading news banner data from Firebase...');
+      
+      const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+      
+      // Get current season and its games
+      const currentSeasonData = await getCurrentSeason();
+      const seasonGames = await getSeasonGames(currentSeasonData.id);
+      
+      // Also fetch previews.json for upcoming game details
+      const previewsResponse = await fetch('previews.json').catch(() => ({ ok: false }));
+      const previews = previewsResponse.ok ? await previewsResponse.json() : [];
+      
+      console.log(`✅ Loaded ${seasonGames.length} games for banner`);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Map games to expected format
+      const mappedGames = seasonGames.map(g => {
+        let dateString = "";
+        if (g.date && g.date.seconds) {
+          const dateObj = new Date(g.date.seconds * 1000);
+          dateString = dateObj.toLocaleDateString('en-US');
+        } else if (g.date) {
+          dateString = g.date;
+        }
+        
+        return {
+          "home team": g.homeTeamName || capitalize(g.homeTeamId) || "",
+          "away team": g.awayTeamName || capitalize(g.awayTeamId) || "",
+          "home score": g.homeScore !== undefined ? g.homeScore : null,
+          "away score": g.awayScore !== undefined ? g.awayScore : null,
+          winner: capitalize(g.winner || ""),
+          date: dateString,
+          year: currentSeasonData.year.toString(),
+          season: capitalize(currentSeasonData.season)
+        };
+      });
+      
+      // Get completed games (past games with winners)
+      const completedGames = mappedGames
+        .filter(game => {
+          const gameDate = new Date(game.date);
+          return game.winner &&
+                 game.winner.trim() !== "" &&
+                 gameDate < today;
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+      recentScores = completedGames.map(game => ({
+        type: 'score',
+        text: formatGameResult(game),
+        className: 'news-score'
+      }));
+      
+      // Get upcoming games from previews.json
+      const upcomingGames = previews
+        .filter(game => {
+          const gameDate = new Date(game.date);
+          return gameDate >= today;
+        })
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 5);
+
+      upcomingSchedule = upcomingGames.map(game => ({
+        type: 'upcoming',
+        text: formatUpcomingGame(game),
+        className: 'news-upcoming'
+      }));
+      
+      console.log(`✅ Banner loaded: ${recentScores.length} scores, ${upcomingSchedule.length} upcoming`);
+      
+    } catch (error) {
+      console.log('Could not load games data:', error);
+      // Fallback data
+      recentScores = [
+        { type: 'score', text: '🏆 Blue defeats Orange 12-8 in thriller!', className: 'news-score' }
+      ];
+      upcomingSchedule = [
+        { type: 'upcoming', text: '📅 Gold @ Silver - Oct 15 7:00 PM', className: 'news-upcoming' }
+      ];
+    }
+    
+    updateNewsBanner();
+  }
+
+  function formatGameResult(game) {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const homeScore = game["home score"];
+    const awayScore = game["away score"];
+    const winner = game.winner;
+    
+    let scoreText;
+    if (homeScore === "W" && awayScore === "L") {
+      scoreText = `${homeTeam} defeats ${awayTeam}`;
+    } else if (homeScore === "L" && awayScore === "W") {
+      scoreText = `${awayTeam} defeats ${homeTeam}`;
+    } else if (winner === "Tie") {
+      scoreText = `${homeTeam} ties ${awayTeam} ${homeScore}-${awayScore}`;
+    } else {
+      const winnerTeam = winner;
+      const loserTeam = winner === homeTeam ? awayTeam : homeTeam;
+      
+      let winnerScore, loserScore;
+      if (winner === homeTeam) {
+        winnerScore = homeScore;
+        loserScore = awayScore;
+      } else {
+        winnerScore = awayScore;
+        loserScore = homeScore;
+      }
+      
+      scoreText = `${winnerTeam} defeats ${loserTeam} ${winnerScore}-${loserScore}`;
+    }
+    
+    return `⚾ ${scoreText}`;
+  }
+
+  function formatUpcomingGame(game) {
+    const homeTeam = game["home team"];
+    const awayTeam = game["away team"];
+    const gameDate = game.date;
+    const gameTime = game.time || "TBD";
+    
+    const dateObj = new Date(gameDate);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    const timeDisplay = gameTime && gameTime.trim() !== "" ? ` ${gameTime}` : "";
+    
+    return `📅 ${awayTeam} @ ${homeTeam} - ${formattedDate}${timeDisplay}`;
+  }
+
+  function updateNewsBanner() {
+    const newsContent = document.getElementById('newsContent');
+    const allNews = [...announcements, ...recentScores, ...upcomingSchedule];
+    
+    if (allNews.length === 0) {
+      newsContent.innerHTML = '<span class="news-item news-announcement">🏆 Welcome to Mountainside Aces Statistics Hub!</span>';
       return;
     }
     
-    let html = '';
+    const newsHTML = allNews.map(item =>
+      `<span class="news-item ${item.className}">${item.text}</span>`
+    ).join('');
     
-    if (prioritizeTeams) {
-      if (results.teams.length > 0) {
-        html += this.renderTeamsSection(results.teams, query);
-      }
-      if (results.players.length > 0) {
-        html += this.renderPlayersSection(results.players, query);
-      }
-    } else {
-      if (results.players.length > 0) {
-        html += this.renderPlayersSection(results.players, query);
-      }
-      if (results.teams.length > 0) {
-        html += this.renderTeamsSection(results.teams, query);
-      }
-    }
-    
-    if (results.seasons.length > 0) {
-      html += this.renderSeasonsSection(results.seasons, query);
-    }
-    
-    this.searchResults.innerHTML = html;
-    this.showResults();
-    this.bindResultEvents();
+    newsContent.innerHTML = newsHTML;
   }
-  
-  renderPlayersSection(players, query) {
-    return `
-      <div class="search-category">
-        <div class="category-header">Players</div>
-        ${players.map(player => `
-          <div class="search-item" data-type="player" data-name="${player.name}" data-team="${player.team}">
-            <div class="search-item-icon">👤</div>
-            <div class="search-item-content">
-              <div class="search-item-title">${this.highlightMatch(player.name, query)}</div>
-             <div class="search-item-subtitle">  <span class="team-badge-${player.team.toLowerCase()}">${player.team}</span> • ${player.games} games </div>
-            </div>
-            <div class="search-item-stats">
-              ${player.atBats > 0 ? `.${player.avg.toFixed(3)} AVG<br>${player.hits} hits` : `${player.runs} runs`}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-  
-  renderTeamsSection(teams, query) {
-    return `
-      <div class="search-category">
-        <div class="category-header">Teams</div>
-        ${teams.map(team => `
-          <div class="search-item" data-type="team" data-name="${team.name}">
-            <div class="search-item-icon">🏆</div>
-            <div class="search-item-content">
-              <div class="search-item-title team-text-${team.name.toLowerCase()}">  ${this.highlightMatch(team.name, query)}</div>
-              <div class="search-item-subtitle">${team.wins}-${team.losses} record • ${team.playerCount} players</div>
-            </div>
-            <div class="search-item-stats">
-              ${team.wins + team.losses > 0 ? `.${team.pct.toFixed(3)} PCT` : 'New team'}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-  
-  renderSeasonsSection(seasons, query) {
-    return `
-      <div class="search-category">
-        <div class="category-header">Seasons</div>
-        ${seasons.map(season => `
-          <div class="search-item" data-type="season" data-year="${season.year}" data-season="${season.season}">
-            <div class="search-item-icon">📅</div>
-            <div class="search-item-content">
-              <div class="search-item-title">${this.highlightMatch(`${season.year} ${season.season}`, query)}</div>
-              <div class="search-item-subtitle">${season.teamCount} teams • ${season.playerCount} players</div>
-            </div>
-            <div class="search-item-stats">
-              ${season.games} games
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-  
-  highlightMatch(text, query) {
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  }
-  
-  bindResultEvents() {
-    const items = this.searchResults.querySelectorAll('.search-item');
-    items.forEach((item, index) => {
-      item.addEventListener('click', () => {
-        this.selectResult(item);
-      });
-      
-      item.addEventListener('mouseenter', () => {
-        this.currentHighlight = index;
-        this.updateHighlight();
-      });
-    });
-  }
-  
-  selectResult(item) {
-    const type = item.dataset.type;
-    
-    switch(type) {
-      case 'player':
-        const playerName = item.dataset.name;
-        window.location.href = `player.html?name=${encodeURIComponent(playerName)}`;
-        break;
-        
-      case 'team':
-        const team = item.dataset.name;
-        window.location.href = `team.html?team=${encodeURIComponent(team)}`;
-        break;
-        
-      case 'season':
-        const year = item.dataset.year;
-        const season = item.dataset.season;
-        window.location.href = `season.html?year=${year}&season=${encodeURIComponent(season)}`;
-        break;
-    }
-    
-    this.hideResults();
-    this.clearSearch();
-  }
-  
-  handleKeyNavigation(e) {
-    const items = this.searchResults.querySelectorAll('.search-item');
-    
-    switch(e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        this.currentHighlight = Math.min(this.currentHighlight + 1, items.length - 1);
-        this.updateHighlight();
-        break;
-        
-      case 'ArrowUp':
-        e.preventDefault();
-        this.currentHighlight = Math.max(this.currentHighlight - 1, -1);
-        this.updateHighlight();
-        break;
-        
-      case 'Enter':
-        e.preventDefault();
-        if (this.currentHighlight >= 0 && items[this.currentHighlight]) {
-          this.selectResult(items[this.currentHighlight]);
-        }
-        break;
-        
-      case 'Escape':
-        this.hideResults();
-        this.searchInput.blur();
-        break;
-    }
-  }
-  
-  updateHighlight() {
-    const items = this.searchResults.querySelectorAll('.search-item');
-    items.forEach((item, index) => {
-      item.classList.toggle('highlighted', index === this.currentHighlight);
-    });
-  }
-  
-  showResults() {
-    this.searchResults.classList.add('show');
-    this.currentHighlight = -1;
-  }
-  
-  hideResults() {
-    this.searchResults.classList.remove('show');
-    this.currentHighlight = -1;
-  }
-  
-  clearSearch() {
-    this.searchInput.value = '';
-    this.clearButton.classList.remove('show');
-    this.hideResults();
-    this.searchInput.focus();
-  }
-}
 
-// Initialize search when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new GlobalSearch();
-});
-</script>
-  <script>
-// Sample announcements and recent scores data
-const announcements = [
-  { type: 'announcement', text: '🏆 2025 Fall Playoffs starts November 16th!', className: 'news-announcement' },
-  { type: 'announcement', text: '⭐ Remember to clean up all trash after your games!', className: 'news-announcement' }
-];
-
-let recentScores = [];
-let allGames = [];
-let upcomingSchedule = [];
-
-// Load recent scores from games.json
-async function loadRecentScores() {
-  try {
-    const [gamesResponse, previewsResponse] = await Promise.all([
-      fetch('games.json'),
-      fetch('previews.json')
-    ]);
-    
-    if (gamesResponse.ok) {
-      allGames = await gamesResponse.json();
-    }
-    
-    let previews = [];
-    if (previewsResponse.ok) {
-      previews = await previewsResponse.json();
-    }
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Get completed games (past games with winners)
-    const completedGames = allGames
-      .filter(game => {
-        const gameDate = new Date(game.date);
-        return game.year === "2025" && 
-               game.season === "Fall" && 
-               game.winner && 
-               game.winner.trim() !== "" &&
-               gameDate < today;
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5);
-
-    recentScores = completedGames.map(game => ({
-      type: 'score',
-      text: formatGameResult(game),
-      className: 'news-score'
-    }));
-    
-    // Get upcoming games from previews.json (future games)
-    const upcomingGames = previews
-      .filter(game => {
-        const gameDate = new Date(game.date);
-        return gameDate >= today;
-      })
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .slice(0, 5);
-
-    upcomingSchedule = upcomingGames.map(game => ({
-      type: 'upcoming',
-      text: formatUpcomingGame(game),
-      className: 'news-upcoming'
-    }));
-    
-  } catch (error) {
-    console.log('Could not load games data:', error);
-    // Fallback data
-    recentScores = [
-      { type: 'score', text: '🏆 Blue defeats Orange 12-8 in thriller!', className: 'news-score' }
-    ];
-    upcomingSchedule = [
-      { type: 'upcoming', text: '📅 Gold @ Silver - Oct 15 7:00 PM', className: 'news-upcoming' }
-    ];
-  }
-  
-  updateNewsBanner();
-}
-
-function formatGameResult(game) {
-  const homeTeam = game["home team"];
-  const awayTeam = game["away team"];
-  const homeScore = game["home score"];
-  const awayScore = game["away score"];
-  const winner = game.winner;
-  
-  let scoreText;
-  if (homeScore === "W" && awayScore === "L") {
-    scoreText = `${homeTeam} defeats ${awayTeam}`;
-  } else if (homeScore === "L" && awayScore === "W") {
-    scoreText = `${awayTeam} defeats ${homeTeam}`;
-  } else if (winner === "Tie") {
-    scoreText = `${homeTeam} ties ${awayTeam} ${homeScore}-${awayScore}`;
-  } else {
-    // Determine winner and format with winning score first
-    const winnerTeam = winner;
-    const loserTeam = winner === homeTeam ? awayTeam : homeTeam;
-    
-    // Get winning and losing scores
-    let winnerScore, loserScore;
-    if (winner === homeTeam) {
-      winnerScore = homeScore;
-      loserScore = awayScore;
-    } else {
-      winnerScore = awayScore;
-      loserScore = homeScore;
-    }
-    
-    scoreText = `${winnerTeam} defeats ${loserTeam} ${winnerScore}-${loserScore}`;
-  }
-  
-  return `⚾ ${scoreText}`;
-}
-function formatUpcomingGame(game) {
-  const homeTeam = game["home team"];
-  const awayTeam = game["away team"];
-  const gameDate = game.date;
-  const gameTime = game.time || "TBD";
-  
-  // Format the date nicely
-  const dateObj = new Date(gameDate);
-  const formattedDate = dateObj.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric' 
+  // Initialize the banner when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRecentScores();
   });
-  
-  // Only show time if it exists and isn't empty
-  const timeDisplay = gameTime && gameTime.trim() !== "" ? ` ${gameTime}` : "";
-  
-  return `📅 ${awayTeam} @ ${homeTeam} - ${formattedDate}${timeDisplay}`;
-}
-function updateNewsBanner() {
-  const newsContent = document.getElementById('newsContent');
-  const allNews = [...announcements, ...recentScores, ...upcomingSchedule];
-  
-  if (allNews.length === 0) {
-    newsContent.innerHTML = '<span class="news-item news-announcement">🏆 Welcome to Mountainside Aces Statistics Hub!</span>';
-    return;
-  }
-  
-  const newsHTML = allNews.map(item => 
-    `<span class="news-item ${item.className}">${item.text}</span>`
-  ).join('');
-  
-  newsContent.innerHTML = newsHTML;
-}
 
-// Initialize the banner when page loads
-document.addEventListener('DOMContentLoaded', function() {
-  loadRecentScores();
-});
-
-// Update banner every 5 minutes to get fresh scores
-setInterval(loadRecentScores, 5 * 60 * 1000);
-</script>
+  // Update banner every 5 minutes to get fresh scores
+  setInterval(loadRecentScores, 5 * 60 * 1000);
+  </script>
+  <script src="mobile-enhancements.js"></script>
  <script src="mobile-enhancements.js"></script>
 </body>
 </html>
