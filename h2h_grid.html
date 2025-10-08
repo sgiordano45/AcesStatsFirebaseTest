@@ -374,6 +374,12 @@
     font-style: italic;
   }
   
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+  
   /* Responsive design */
   @media (max-width: 768px) {
     .page-container {
@@ -504,13 +510,10 @@
     </nav>
   </div>
 
-
-  </div>
-
   <div class="summary-stats" id="summaryStats">
     <h3>League Head-to-Head Summary (2022+)</h3>
     <div class="stats-grid" id="statsGrid">
-      <!-- Stats will be populated dynamically -->
+      <div class="loading">Loading statistics...</div>
     </div>
   </div>
 
@@ -542,20 +545,30 @@
   <div class="h2h-container">
     <div class="h2h-scroll">
       <table class="h2h-grid" id="h2hGrid">
-        <!-- Grid will be populated dynamically -->
+        <tr><td class="loading">Loading head-to-head grid...</td></tr>
       </table>
     </div>
   </div>
 </div>
 
-<script>
-let allBattingData = [];
+<script type="module">
+import { getAllSeasons } from './firebase-data.js';
+
 let allGames = [];
 let teams = [];
 
+// Mobile menu toggle
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileNavMenu');
+  menu.classList.toggle('open');
+}
+window.toggleMobileMenu = toggleMobileMenu;
+
+// Helper function to capitalize team names
+const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
 // Function to get team logo path
 function getTeamLogoPath(teamName) {
-  // Convert team name to lowercase and replace spaces with underscores for filename
   const logoFileName = teamName.toLowerCase().replace(/\s+/g, '_') + '.png';
   return `logos/${logoFileName}`;
 }
@@ -583,33 +596,98 @@ function createTeamRowHeader(teamName) {
   `;
 }
 
-// Load batting data and games data
-Promise.all([
-  fetch("data.json").then(res => res.json()),
-  fetch("games.json").then(res => res.ok ? res.json() : [])
-])
-  .then(([battingData, gamesData]) => {
-    allBattingData = battingData.map(p => ({
-      ...p,
-      name: p.name ? p.name.trim() : "",
-      team: p.team ? p.team.trim() : ""
-    }));
+// Load all games from Firebase
+async function loadData() {
+  try {
+    console.log('📊 Loading all games from Firebase...');
     
-    allGames = gamesData;
+    // Get all seasons
+    const seasons = await getAllSeasons();
+    console.log(`✅ Found ${seasons.length} seasons`);
     
-    // Get teams that have pages (teams with batting data, excluding "Kings")
-    teams = [...new Set(allBattingData.map(p => p.team))]
-      .filter(team => team && team.toLowerCase() !== "kings")
-      .sort();
+    // Load games from all seasons
+    const gamePromises = seasons.map(async (season) => {
+      try {
+        // Import getSeasonGames dynamically to avoid circular dependency
+        const { getSeasonGames } = await import('./firebase-data.js');
+        const seasonGames = await getSeasonGames(season.id);
+        
+        // Map games to expected format with proper field names
+        return seasonGames.map(g => {
+          // Convert Firebase Timestamp to date
+          let dateString = "";
+          if (g.date && g.date.seconds) {
+            const dateObj = new Date(g.date.seconds * 1000);
+            dateString = dateObj.toLocaleDateString('en-US');
+          } else if (g.date) {
+            dateString = g.date;
+          }
+          
+          return {
+            "home team": g.homeTeamName || capitalize(g.homeTeamId) || "",
+            "away team": g.awayTeamName || capitalize(g.awayTeamId) || "",
+            "home score": g.homeScore !== undefined ? g.homeScore : null,
+            "away score": g.awayScore !== undefined ? g.awayScore : null,
+            winner: capitalize(g.winner || ""),
+            game_type: g.gameType || "Regular",
+            date: dateString,
+            year: season.year || "",
+            season: capitalize(season.season || ""),
+            forfeit: g.forfeit ? "Yes" : "No"
+          };
+        });
+      } catch (err) {
+        console.warn(`Could not load games for season ${season.id}:`, err);
+        return [];
+      }
+    });
+    
+    const allSeasonGames = await Promise.all(gamePromises);
+    allGames = allSeasonGames.flat();
+    
+    console.log(`✅ Loaded ${allGames.length} total games`);
+    
+    // Filter for 2022+ only
+    allGames = allGames.filter(g => {
+      const year = parseInt(g.year);
+      return year >= 2022;
+    });
+    
+    console.log(`✅ Filtered to ${allGames.length} games from 2022+`);
+    
+    // Define official Aces teams (in preferred display order)
+    const officialAcesTeams = [
+      "Army", "Black", "Blue", "Carolina", "Gold", "Green", 
+      "Orange", "Purple", "Red", "Silver", "White"
+    ];
+    
+    // Extract unique teams from games
+    const teamSet = new Set();
+    allGames.forEach(game => {
+      if (game["home team"]) teamSet.add(game["home team"]);
+      if (game["away team"]) teamSet.add(game["away team"]);
+    });
+    
+    // Filter to only official Aces teams (case-insensitive matching)
+    teams = officialAcesTeams.filter(officialTeam => {
+      return Array.from(teamSet).some(gameTeam => 
+        gameTeam.toLowerCase() === officialTeam.toLowerCase()
+      );
+    });
+    
+    console.log(`✅ Found ${teams.length} Aces teams with games:`, teams);
     
     generateH2HGrid();
     generateSummaryStats();
-  })
-  .catch(error => {
-    console.error("Error loading data:", error);
-    document.getElementById("h2hGrid").innerHTML = 
-      '<tr><td>Error loading head-to-head data. Please check that data files are available.</td></tr>';
-  });
+    
+  } catch (error) {
+    console.error('❌ Error loading data:', error);
+    document.getElementById('h2hGrid').innerHTML = 
+      '<tr><td>Error loading head-to-head data. Please refresh the page.</td></tr>';
+    document.getElementById('statsGrid').innerHTML = 
+      '<div class="stat-item"><div class="stat-value">Error loading data</div></div>';
+  }
+}
 
 function generateH2HGrid() {
   const table = document.getElementById('h2hGrid');
@@ -648,18 +726,18 @@ function generateH2HGrid() {
 }
 
 function calculateHeadToHead(team1, team2) {
-  // Filter games where these two teams played each other, only including 2022 and later
+  // Filter games where these two teams played each other (case-insensitive)
+  const team1Lower = team1.toLowerCase();
+  const team2Lower = team2.toLowerCase();
+  
   const headToHeadGames = allGames.filter(game => {
-    const homeTeam = game["home team"];
-    const awayTeam = game["away team"];
-    const gameYear = parseInt(game.year);
+    const homeTeam = (game["home team"] || "").toLowerCase();
+    const awayTeam = (game["away team"] || "").toLowerCase();
     
-    // Only include games from 2022 onwards
-    const isRecentGame = gameYear >= 2022;
-    const isMatchup = (homeTeam === team1 && awayTeam === team2) ||
-                     (homeTeam === team2 && awayTeam === team1);
+    const isMatchup = (homeTeam === team1Lower && awayTeam === team2Lower) ||
+                     (homeTeam === team2Lower && awayTeam === team1Lower);
     
-    return isMatchup && isRecentGame;
+    return isMatchup;
   });
   
   if (headToHeadGames.length === 0) {
@@ -669,19 +747,14 @@ function calculateHeadToHead(team1, team2) {
   let team1Wins = 0, team2Wins = 0, ties = 0;
   
   headToHeadGames.forEach(game => {
-    const winner = game.winner;
+    const winner = (game.winner || "").toLowerCase();
     
-    // Handle different winner formats
-    let actualWinner = winner;
-    if (winner && winner.includes("Forfeit")) {
-      actualWinner = winner.replace("Forfeit - ", "").replace("Tie", "");
-    }
-    
-    if (actualWinner === "Tie") {
+    // Handle different winner formats (case-insensitive)
+    if (winner.includes("tie")) {
       ties++;
-    } else if (actualWinner === team1) {
+    } else if (winner === team1Lower) {
       team1Wins++;
-    } else if (actualWinner === team2) {
+    } else if (winner === team2Lower) {
       team2Wins++;
     }
   });
@@ -727,7 +800,7 @@ function formatCellContent(h2h, team1, team2) {
   return `<div class="h2h-record">${record}</div><div class="h2h-details">${h2h.totalGames} games</div>`;
 }
 
-function showH2HDetails(team1, team2) {
+window.showH2HDetails = function(team1, team2) {
   // Redirect to team comparison page with these teams pre-selected
   window.location.href = `team_compare.html?team1=${encodeURIComponent(team1)}&team2=${encodeURIComponent(team2)}`;
 }
@@ -823,8 +896,11 @@ function generateSummaryStats() {
   
   statsGrid.innerHTML = statsHTML;
 }
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', loadData);
 </script>
 <script src="team-colors.js"></script>
- <script src="mobile-enhancements.js"></script>
+<script src="mobile-enhancements.js"></script>
 </body>
 </html>
