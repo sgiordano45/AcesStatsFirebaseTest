@@ -718,13 +718,34 @@
         const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
         
         // Get all player stats and seasons from Firebase
-        const [allPlayerStats, seasons, awardsResponse] = await Promise.all([
+        const [allPlayerStats, seasons] = await Promise.all([
           getAllPlayerStatsOptimized(),
-          getAllSeasons(),
-          fetch('awards.json').catch(() => ({ ok: false }))
+          getAllSeasons()
         ]);
         
         console.log(`✅ Loaded ${allPlayerStats.length} players, ${seasons.length} seasons`);
+        
+        // Load awards from Firebase
+        let awardsData = [];
+        try {
+          const { db, collection, getDocs } = await import('./firebase-config.js');
+          const awardsSnapshot = await getDocs(collection(db, 'awards'));
+          
+          awardsSnapshot.forEach(doc => {
+            const data = doc.data();
+            awardsData.push({
+              Player: data.playerName || data.Player,
+              Award: data.category || data.Award,
+              Year: data.year || (data.seasonId ? data.seasonId.split('-')[0] : ''),
+              Season: data.season || (data.seasonId ? data.seasonId.split('-')[1] : '')
+            });
+          });
+          
+          console.log(`✅ Loaded ${awardsData.length} awards from Firebase`);
+        } catch (error) {
+          console.warn('Could not load awards from Firebase:', error);
+          awardsData = [];
+        }
         
         // Load games from all seasons
         const gamePromises = seasons.map(async (season) => {
@@ -732,11 +753,20 @@
             const seasonGames = await getSeasonGames(season.id);
             return seasonGames.map(g => {
               let dateString = "";
-              if (g.date && g.date.seconds) {
-                const dateObj = new Date(g.date.seconds * 1000);
-                dateString = dateObj.toLocaleDateString('en-US');
-              } else if (g.date) {
-                dateString = g.date;
+              try {
+                if (g.date && g.date.seconds) {
+                  const dateObj = new Date(g.date.seconds * 1000);
+                  // Use simpler date formatting to avoid locale issues
+                  const month = dateObj.getMonth() + 1;
+                  const day = dateObj.getDate();
+                  const year = dateObj.getFullYear();
+                  dateString = `${month}/${day}/${year}`;
+                } else if (g.date) {
+                  dateString = g.date;
+                }
+              } catch (dateError) {
+                console.warn('Date parsing error:', dateError);
+                dateString = "";
               }
               
               return {
@@ -762,9 +792,6 @@
         
         console.log(`✅ Loaded ${gamesData.length} total games`);
         
-        // Process awards if available
-        const awardsData = awardsResponse.ok ? await awardsResponse.json() : [];
-        
         // Process data for search
         this.allData = this.processPlayerData(allPlayerStats, awardsData);
         this.allTeams = this.processTeamData(allPlayerStats, gamesData);
@@ -778,6 +805,7 @@
         
       } catch (error) {
         console.error('❌ Error loading search data:', error);
+        console.error('Error stack:', error.stack);
         this.allData = [];
         this.allTeams = [];
         this.allSeasons = [];
@@ -814,12 +842,23 @@
           p.mostRecentTeam = player.currentTeam;
         }
         
-        // Aggregate career stats
+        // Aggregate career stats - check multiple possible field names
         p.games += Number(player.careerGames || 0);
         p.atBats += Number(player.careerAtBats || 0);
         p.hits += Number(player.careerHits || 0);
         p.runs += Number(player.careerRuns || 0);
         p.walks += Number(player.careerWalks || 0);
+        
+        // If no career stats, try to sum from seasons
+        if (p.games === 0 && player.seasons) {
+          Object.values(player.seasons).forEach(season => {
+            p.games += Number(season.games || 0);
+            p.atBats += Number(season.atBats || 0);
+            p.hits += Number(season.hits || 0);
+            p.runs += Number(season.runs || 0);
+            p.walks += Number(season.walks || 0);
+          });
+        }
       });
       
       // Add awards count
