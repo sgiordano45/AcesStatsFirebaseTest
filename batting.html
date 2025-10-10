@@ -559,15 +559,12 @@ td a:hover {
   </div>
 </div>
 
-<script>
-// Mock data for demonstration
-const mockPlayerData = [
-  {name: "John Smith", team: "Eagles", year: "2025", season: "Fall", games: 12, atBats: 48, hits: 18, runs: 12, walks: 8, AcesWar: 2.45, BA: 0.375, OBP: 0.464, sub: "No"},
-  {name: "Sarah Johnson", team: "Hawks", year: "2025", season: "Fall", games: 11, atBats: 42, hits: 16, runs: 10, walks: 6, AcesWar: 2.12, BA: 0.381, OBP: 0.458, sub: "No"},
-  {name: "Mike Davis", team: "Eagles", year: "2025", season: "Fall", games: 10, atBats: 38, hits: 14, runs: 9, walks: 5, AcesWar: 1.89, BA: 0.368, OBP: 0.442, sub: "No"},
-  {name: "Emily Chen", team: "Wolves", year: "2025", season: "Spring", games: 14, atBats: 52, hits: 19, runs: 14, walks: 9, AcesWar: 2.67, BA: 0.365, OBP: 0.452, sub: "No"},
-  {name: "Chris Martinez", team: "Hawks", year: "2024", season: "Fall", games: 13, atBats: 50, hits: 21, runs: 15, walks: 7, AcesWar: 3.01, BA: 0.420, OBP: 0.491, sub: "No"}
-];
+<script type="module">
+// Import Firebase functions
+import {
+  getAllPlayerStatsOptimized,
+  seasonsObjectToArray
+} from './firebase-data.js';
 
 let allPlayerData = [];
 let currentSortField = null;
@@ -576,33 +573,108 @@ let currentSortDirection = 'desc';
 // Helper functions
 function formatPlayerName(name) {
   if (!name) return "";
-  return name.split(' ').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  ).join(' ');
+  
+  if (name.includes(' ')) {
+    return name.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  if (name.includes('_')) {
+    return name.split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
 function capitalize(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
 
-// Load data
+// Load data from Firebase
 async function loadData() {
+  const loadStartTime = performance.now();
+  console.log('⚡ Loading batting data from Firebase...');
+  
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const players = await getAllPlayerStatsOptimized();
+    console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
     
-    allPlayerData = mockPlayerData;
+    if (!players || players.length === 0) {
+      console.warn('No player data found');
+      const summaryContent = document.getElementById('summaryContent');
+      summaryContent.classList.remove('loading');
+      summaryContent.innerHTML = '<div style="text-align:center;">No player data available.</div>';
+      document.getElementById('loadingOverlay').classList.add('hidden');
+      return;
+    }
+    
+    // Process seasons from OBJECT format
+    const allStats = [];
+    
+    players.forEach(player => {
+      if (player.seasons && typeof player.seasons === 'object') {
+        const seasonsArray = seasonsObjectToArray(player);
+        
+        seasonsArray.forEach(season => {
+          let year = "";
+          let seasonName = "";
+          
+          if (season.seasonId) {
+            const parts = season.seasonId.split('-');
+            if (parts.length >= 2) {
+              year = parts[0];
+              seasonName = parts[1];
+            }
+          }
+          
+          if (!year && season.year) year = season.year;
+          if (!seasonName && season.season) seasonName = season.season;
+          
+          allStats.push({
+            name: formatPlayerName(player.name || player.displayName || player.userId),
+            team: capitalize(season.team || player.currentTeam || ""),
+            year: year,
+            season: capitalize(seasonName),
+            games: Number(season.games) || 0,
+            atBats: Number(season.atBats) || 0,
+            hits: Number(season.hits) || 0,
+            runs: Number(season.runs) || 0,
+            walks: Number(season.walks) || 0,
+            AcesWar: typeof season.acesBPI === 'number' ? season.acesBPI :
+                     (season.acesBPI === "N/A" ? "N/A" : Number(season.acesBPI) || 0),
+            BA: season.battingAverage || 0,
+            OBP: season.onBasePercentage || 0,
+            sub: season.sub || "No",
+            id: player.userId || player.id || "",
+            seasonId: season.seasonId || ""
+          });
+        });
+      }
+    });
+    
+    console.log(`✅ Processed ${allStats.length} season records`);
+    allPlayerData = allStats;
     
     populateFilters();
     filterAndDisplayStats();
     updateSummary();
     
+    const loadEndTime = performance.now();
+    console.log(`🎉 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+    
     // Hide loading overlay
     document.getElementById('loadingOverlay').classList.add('hidden');
+    
   } catch (error) {
-    console.error('Error loading data:', error);
-    document.getElementById('summaryContent').innerHTML = 
+    console.error('❌ Error loading data:', error);
+    const summaryContent = document.getElementById('summaryContent');
+    summaryContent.classList.remove('loading');
+    summaryContent.innerHTML = 
       '<div style="text-align:center;color:#e53e3e;">Error loading data. Please refresh the page.</div>';
+    document.getElementById('loadingOverlay').classList.add('hidden');
   }
 }
 
@@ -699,9 +771,9 @@ function displayTable(data) {
     row.insertCell().textContent = player.hits;
     row.insertCell().textContent = player.runs;
     row.insertCell().textContent = player.walks;
-    row.insertCell().textContent = player.AcesWar.toFixed(2);
-    row.insertCell().textContent = player.BA.toFixed(3);
-    row.insertCell().textContent = player.OBP.toFixed(3);
+    row.insertCell().textContent = typeof player.AcesWar === 'number' ? player.AcesWar.toFixed(2) : player.AcesWar;
+    row.insertCell().textContent = typeof player.BA === 'number' ? player.BA.toFixed(3) : player.BA;
+    row.insertCell().textContent = typeof player.OBP === 'number' ? player.OBP.toFixed(3) : player.OBP;
     row.insertCell().textContent = player.sub;
   });
 }
@@ -722,9 +794,37 @@ function updateSummary(data = allPlayerData) {
   const totalRuns = data.reduce((sum, p) => sum + p.runs, 0);
   const totalWalks = data.reduce((sum, p) => sum + p.walks, 0);
   
-  const qualifiedPlayers = allPlayerData.filter(p => p.atBats >= 10);
-  const topBA = qualifiedPlayers.reduce((max, p) => p.BA > max.BA ? p : max, {BA: 0});
-  const topOBP = qualifiedPlayers.reduce((max, p) => p.OBP > max.OBP ? p : max, {OBP: 0});
+  // Find all-time leaders (use all data, not just filtered)
+  const allTimeData = allPlayerData;
+  const qualifiedPlayers = allTimeData.filter(p => p.atBats >= 10);
+  
+  let leadersHTML = '';
+  if (allTimeData.length > 0) {
+    const topGames = allTimeData.reduce((max, p) => p.games > max.games ? p : max);
+    const topAtBats = allTimeData.reduce((max, p) => p.atBats > max.atBats ? p : max);
+    const topHits = allTimeData.reduce((max, p) => p.hits > max.hits ? p : max);
+    const topRuns = allTimeData.reduce((max, p) => p.runs > max.runs ? p : max);
+    const topWalks = allTimeData.reduce((max, p) => p.walks > max.walks ? p : max);
+    
+    const topBA = qualifiedPlayers.reduce((max, p) => p.BA > max.BA ? p : max, {BA: 0});
+    const topOBP = qualifiedPlayers.reduce((max, p) => p.OBP > max.OBP ? p : max, {OBP: 0});
+    
+    const topAcesWar = allTimeData.filter(p => typeof p.AcesWar === 'number').reduce((max, p) => p.AcesWar > max.AcesWar ? p : max, {AcesWar: 0});
+    
+    leadersHTML = `
+      <div class="leaders-text">
+        <strong>🏆 All-Time Single Season Leaders:</strong><br>
+        Games: ${topGames.name} (${topGames.games}) • 
+        At Bats: ${topAtBats.name} (${topAtBats.atBats}) • 
+        Hits: ${topHits.name} (${topHits.hits}) • 
+        Runs: ${topRuns.name} (${topRuns.runs}) • 
+        Walks: ${topWalks.name} (${topWalks.walks})<br>
+        AVG: ${topBA.name} (${topBA.BA.toFixed(3)}) • 
+        OBP: ${topOBP.name} (${topOBP.OBP.toFixed(3)}) • 
+        BPI: ${topAcesWar.name} (${topAcesWar.AcesWar.toFixed(2)})
+      </div>
+    `;
+  }
   
   summaryContent.innerHTML = `
     <div class="summary-stats">
@@ -749,11 +849,7 @@ function updateSummary(data = allPlayerData) {
         <div class="stat-value">${totalRuns}</div>
       </div>
     </div>
-    <div class="leaders-text">
-      <strong>🏆 Single Season Leaders:</strong> 
-      AVG: ${topBA.name} (${topBA.BA.toFixed(3)}) • 
-      OBP: ${topOBP.name} (${topOBP.OBP.toFixed(3)})
-    </div>
+    ${leadersHTML}
   `;
 }
 
