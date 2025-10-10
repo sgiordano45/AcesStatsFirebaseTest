@@ -887,8 +887,13 @@ td a:hover {
     const totalRuns = data.reduce((sum, p) => sum + p.runs, 0);
     const totalWalks = data.reduce((sum, p) => sum + p.walks, 0);
     
-    totalsText.textContent = `${data.length} player records | ${totalGames} total games | ${totalAtBats} at bats | ${totalHits} hits | ${totalRuns} runs | ${totalWalks} walks`;
+    // COUNT UNIQUE PLAYERS instead of total records
+    const uniquePlayers = new Set(data.map(p => p.name)).size;
+    // HELPER FUNCTION to format numbers with commas
+      const formatNumber = (num) => num.toLocaleString('en-US');
     
+    totalsText.textContent = `${formatNumber(uniquePlayers)} unique players | ${formatNumber(totalGames)} total games | ${formatNumber(totalAtBats)} at bats | ${formatNumber(totalHits)} hits | ${formatNumber(totalRuns)} runs | ${formatNumber(totalWalks)} walks`;
+      
     // Find all-time leaders (use all data, not just filtered)
     const allTimeData = allPlayerData;
     const qualifiedPlayers = allTimeData.filter(p => p.atBats >= 10);
