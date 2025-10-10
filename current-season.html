@@ -3,153 +3,232 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2d5016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mountainside Aces">
 <title>2025 Fall Season - Mountainside Aces</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="mobile-enhancements.css">
 <style>
+  :root {
+    --primary-color: #2d5016;
+    --secondary-color: #1a6b4a;
+    --accent-color: #ffd700;
+    --seasonal-red: #ff6b6b;
+    --seasonal-red-dark: #ff7b7b;
+    --card-bg: #ffffff;
+    --text-dark: #2d3748;
+    --text-light: #718096;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
   body {
-    font-family: Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
     min-height: 100vh;
+    color: var(--text-dark);
   }
 
+  /* Loading Spinner */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  }
+
+  .loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .softball-spinner {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    animation: spin 1.5s ease-in-out infinite;
+  }
+
+  .softball-spinner::before {
+    content: '⚾';
+    font-size: 80px;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  @keyframes spin {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.1); }
+  }
+
+  /* Header with softball pattern - SEASONAL RED THEME */
   .header {
-    background: linear-gradient(135deg, #ff7b7b 0%, #ff6b6b 100%);
+    background: linear-gradient(135deg, var(--seasonal-red-dark) 0%, var(--seasonal-red) 100%);
     color: white;
     text-align: center;
-    padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 4rem 2rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
   }
 
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .header::after {
+    content: '🍂';
+    position: absolute;
+    bottom: -30px;
+    left: 10%;
+    font-size: 120px;
+    opacity: 0.15;
+    transform: rotate(-15deg);
+  }
+  
   .header h1 {
     margin: 0;
-    font-size: 2.5rem;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-shadow: 2px 4px 8px rgba(0,0,0,0.2);
+    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 1;
   }
-
+  
   .header p {
-    margin: 0.5rem 0 0 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-  }
-
-  .back-nav {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 1rem 2rem;
-    border-bottom: 1px solid #eee;
-  }
-
-  .back-nav a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
-    margin-right: 2rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    transition: background-color 0.3s;
-  }
-
-  .back-nav a:hover {
-    background: #f8f9fa;
-  }
-
-  .mobile-nav-container {
-    display: none;
-  }
-
-  .mobile-nav-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px 12px 0 0;
-  }
-
-  .mobile-nav-title {
-    font-weight: 600;
-    font-size: 1.1rem;
-  }
-
-  .hamburger-menu {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background-color 0.3s ease;
-  }
-
-  .hamburger-menu:hover {
-    background-color: rgba(255,255,255,0.2);
-  }
-
-  .mobile-nav-menu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    background: white;
-    border-radius: 0 0 12px 12px;
-  }
-
-  .mobile-nav-menu.open {
-    max-height: 600px;
-  }
-
-  .mobile-nav-item {
-    display: block;
-    padding: 1rem 1.5rem;
-    color: #333;
-    text-decoration: none;
-    border-bottom: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
-  }
-
-  .mobile-nav-item:hover {
-    background-color: #f8f9fa;
-    color: #667eea;
-    padding-left: 2rem;
-  }
-
-  .mobile-nav-item:last-child {
-    border-bottom: none;
+    margin: 1rem 0 0 0;
+    font-size: 1.3rem;
+    opacity: 0.95;
+    font-weight: 300;
+    position: relative;
+    z-index: 1;
   }
 
   .container {
     max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
+    margin: 3rem auto;
+    padding: 0 2rem;
   }
 
+  /* Modern Section Styling */
   .section {
-    background: white;
-    border-radius: 12px;
+    background: var(--card-bg);
+    border-radius: 16px;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
     overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .section:hover {
+    box-shadow: var(--shadow-md);
   }
 
   .section-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     color: white;
     padding: 1.5rem 2rem;
-    font-size: 1.4rem;
-    font-weight: bold;
+    font-size: 1.5rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    position: relative;
+  }
+
+  .section-header::after {
+    content: '⚾';
+    position: absolute;
+    right: 2rem;
+    font-size: 2rem;
+    opacity: 0.2;
   }
 
   .section-content {
     padding: 2rem;
   }
 
+  /* Stats Summary Cards */
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    border-left: 4px solid var(--seasonal-red);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '⚾';
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    font-size: 60px;
+    opacity: 0.05;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .stat-card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  /* Tables */
   .standings-table, .schedule-table, .bracket-table {
     width: 100%;
     border-collapse: collapse;
@@ -159,39 +238,55 @@
 
   .standings-table th, .schedule-table th, .bracket-table th,
   .standings-table td, .schedule-table td, .bracket-table td {
-    padding: 10px 8px;
+    padding: 12px 10px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .standings-table th, .schedule-table th, .bracket-table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
-    color: #333;
-    font-size: 0.8rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 0.85rem;
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   .standings-table tr:nth-child(even), 
   .schedule-table tr:nth-child(even), 
   .bracket-table tr:nth-child(even) {
-    background-color: #fafafa;
+    background-color: #fafbfc;
   }
 
   .standings-table tr:hover, 
   .schedule-table tr:hover, 
   .bracket-table tr:hover {
-    background-color: #f0f0f0;
+    background-color: #f0f4f8;
+    transition: background-color 0.2s ease;
   }
 
   .team-name {
-    font-weight: bold;
-    color: #333;
+    font-weight: 600;
+    color: var(--text-dark);
     text-align: left !important;
   }
 
+  .team-name a {
+    color: var(--primary-color) !important;
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.2s ease;
+  }
+
+  .team-name a:hover {
+    color: var(--secondary-color) !important;
+    text-decoration: underline;
+  }
+
   .win-pct {
-    font-weight: bold;
+    font-weight: 700;
     color: #28a745;
     text-align: center;
   }
@@ -199,18 +294,23 @@
   .schedule-strength {
     text-align: center;
     font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
   }
 
   .schedule-strength.easy {
     color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
   }
 
   .schedule-strength.average {
     color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
   }
 
   .schedule-strength.hard {
     color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
   }
 
   .game-date {
@@ -220,137 +320,26 @@
 
   .game-score {
     text-align: center;
-    font-weight: bold;
-    color: #495057;
+    font-weight: 700;
+    color: var(--text-dark);
   }
 
   .winner {
-    font-weight: bold;
-    color: #007bff;
+    font-weight: 700;
+    color: var(--primary-color);
   }
 
   .upcoming {
     background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
   }
 
   .playoff-game {
     background-color: #d1ecf1 !important;
+    border-left: 4px solid #17a2b8;
   }
 
-  .bracket-section {
-    margin-bottom: 2rem;
-  }
-
-  .bracket-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 1rem;
-    padding: 0.8rem 1rem;
-    background: #f8f9fa;
-    border-left: 4px solid #ff6b6b;
-    border-radius: 4px;
-  }
-
-  .bracket-visual {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin: 1rem 0;
-  }
-
-  .bracket-round {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .bracket-round h4 {
-    margin: 0 0 0.8rem 0;
-    color: #333;
-    font-size: 1rem;
-  }
-
-  .matchup {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 0.8rem;
-    margin-bottom: 0.8rem;
-  }
-
-  .matchup:last-child {
-    margin-bottom: 0;
-  }
-
-  .team-in-bracket {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.3rem 0;
-    border-bottom: 1px solid #eee;
-  }
-
-  .team-in-bracket:last-child {
-    border-bottom: none;
-  }
-
-  .team-in-bracket.winner {
-    font-weight: bold;
-    color: #28a745;
-  }
-
-  .standings-table .team-name a {
-    color: #667eea !important;
-    text-decoration: underline;
-    font-weight: bold;
-  }
-
-  .standings-table .team-name a:hover {
-    color: #4c63d2;
-    text-decoration: underline;
-  }
-
-  .loading {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-    font-style: italic;
-  }
-
-  .no-data {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-  }
-
-  .stats-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .stat-card {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-    border-left: 4px solid #ff6b6b;
-  }
-
-  .stat-number {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .stat-label {
-    font-size: 0.9rem;
-    color: #666;
-    margin-top: 0.2rem;
-  }
-
+  /* Leaders Section */
   .leaders-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -359,10 +348,17 @@
   }
 
   .leader-category {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
     border-left: 4px solid #28a745;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .leader-category:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
   }
 
   .leader-category.pitching {
@@ -370,9 +366,10 @@
   }
 
   .leader-category h4 {
-    margin: 0 0 0.8rem 0;
-    color: #333;
+    margin: 0 0 1rem 0;
+    color: var(--text-dark);
     font-size: 1.1rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -388,8 +385,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid #e9ecef;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
   }
 
@@ -398,122 +395,249 @@
   }
 
   .leader-rank {
-    background: #667eea;
+    background: var(--primary-color);
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.8rem;
-    font-weight: bold;
+    font-weight: 700;
     margin-right: 0.5rem;
     flex-shrink: 0;
   }
 
   .leader-rank.first {
-    background: #ffd700;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
     color: #333;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
   }
 
   .leader-rank.second {
-    background: #c0c0c0;
+    background: linear-gradient(135deg, #c0c0c0 0%, #d3d3d3 100%);
     color: #333;
   }
 
   .leader-rank.third {
-    background: #cd7f32;
+    background: linear-gradient(135deg, #cd7f32 0%, #b8732d 100%);
     color: white;
   }
 
   .leader-name {
     flex: 1;
     margin-left: 0.5rem;
-    font-weight: 500;
+    font-weight: 600;
+  }
+
+  .leader-name a {
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .leader-name a:hover {
+    color: var(--primary-color);
   }
 
   .leader-value {
-    font-weight: bold;
-    color: #495057;
+    font-weight: 700;
+    color: var(--text-dark);
     margin-left: 0.5rem;
   }
 
   .leader-team {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: var(--text-light);
     margin-left: 0.3rem;
   }
 
   .leaders-section-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-    margin: 1.5rem 0 1rem 0;
-    padding: 0.8rem 0;
-    border-bottom: 2px solid #e9ecef;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 2rem 0 1rem 0;
+    padding: 1rem 0;
+    border-bottom: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
+  .leaders-section-title::before {
+    content: "";
+    width: 6px;
+    height: 28px;
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border-radius: 3px;
+  }
+
+  /* Bracket Styling */
+  .bracket-section {
+    margin-bottom: 2rem;
+  }
+
+  .bracket-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 6px solid var(--seasonal-red);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bracket-visual {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .bracket-round {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+  }
+
+  .bracket-round:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .bracket-round h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-dark);
+    font-size: 1rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+  }
+
+  .matchup {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .matchup:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .matchup:last-child {
+    margin-bottom: 0;
+  }
+
+  .team-in-bracket {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .team-in-bracket:last-child {
+    border-bottom: none;
+  }
+
+  .team-in-bracket.winner {
+    font-weight: 700;
+    color: #28a745;
+  }
+
+  /* Loading and No Data States */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-light);
+    font-style: italic;
+  }
+
+  .loading::before {
+    content: '⚾';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: spin 1.5s ease-in-out infinite;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-light);
+  }
+
+  .no-data h4 {
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Swipe Indicator */
   .swipe-indicator {
     text-align: center;
-    padding: 0.5rem;
-    background: #fff3cd;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
     color: #856404;
     font-size: 0.85rem;
-    border-bottom: 1px solid #ffeaa7;
+    border-bottom: 2px solid #ffc107;
     display: none;
+    font-weight: 600;
   }
 
+  /* Responsive Design */
   @media (max-width: 768px) {
-    .back-nav {
-      display: none;
-    }
-
-    .mobile-nav-container {
-      display: block;
-      margin: 1rem;
-      background: white;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
     .header h1 {
-      font-size: 1.8rem;
+      font-size: 2.5rem;
+    }
+
+    .header::after {
+      font-size: 80px;
+      bottom: -20px;
     }
 
     .header p {
-      font-size: 0.95rem;
+      font-size: 1rem;
     }
 
     .container {
-      padding: 1rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .section {
+      margin-bottom: 1.5rem;
     }
 
     .section-content {
-      padding: 1rem;
+      padding: 1.5rem;
     }
 
     .section-header {
-      padding: 1rem;
-      font-size: 1.2rem;
+      padding: 1.25rem 1.5rem;
+      font-size: 1.3rem;
     }
 
     .stats-summary {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
     .stat-card {
-      padding: 0.75rem;
+      padding: 1.25rem;
     }
 
     .stat-number {
-      font-size: 1.5rem;
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
+      font-size: 1.75rem;
     }
 
     .swipe-indicator {
@@ -521,88 +645,87 @@
     }
 
     .standings-table, .schedule-table, .bracket-table {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       display: block;
       overflow-x: auto;
       white-space: nowrap;
       -webkit-overflow-scrolling: touch;
     }
 
-    .standings-table th, .schedule-table th, .bracket-table th,
-    .standings-table td, .schedule-table td, .bracket-table td {
-      padding: 6px 4px;
-      font-size: 0.75rem;
-    }
-
     .leaders-grid {
       grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-
-    .leader-list li {
-      font-size: 0.85rem;
-      flex-wrap: wrap;
-    }
-
-    .leader-team {
-      width: 100%;
-      margin-left: 2rem;
-      margin-top: 0.25rem;
     }
 
     .bracket-visual {
       grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-
-    .bracket-round {
-      padding: 0.75rem;
-    }
-
-    .bracket-title {
-      font-size: 1rem;
-      padding: 0.6rem 0.75rem;
-    }
-
-    .matchup {
-      padding: 0.6rem;
     }
   }
 
   @media (max-width: 480px) {
     .header h1 {
-      font-size: 1.5rem;
+      font-size: 2rem;
     }
 
     .stats-summary {
       grid-template-columns: 1fr;
     }
+  }
 
-    .section {
-      margin-bottom: 1rem;
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Fade in animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
+
+  .section {
+    animation: fadeInUp 0.6s ease backwards;
+  }
+
+  .section:nth-child(1) { animation-delay: 0.1s; }
+  .section:nth-child(2) { animation-delay: 0.2s; }
+  .section:nth-child(3) { animation-delay: 0.3s; }
+  .section:nth-child(4) { animation-delay: 0.4s; }
+  .section:nth-child(5) { animation-delay: 0.5s; }
+  .section:nth-child(6) { animation-delay: 0.6s; }
 </style>
 </head>
 <body>
+  <!-- Loading Spinner -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="softball-spinner"></div>
+  </div>
+
+  <!-- Navigation -->
   <div class="filters-nav">
     <nav class="nav-container">
       <a href="index.html" class="nav-link">🏠 Home</a>
       <a href="current-season.html" class="nav-link active">🍂 Current Season</a>
-      <a href="weekend-preview.html" class="nav-link batting">🔮 Weekend Preview</a>
-      <a href="batting.html" class="nav-link batting">⚾ Batting Stats</a>
-      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
+      <a href="weekend-preview.html" class="nav-link">🔮 Weekend Preview</a>
+      <a href="batting.html" class="nav-link">⚾ Batting Stats</a>
+      <a href="pitching.html" class="nav-link">🥎 Pitching Stats</a>
       <a href="teams.html" class="nav-link">🏆 All Teams</a>
       <a href="players.html" class="nav-link">👤 All Players</a>
       <a href="seasons.html" class="nav-link">📅 All Seasons</a>
       <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
-      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
+      <a href="compare.html" class="nav-link">📈 Player Comparison</a>
       <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
       <a href="pictures.html" class="nav-link">📷 Gallery</a>
-      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
+      <a href="charts.html" class="nav-link">📊 Performance Charts</a>
     </nav>
   </div>
 
+  <!-- Mobile Navigation -->
   <div class="mobile-nav-container">
     <div class="mobile-nav-header">
       <div class="mobile-nav-title">🍂 2025 Fall Season</div>
@@ -610,9 +733,9 @@
     </div>
     <nav class="mobile-nav-menu" id="mobileNavMenu">
       <a href="index.html" class="mobile-nav-item">🏠 Home</a>
-      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
+      <a href="current-season.html" class="mobile-nav-item active">🍂 Current Season</a>
       <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
-      <a href="batting.html" class="mobile-nav-item active">⚾ Batting Stats</a>
+      <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
       <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
       <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
       <a href="players.html" class="mobile-nav-item">👤 All Players</a>
@@ -626,12 +749,14 @@
     </nav>
   </div>
 
+  <!-- Header -->
   <header class="header">
     <h1>🍂 2025 Fall Season</h1>
     <p>Current standings, schedule, results & playoff bracket</p>
   </header>
 
   <div class="container">
+    <!-- Season Overview -->
     <div class="section">
       <div class="section-header">
         📊 Season Overview
@@ -655,24 +780,21 @@
             <div class="stat-label">Playoff Games</div>
           </div>
           <a href="projections.html" class="stat-card" style="
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             text-decoration: none;
-            border-left: 4px solid #764ba2;
+            border-left: 4px solid var(--accent-color);
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.2)'">
+            box-shadow: var(--shadow-sm);
+          " onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 20px rgba(45, 80, 22, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
             <div class="stat-number" style="color: white;">🔮</div>
-            <div class="stat-label" style="color: rgba(255,255,255,0.9);">Playoff Projections</div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.95);">Playoff Projections</div>
           </a>
         </div>
       </div>
     </div>
 
+    <!-- Current Standings -->
     <div class="section">
       <div class="section-header">
         🏆 Current Standings
@@ -683,6 +805,7 @@
       </div>
     </div>
 
+    <!-- Season Leaders -->
     <div class="section">
       <div class="section-header">
         ⭐ Season Leaders
@@ -692,6 +815,7 @@
       </div>
     </div>
 
+    <!-- Upcoming Schedule -->
     <div class="section">
       <div class="section-header">
         📅 Upcoming Schedule
@@ -702,6 +826,7 @@
       </div>
     </div>
 
+    <!-- Game Results -->
     <div class="section">
       <div class="section-header">
         📋 Game Results
@@ -712,9 +837,10 @@
       </div>
     </div>
 
+    <!-- Playoff Bracket -->
     <div class="section">
       <div class="section-header">
-        🟢 Playoff Bracket
+        🏆 Playoff Bracket
       </div>
       <div class="section-content">
         <div id="bracketContent" class="loading">Loading playoff bracket...</div>
@@ -722,123 +848,18 @@
     </div>
   </div>
 
-  <script type ="module">
-      // DIAGNOSTIC SCRIPT
-      // Add this temporarily to current-season.html to see what's in the data
+  <script>
+    // Hide loading spinner after page loads
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }, 800);
+    });
+  </script>
 
-      async function diagnoseData() {
-        console.log('🔍 DIAGNOSTIC MODE - Checking aggregatedPlayerStats structure...');
-        
-        try {
-          // Import directly
-          const { db, collection, getDocs } = await import('./firebase-config.js');
-          
-          // Get the aggregatedPlayerStats collection
-          const statsRef = collection(db, 'aggregatedPlayerStats');
-          const snapshot = await getDocs(statsRef);
-          
-          console.log(`📊 Total documents in aggregatedPlayerStats: ${snapshot.docs.length}`);
-          
-          if (snapshot.docs.length > 0) {
-            // Look at first document
-            const firstDoc = snapshot.docs[0];
-            const data = firstDoc.data();
-            
-            console.log('🔍 First player ID:', firstDoc.id);
-            console.log('🔍 First player data structure:', data);
-            
-            // Check what fields exist
-            console.log('🔍 Available top-level fields:', Object.keys(data));
-            
-            // Check if seasons exists
-            if (data.seasons) {
-              console.log('✅ seasons field EXISTS');
-              console.log('🔍 Type of seasons:', typeof data.seasons);
-              console.log('🔍 Is seasons an object?', typeof data.seasons === 'object' && !Array.isArray(data.seasons));
-              console.log('🔍 Season keys:', Object.keys(data.seasons));
-              
-              // Check if 2025-fall exists
-              if (data.seasons['2025-fall']) {
-                console.log('✅ 2025-fall season EXISTS for this player');
-                console.log('🔍 2025-fall data:', data.seasons['2025-fall']);
-              } else {
-                console.log('❌ 2025-fall season NOT FOUND for this player');
-                console.log('🔍 Available season keys:', Object.keys(data.seasons));
-              }
-            } else {
-              console.log('❌ seasons field DOES NOT EXIST');
-            }
-            
-            // Check pitching seasons
-            if (data.pitchingSeasons) {
-              console.log('✅ pitchingSeasons field EXISTS');
-              console.log('🔍 Pitching season keys:', Object.keys(data.pitchingSeasons));
-            } else {
-              console.log('❌ pitchingSeasons field DOES NOT EXIST');
-            }
-            
-            // Look at a few more documents
-            console.log('\n🔍 Checking first 3 players for 2025-fall data...');
-            let playersWithSeason = 0;
-            let playersWithoutSeason = 0;
-            
-            for (let i = 0; i < Math.min(3, snapshot.docs.length); i++) {
-              const doc = snapshot.docs[i];
-              const playerData = doc.data();
-              const hasSeasonData = playerData.seasons && playerData.seasons['2025-fall'];
-              
-              if (hasSeasonData) {
-                playersWithSeason++;
-                console.log(`✅ Player ${i+1} (${doc.id}): HAS 2025-fall data`);
-                console.log('   Sample stats:', playerData.seasons['2025-fall']);
-              } else {
-                playersWithoutSeason++;
-                console.log(`❌ Player ${i+1} (${doc.id}): NO 2025-fall data`);
-                if (playerData.seasons) {
-                  console.log('   Available seasons:', Object.keys(playerData.seasons));
-                }
-              }
-            }
-            
-            console.log(`\n📊 Summary: ${playersWithSeason} with data, ${playersWithoutSeason} without data`);
-            
-            // Check all documents for 2025-fall
-            let totalWith2025Fall = 0;
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.seasons && data.seasons['2025-fall']) {
-                totalWith2025Fall++;
-              }
-            });
-            
-            console.log(`\n📊 TOTAL PLAYERS WITH 2025-fall DATA: ${totalWith2025Fall} out of ${snapshot.docs.length}`);
-            
-          } else {
-            console.log('❌ No documents found in aggregatedPlayerStats collection!');
-          }
-          
-        } catch (error) {
-          console.error('❌ Diagnostic error:', error);
-          console.error('Error details:', error.message);
-        }
-      }
-
-      // Run diagnostic
-      diagnoseData();
-
-      // INSTRUCTIONS:
-      // 1. Add this script to current-season.html BEFORE the existing <script type="module">
-      // 2. Save and refresh
-      // 3. Check console output
-      // 4. Send me the console output so we can see what's wrong
-      
-   </script>
-  
-  
   <script type="module">
       console.log('Script started - checking imports...');
       
-      // Import Firebase helper functions - UPDATED for optimized functions
       import {
         getSeasonGames,
         getSeasonPlayerStatsOptimized,
@@ -848,7 +869,6 @@
 
       console.log('Imports successful!');
 
-      // Mobile menu toggle
       function toggleMobileMenu() {
         const menu = document.getElementById('mobileNavMenu');
         menu.classList.toggle('open');
@@ -873,16 +893,13 @@
         try {
           console.log('📊 Loading season data from Firebase...');
           
-          // Helper function - define at the top so it's available everywhere
           const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
           
-          // Get current season
           const currentSeasonData = await getCurrentSeason();
           console.log('✅ Current season:', currentSeasonData);
           
           const seasonId = currentSeasonData.id;
           
-          // Fetch all data - USING OPTIMIZED FUNCTIONS
           const [games, batting, pitching] = await Promise.all([
             getSeasonGames(seasonId),
             getSeasonPlayerStatsOptimized(seasonId),
@@ -891,9 +908,7 @@
           
           console.log(`✅ Fetched: ${games?.length || 0} games, ${batting?.length || 0} batting records, ${pitching?.length || 0} pitching records`);
           
-          // ====== MAP GAMES TO EXPECTED FORMAT ======
           allGames = (games || []).map(g => {
-            // Convert Firebase Timestamp to readable date string
             let dateString = "";
             if (g.date && g.date.seconds) {
               const dateObj = new Date(g.date.seconds * 1000);
@@ -922,7 +937,6 @@
           
           console.log('✅ Mapped games:', allGames.length);
           
-          // Verify team extraction
           const teams = new Set();
           allGames.forEach(game => {
             if (game["home team"]) teams.add(game["home team"]);
@@ -930,11 +944,6 @@
           });
           console.log(`✅ Found ${teams.size} unique teams:`, Array.from(teams).sort());
           
-          if (allGames.length > 0) {
-            console.log('📊 Sample Mapped Game:', allGames[0]);
-          }
-          
-          // ====== MAP BATTING DATA - OPTIMIZED DATA ALREADY IN CORRECT FORMAT ======
           playerData = (batting || []).map(p => ({
             name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
@@ -950,12 +959,6 @@
             sub: "No"
           }));
           
-          console.log('✅ Mapped batting data:', playerData.length);
-          if (playerData.length > 0) {
-            console.log('📊 Sample batting data:', playerData[0]);
-          }
-          
-          // ====== MAP PITCHING DATA - OPTIMIZED DATA ALREADY IN CORRECT FORMAT ======
           pitchingData = (pitching || []).map(p => ({
             name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
@@ -967,18 +970,12 @@
             ERA: p.earnedRunAverage || p.era || p.ERA || 0
           }));
           
-          console.log('✅ Mapped pitching data:', pitchingData.length);
-          if (pitchingData.length > 0) {
-            console.log('📊 Sample pitching data:', pitchingData[0]);
-          }
           console.log('🎉 All data loaded and mapped successfully');
           
-          // ====== FILTER DATA FOR CURRENT SEASON ======
           const seasonGames = allGames;
           const seasonPlayerData = playerData.filter(p => p.sub === "No");
           const seasonPitchingData = pitchingData;
           
-          // ====== CALL RENDER FUNCTIONS ======
           updateSeasonSummary(seasonGames);
           updateStandings(seasonGames);
           updateSeasonLeaders(seasonPlayerData, seasonPitchingData);
@@ -988,13 +985,10 @@
           
         } catch (error) {
           console.error('❌ Error loading season data:', error);
-          console.error('Error details:', error.message);
-          console.error('Error stack:', error.stack);
           showError();
         }
       }
 
-      // Rest of the functions remain the same...
       function parseGameDate(dateStr) {
         return new Date(dateStr);
       }
@@ -1450,7 +1444,7 @@
                     <td class="game-score">vs</td>
                     <td class="team-name">${game["away team"]}</td>
                     <td>${game.game_type}</td>
-                    <td><a href="game-preview.html?home=${encodeURIComponent(game["home team"])}&away=${encodeURIComponent(game["away team"])}&date=${encodeURIComponent(game.date)}" style="color: #667eea; text-decoration: none; font-weight: 600;">📊 Preview</a></td>
+                    <td><a href="game-preview.html?home=${encodeURIComponent(game["home team"])}&away=${encodeURIComponent(game["away team"])}&date=${encodeURIComponent(game.date)}" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">📊 Preview</a></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1530,97 +1524,4 @@
         
         const html = `
           <div class="bracket-title">Projected Double Elimination Playoff Bracket</div>
-          <div class="bracket-section">
-            <h4>Playoff Seeding (Top 10 Teams)</h4>
-            <div style="overflow-x: auto;">
-              <table class="bracket-table">
-                <thead>
-                  <tr><th>Seed</th><th>Team</th><th>Record</th><th>Win%</th></tr>
-                </thead>
-                <tbody>
-                  ${playoffTeams.map((team, index) => `
-                    <tr>
-                      <td><strong>${index + 1}</strong></td>
-                      <td class="team-name">${team.name}</td>
-                      <td>${team.wins}-${team.losses}${team.ties > 0 ? `-${team.ties}` : ''}</td>
-                      <td class="win-pct">${(team.winPct * 100).toFixed(1)}%</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="bracket-section">
-            <h4>First Round Playoff Matchups</h4>
-            <div class="bracket-visual">
-              ${[
-                { game: 1, seed1: 1, seed2: 'Winner 8v9', desc: '#1 vs Winner of 8v9' },
-                { game: 2, seed1: 2, seed2: 'Winner 7v10', desc: '#2 vs Winner of 7v10' },
-                { game: 3, seed1: 3, seed2: 6, desc: '#3 vs #6' },
-                { game: 4, seed1: 4, seed2: 5, desc: '#4 vs #5' }
-              ].map(m => `
-                <div class="bracket-round">
-                  <h4>First Round - Game ${m.game}</h4>
-                  <div class="matchup">
-                    <div class="team-in-bracket">
-                      <span><strong>#${m.seed1}</strong> ${playoffTeams[m.seed1-1].name}</span>
-                      <span>${playoffTeams[m.seed1-1].wins}-${playoffTeams[m.seed1-1].losses}</span>
-                    </div>
-                    <div class="team-in-bracket">
-                      <span>${typeof m.seed2 === 'number' ? `<strong>#${m.seed2}</strong> ${playoffTeams[m.seed2-1].name}` : m.seed2}</span>
-                      <span>${typeof m.seed2 === 'number' ? `${playoffTeams[m.seed2-1].wins}-${playoffTeams[m.seed2-1].losses}` : 'TBD'}</span>
-                    </div>
-                    <div style="text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
-                      ${m.desc}
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-
-            <h4>Play-in Games</h4>
-            <div class="bracket-visual">
-              ${[
-                { game: 1, seed1: 7, seed2: 10, winner: '#2' },
-                { game: 2, seed1: 8, seed2: 9, winner: '#1' }
-              ].map(m => `
-                <div class="bracket-round">
-                  <h4>Play-in Game ${m.game}</h4>
-                  <div class="matchup">
-                    <div class="team-in-bracket">
-                      <span><strong>#${m.seed1}</strong> ${playoffTeams[m.seed1-1].name}</span>
-                      <span>${playoffTeams[m.seed1-1].wins}-${playoffTeams[m.seed1-1].losses}</span>
-                    </div>
-                    <div class="team-in-bracket">
-                      <span><strong>#${m.seed2}</strong> ${playoffTeams[m.seed2-1].name}</span>
-                      <span>${playoffTeams[m.seed2-1].wins}-${playoffTeams[m.seed2-1].losses}</span>
-                    </div>
-                    <div style="text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
-                      Winner faces ${m.winner} in First Round
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-
-        document.getElementById('bracketContent').innerHTML = html;
-      }
-
-      function showError() {
-        const errorHtml = '<div class="no-data">Error loading season data. Please try again later.</div>';
-        document.getElementById('standingsContent').innerHTML = errorHtml;
-        document.getElementById('leadersContent').innerHTML = errorHtml;
-        document.getElementById('scheduleContent').innerHTML = errorHtml;
-        document.getElementById('resultsContent').innerHTML = errorHtml;
-        document.getElementById('bracketContent').innerHTML = errorHtml;
-      }
-
-      document.addEventListener('DOMContentLoaded', loadData);
-    </script>
-  <script src="team-colors.js"></script>
-  <script src="mobile-enhancements.js"></script>
-</body>
-</html>
+          
