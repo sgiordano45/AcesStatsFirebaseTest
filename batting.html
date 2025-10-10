@@ -3,344 +3,507 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aces Historical Batting</title>
-<link rel="stylesheet" href="style.css">
+<title>Mountainside Aces - Batting Statistics</title>
+<meta name="theme-color" content="#2d5016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-  }
-  
-  .page-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-  
-  .page-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-align: center;
-    padding: 3rem 2rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  }
-  
-  .page-header h1 {
-    margin: 0;
+:root {
+  --primary-color: #2d5016;
+  --secondary-color: #1a6b4a;
+  --accent-color: #ffd700;
+  --card-bg: #ffffff;
+  --text-dark: #2d3748;
+  --text-light: #718096;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  min-height: 100vh;
+  color: var(--text-dark);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.softball-spinner::before {
+  content: '⚾';
+  font-size: 80px;
+  animation: spin 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  padding: 4rem 2rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.header::after {
+  content: '⚾';
+  position: absolute;
+  bottom: -30px;
+  left: -30px;
+  font-size: 200px;
+  opacity: 0.05;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.header h1 {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.header p {
+  color: rgba(255,255,255,0.9);
+  font-size: 1.3rem;
+  font-weight: 300;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+  max-width: 1400px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+}
+
+/* Section */
+.section {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+/* Section Title */
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title::before {
+  content: "";
+  width: 8px;
+  height: 36px;
+  background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border-radius: 4px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--border-color) 0%, transparent 100%);
+}
+
+/* Filters Section */
+.filters-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.filter-group select {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: white;
+  color: var(--text-dark);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(45,80,22,0.1);
+}
+
+/* Navigation Buttons */
+.nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.nav-btn {
+  padding: 0.8rem 1.5rem;
+  border: 2px solid var(--primary-color);
+  background: white;
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-color);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+
+.nav-btn:hover::before {
+  transform: translateX(0);
+}
+
+.nav-btn:hover {
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-btn.pitching {
+  border-color: #11998e;
+  color: #11998e;
+}
+
+.nav-btn.pitching::before {
+  background: #11998e;
+}
+
+/* Summary Stats */
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Leaders Section */
+.leaders-text {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-color);
+  color: var(--text-dark);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Table Container */
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+thead {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+th {
+  padding: 1rem;
+  text-align: center;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.3s ease;
+}
+
+th:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+th.asc::after {
+  content: " ▲";
+  font-size: 0.8em;
+}
+
+th.desc::after {
+  content: " ▼";
+  font-size: 0.8em;
+}
+
+td {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+tbody tr {
+  transition: all 0.3s ease;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, rgba(45,80,22,0.05) 0%, rgba(26,107,74,0.05) 100%);
+  transform: scale(1.01);
+  box-shadow: var(--shadow-sm);
+}
+
+td a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+td a:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-light);
+}
+
+.loading::before {
+  content: '⚾';
+  font-size: 40px;
+  margin-right: 1rem;
+  animation: spin 1.5s ease-in-out infinite;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header h1 {
     font-size: 2.5rem;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   }
   
-  .page-header p {
-    margin: 1rem 0 0 0;
+  .header p {
     font-size: 1.1rem;
-    opacity: 0.9;
   }
   
-  .filters-nav {
-    background: white;
+  .dashboard-container {
+    padding: 0 1rem;
+    margin: 2rem auto;
+  }
+  
+  .section {
     padding: 1.5rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border: 1px solid #e1e5e9;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.6rem;
+  }
+  
+  .section-title::after {
+    display: none;
   }
   
   .filters-section {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group select {
+    width: 100%;
+  }
+  
+  .nav-buttons {
+    flex-direction: column;
+  }
+  
+  .nav-btn {
+    width: 100%;
     justify-content: center;
   }
   
-  .filters-section label {
-    font-weight: 600;
-    color: #333;
-    margin-right: 0.5rem;
-  }
-  
-  .filters-section select {
-    padding: 0.5rem 1rem;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    background: white;
-    font-size: 1rem;
-    color: #333;
-    transition: border-color 0.3s ease;
-  }
-  
-  .filters-section select:focus {
-    outline: none;
-    border-color: #667eea;
-  }
-  
-  .nav-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .nav-link {
-    padding: 0.8rem 1.5rem;
-    border: 2px solid #667eea;
-    background: white;
-    color: #667eea;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .nav-link:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-2px);
-    text-decoration: none;
-  }
-  
-  .nav-link.pitching {
-    border-color: #11998e;
-    color: #11998e;
-  }
-  
-  .nav-link.pitching:hover {
-    background: #11998e;
-    color: white;
-  }
-  
-  .summary {
-    background: white;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border: 1px solid #e1e5e9;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .summary::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  }
-  
-  .summary p {
-    margin: 0 0 1rem 0;
-    color: #333;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-  
-  .summary p:last-child {
-    margin-bottom: 0;
-  }
-  
-  .table-container {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border: 1px solid #e1e5e9;
+  .summary-stats {
+    grid-template-columns: 1fr;
   }
   
   table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   
-  th {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1rem 0.8rem;
-    text-align: center;
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
-    border: none;
-    position: relative;
-    transition: background 0.3s ease;
+  th, td {
+    padding: 0.6rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 3rem 1rem;
   }
   
-  th:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  .header h1 {
+    font-size: 2rem;
   }
   
-  th.asc::after {
-    content: " ▲";
-    font-size: 0.8em;
-    margin-left: 0.5rem;
+  table {
+    font-size: 0.75rem;
   }
   
-  th.desc::after {
-    content: " ▼";
-    font-size: 0.8em;
-    margin-left: 0.5rem;
+  th, td {
+    padding: 0.5rem 0.3rem;
   }
-  
-  td {
-    padding: 0.8rem;
-    text-align: center;
-    border-bottom: 1px solid #f1f3f4;
-    color: #333;
-  }
-  
-  tbody tr {
-    transition: background-color 0.3s ease;
-  }
-  
-  tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
-  }
-  
-  tbody tr:hover {
-    background-color: #e3f2fd;
-    transform: scale(1.01);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
-  }
-  
-  /* Mobile responsive adjustments */
-  @media (max-width: 768px) {
-    .page-container {
-      padding: 1rem;
-    }
-    
-    .page-header {
-      padding: 2rem 1rem;
-    }
-    
-    .page-header h1 {
-      font-size: 2rem;
-    }
-    
-    .filters-section {
-      flex-direction: column;
-      gap: 1rem;
-      align-items: stretch;
-    }
-    
-    .nav-container {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    .nav-link {
-      padding: 12px 15px;
-      font-size: 14px;
-      text-align: center;
-      width: 100%;
-      justify-content: center;
-    }
-    
-    table {
-      font-size: 0.8rem;
-    }
-    
-    th, td {
-      padding: 0.5rem 0.3rem;
-    }
-    
-    .table-container {
-      overflow-x: auto;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .page-header h1 {
-      font-size: 1.8rem;
-    }
-    
-    .filters-nav {
-      padding: 1rem;
-    }
-    
-    .summary {
-      padding: 1.5rem;
-    }
-    
-    .summary p {
-      font-size: 1rem;
-    }
-    
-    table {
-      font-size: 0.7rem;
-    }
-    
-    th, td {
-      padding: 0.4rem 0.2rem;
-    }
-  }
+}
 </style>
-<link rel="stylesheet" href="mobile-enhancements.css">
 </head>
 <body>
-  <div class="mobile-nav-container">
-    <div class="mobile-nav-header">
-      <div class="mobile-nav-title">⚾ Batting Statistics</div>
-      <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
-    </div>
-    <nav class="mobile-nav-menu" id="mobileNavMenu">
-      <a href="index.html" class="mobile-nav-item">🏠 Home</a>
-      <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
-      <a href="weekend-preview.html" class="mobile-nav-item">🔮 Weekend Preview</a>
-      <a href="batting.html" class="mobile-nav-item active">⚾ Batting Stats</a>
-      <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
-      <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
-      <a href="players.html" class="mobile-nav-item">👤 All Players</a>
-      <a href="seasons.html" class="mobile-nav-item">📅 All Seasons</a>
-      <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
-      <a href="leaders.html" class="mobile-nav-item">📊 Career Leaders</a>
-      <a href="milestones.html" class="mobile-nav-item">🎯 Milestones</a>
-      <a href="h2h_grid.html" class="mobile-nav-item">⚔️ Head-to-Head Grid</a>
-      <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
-    </nav>
-  </div>
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="softball-spinner"></div>
+</div>
 
-<div class="page-container">
-  <div class="page-header">
-    <h1>Mountainside Aces Batting Stats</h1>
+<!-- Header -->
+<div class="header">
+  <div class="header-content">
+    <h1>⚾ Batting Statistics</h1>
     <p>Complete batting statistics and performance metrics for all players</p>
   </div>
+</div>
 
-  <div id="summary" class="summary">
-    <div id="loadingIndicator" style="text-align: center; padding: 2rem;">
-      <p style="font-size: 1.2rem; color: #667eea;">⏳ Loading batting statistics...</p>
-      <p style="color: #666; margin-top: 0.5rem;">Using optimized aggregated collection (fast!)</p>
-    </div>
-    <p id="totalsText" style="display: none;"></p>
-    <p id="leadersText" style="display: none;"></p>
-  </div>
-
-  <div class="filters-nav">
+<!-- Main Content -->
+<div class="dashboard-container">
+  <!-- Filters Section -->
+  <div class="section">
+    <div class="section-title">🔍 Filters</div>
     <div class="filters-section">
-      <div>
+      <div class="filter-group">
         <label for="yearFilter">Year:</label>
         <select id="yearFilter">
           <option value="All">All Years</option>
         </select>
       </div>
-      <div>
+      <div class="filter-group">
         <label for="seasonFilter">Season:</label>
         <select id="seasonFilter">
           <option value="All">All Seasons</option>
@@ -348,522 +511,298 @@
       </div>
     </div>
     
-    <nav class="nav-container">
-      <a href="index.html" class="nav-link">🏠 Home</a>
-      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
-      <a href="batting.html" class="nav-link batting active">⚾ Batting Stats</a>
-      <a href="pitching.html" class="nav-link pitching">🥎 Pitching Stats</a>
-      <a href="teams.html" class="nav-link">🏆 All Teams</a>
-      <a href="players.html" class="nav-link">👤 All Players</a>
-      <a href="seasons.html" class="nav-link">📅 All Seasons</a>
-      <a href="leaders.html" class="nav-link">📊 Career Leaders</a>
-      <a href="compare.html" class="nav-link">⚖️ Player Comparison</a>
-      <a href="h2h_grid.html" class="nav-link">⚔️ Head-to-Head Grid</a>
-      <a href="pictures.html" class="nav-link">📷 Gallery</a>
-      <a href="charts.html" class="nav-link">📈 Performance Charts</a>
-    </nav>
+    <div class="nav-buttons">
+      <a href="index.html" class="nav-btn">🏠 Home</a>
+      <a href="current-season.html" class="nav-btn">🍂 Current Season</a>
+      <a href="pitching.html" class="nav-btn pitching">🥎 Pitching Stats</a>
+      <a href="teams.html" class="nav-btn">🏆 All Teams</a>
+      <a href="players.html" class="nav-btn">👤 All Players</a>
+      <a href="compare.html" class="nav-btn">⚖️ Compare Players</a>
+    </div>
   </div>
 
-  <div class="table-container">
-    <div class="swipe-indicator">← Swipe left/right to see all columns →</div>
-    <table id="statsTable">
-      <thead>
-        <tr>
-          <th data-field="name">Name</th>
-          <th data-field="team">Team</th>
-          <th data-field="year">Year</th>
-          <th data-field="season">Season</th>
-          <th data-field="games">Games</th>
-          <th data-field="atBats">At Bats</th>
-          <th data-field="hits">Hits</th>
-          <th data-field="runs">Runs</th>
-          <th data-field="walks">Walks</th>
-          <th data-field="AcesWar">AcesBPI</th>
-          <th data-field="BA">BA</th>
-          <th data-field="OBP">OBP</th>
-          <th data-field="Sub">Sub</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Rows generated dynamically -->
-      </tbody>
-    </table>
+  <!-- Summary Section -->
+  <div class="section">
+    <div class="section-title">📊 Summary</div>
+    <div id="summaryContent" class="loading">Loading statistics...</div>
+  </div>
+
+  <!-- Statistics Table -->
+  <div class="section">
+    <div class="section-title">📈 Player Statistics</div>
+    <div class="table-container">
+      <table id="statsTable">
+        <thead>
+          <tr>
+            <th data-field="name">Name</th>
+            <th data-field="team">Team</th>
+            <th data-field="year">Year</th>
+            <th data-field="season">Season</th>
+            <th data-field="games">Games</th>
+            <th data-field="atBats">AB</th>
+            <th data-field="hits">Hits</th>
+            <th data-field="runs">Runs</th>
+            <th data-field="walks">BB</th>
+            <th data-field="AcesWar">BPI</th>
+            <th data-field="BA">AVG</th>
+            <th data-field="OBP">OBP</th>
+            <th data-field="sub">Sub</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="13" class="loading">Loading player data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<script src="team-colors.js"></script>
-<script type="module">
-  console.log('📄 Script started - checking Firebase imports...');
+<script>
+// Mock data for demonstration
+const mockPlayerData = [
+  {name: "John Smith", team: "Eagles", year: "2025", season: "Fall", games: 12, atBats: 48, hits: 18, runs: 12, walks: 8, AcesWar: 2.45, BA: 0.375, OBP: 0.464, sub: "No"},
+  {name: "Sarah Johnson", team: "Hawks", year: "2025", season: "Fall", games: 11, atBats: 42, hits: 16, runs: 10, walks: 6, AcesWar: 2.12, BA: 0.381, OBP: 0.458, sub: "No"},
+  {name: "Mike Davis", team: "Eagles", year: "2025", season: "Fall", games: 10, atBats: 38, hits: 14, runs: 9, walks: 5, AcesWar: 1.89, BA: 0.368, OBP: 0.442, sub: "No"},
+  {name: "Emily Chen", team: "Wolves", year: "2025", season: "Spring", games: 14, atBats: 52, hits: 19, runs: 14, walks: 9, AcesWar: 2.67, BA: 0.365, OBP: 0.452, sub: "No"},
+  {name: "Chris Martinez", team: "Hawks", year: "2024", season: "Fall", games: 13, atBats: 50, hits: 21, runs: 15, walks: 7, AcesWar: 3.01, BA: 0.420, OBP: 0.491, sub: "No"}
+];
+
+let allPlayerData = [];
+let currentSortField = null;
+let currentSortDirection = 'desc';
+
+// Helper functions
+function formatPlayerName(name) {
+  if (!name) return "";
+  return name.split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ');
+}
+
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+}
+
+// Load data
+async function loadData() {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    allPlayerData = mockPlayerData;
+    
+    populateFilters();
+    filterAndDisplayStats();
+    updateSummary();
+    
+    // Hide loading overlay
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  } catch (error) {
+    console.error('Error loading data:', error);
+    document.getElementById('summaryContent').innerHTML = 
+      '<div style="text-align:center;color:#e53e3e;">Error loading data. Please refresh the page.</div>';
+  }
+}
+
+// Populate filters
+function populateFilters() {
+  const yearFilter = document.getElementById('yearFilter');
+  const seasonFilter = document.getElementById('seasonFilter');
   
-  // UPDATED: Import optimized functions and season helpers
-  import {
-    getAllPlayerStatsOptimized,
-    seasonsObjectToArray
-  } from './firebase-data.js';
+  const years = new Set();
+  const seasons = new Set();
   
-  console.log('✅ Firebase imports successful!');
+  allPlayerData.forEach(player => {
+    if (player.year) years.add(player.year);
+    if (player.season) seasons.add(player.season);
+  });
+  
+  yearFilter.innerHTML = '<option value="All">All Years</option>';
+  seasonFilter.innerHTML = '<option value="All">All Seasons</option>';
+  
+  Array.from(years).sort((a, b) => b.localeCompare(a)).forEach(year => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearFilter.appendChild(option);
+  });
+  
+  Array.from(seasons).sort().forEach(season => {
+    const option = document.createElement('option');
+    option.value = season;
+    option.textContent = season;
+    seasonFilter.appendChild(option);
+  });
+  
+  yearFilter.addEventListener('change', filterAndDisplayStats);
+  seasonFilter.addEventListener('change', filterAndDisplayStats);
+}
 
-  // Global variables
-  let allPlayerData = [];
-  let currentSortField = null;
-  let currentSortDirection = 'desc';
-
-  // Helper function for capitalization
-  const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-
-  // Helper function to format player names from firstname_lastname to First Last
-  function formatPlayerName(name) {
-    if (!name) return "";
-    
-    // If name already has spaces, just capitalize each word
-    if (name.includes(' ')) {
-      return name.split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-    }
-    
-    // If name has underscores, replace with spaces and capitalize
-    if (name.includes('_')) {
-      return name.split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-    }
-    
-    // Otherwise just capitalize the single name
-    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+// Filter and display
+function filterAndDisplayStats() {
+  const yearFilter = document.getElementById('yearFilter').value;
+  const seasonFilter = document.getElementById('seasonFilter').value;
+  
+  let filteredData = allPlayerData;
+  
+  if (yearFilter !== 'All') {
+    filteredData = filteredData.filter(p => p.year === yearFilter);
   }
-
-  // UPDATED: Load data using optimized aggregated collection with object-keyed seasons
-  async function loadData() {
-    const loadStartTime = performance.now();
-    console.log('⚡ Loading batting data from aggregated collection (OPTIMIZED)...');
-    console.time('Total Load Time');
-    
-    try {
-      console.time('Fetch Aggregated Data');
-      const players = await getAllPlayerStatsOptimized();
-      console.timeEnd('Fetch Aggregated Data');
-      console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
-      
-      if (!players || players.length === 0) {
-        console.warn('No player data found');
-        document.getElementById('totalsText').textContent = 'No player data available.';
-        document.getElementById('loadingIndicator').style.display = 'none';
-        document.getElementById('totalsText').style.display = 'block';
-        return;
-      }
-      
-      // UPDATED: Process seasons from OBJECT format (not array)
-      console.time('Process Data');
-      const allStats = [];
-
-      players.forEach(player => {
-        // CRITICAL CHANGE: seasons is now an OBJECT with seasonId keys
-        if (player.seasons && typeof player.seasons === 'object') {
-          // Convert seasons object to array for processing
-          const seasonsArray = seasonsObjectToArray(player);
-          
-          seasonsArray.forEach(season => {
-            // Parse year and season from seasonId
-            // Format: "2024-fall" or "2025-spring"
-            let year = "";
-            let seasonName = "";
-            
-            if (season.seasonId) {
-              const parts = season.seasonId.split('-');
-              if (parts.length >= 2) {
-                year = parts[0];           // "2024"
-                seasonName = parts[1];     // "fall"
-              }
-            }
-            
-            // Fallback: try to get year and season from the season object directly
-            if (!year && season.year) year = season.year;
-            if (!seasonName && season.season) seasonName = season.season;
-            
-            allStats.push({
-              name: formatPlayerName(player.name || player.displayName || player.userId),
-              team: capitalize(season.team || player.currentTeam || ""),
-              year: year,
-              season: capitalize(seasonName),
-              games: Number(season.games) || 0,
-              atBats: Number(season.atBats) || 0,
-              hits: Number(season.hits) || 0,
-              runs: Number(season.runs) || 0,
-              walks: Number(season.walks) || 0,
-              AcesWar: typeof season.acesBPI === 'number' ? season.acesBPI :
-                       (season.acesBPI === "N/A" ? "N/A" : Number(season.acesBPI) || 0),
-              BA: season.battingAverage || 0,
-              OBP: season.onBasePercentage || 0,
-              sub: season.sub || "No",
-              id: player.userId || player.id || "",
-              seasonId: season.seasonId || ""
-            });
-          });
-        }
-      });
-      
-      console.log(`✅ Processed ${allStats.length} season records from ${players.length} players`);
-      allPlayerData = allStats;
-      console.timeEnd('Process Data');
-      
-      // Hide loading indicator and show data
-      const loadingIndicator = document.getElementById('loadingIndicator');
-      const totalsText = document.getElementById('totalsText');
-      const leadersText = document.getElementById('leadersText');
-      
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
-      if (totalsText) totalsText.style.display = 'block';
-      if (leadersText) leadersText.style.display = 'block';
-      
-      console.time('Render UI');
-      populateFilters();
-      filterAndDisplayStats();
-      updateSummary();
-      console.timeEnd('Render UI');
-      
-      const loadEndTime = performance.now();
-      console.timeEnd('Total Load Time');
-      console.log(`🎉 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
-      
-    } catch (error) {
-      console.error('❌ Error loading data:', error);
-      const totalsEl = document.getElementById('totalsText');
-      if (totalsEl) {
-        totalsEl.textContent = 'Error loading data. Please refresh the page.';
-        totalsEl.style.display = 'block';
-      }
-      const loadingIndicator = document.getElementById('loadingIndicator');
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
-    }
+  if (seasonFilter !== 'All') {
+    filteredData = filteredData.filter(p => p.season === seasonFilter);
   }
-
-  // Populate year and season filters
-  function populateFilters() {
-    const yearFilter = document.getElementById('yearFilter');
-    const seasonFilter = document.getElementById('seasonFilter');
-    
-    if (!yearFilter || !seasonFilter) {
-      console.error('❌ Filter elements not found');
-      return;
-    }
-    
-    const years = new Set();
-    const seasons = new Set();
-    
-    allPlayerData.forEach(player => {
-      if (player.year) years.add(player.year);
-      if (player.season) seasons.add(player.season);
-    });
-    
-    // Clear existing options (except "All")
-    yearFilter.innerHTML = '<option value="All">All Years</option>';
-    seasonFilter.innerHTML = '<option value="All">All Seasons</option>';
-    
-    // Add years to filter
-    Array.from(years).sort((a, b) => b.localeCompare(a)).forEach(year => {
-      const option = document.createElement('option');
-      option.value = year;
-      option.textContent = year;
-      yearFilter.appendChild(option);
-    });
-    
-    // Add seasons to filter
-    Array.from(seasons).sort().forEach(season => {
-      const option = document.createElement('option');
-      option.value = season;
-      option.textContent = season;
-      seasonFilter.appendChild(option);
-    });
-    
-    console.log(`✅ Found ${years.size} unique years and ${seasons.size} unique seasons`);
-    
-    // Add event listeners
-    yearFilter.addEventListener('change', filterAndDisplayStats);
-    seasonFilter.addEventListener('change', filterAndDisplayStats);
+  
+  if (currentSortField) {
+    sortData(filteredData, currentSortField, currentSortDirection);
   }
+  
+  displayTable(filteredData);
+  updateSummary(filteredData);
+}
 
-  // Filter and display statistics
-  function filterAndDisplayStats() {
-    const yearFilter = document.getElementById('yearFilter').value;
-    const seasonFilter = document.getElementById('seasonFilter').value;
+// Display table
+function displayTable(data) {
+  const tbody = document.querySelector('#statsTable tbody');
+  tbody.innerHTML = '';
+  
+  if (data.length === 0) {
+    const row = tbody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 13;
+    cell.textContent = 'No data available for selected filters';
+    cell.style.textAlign = 'center';
+    cell.style.padding = '2rem';
+    return;
+  }
+  
+  data.forEach(player => {
+    const row = tbody.insertRow();
     
-    let filteredData = allPlayerData;
+    const nameCell = row.insertCell();
+    const nameLink = document.createElement('a');
+    nameLink.href = `player.html?name=${encodeURIComponent(player.name)}`;
+    nameLink.textContent = player.name;
+    nameCell.appendChild(nameLink);
     
-    // Apply filters
-    if (yearFilter !== 'All') {
-      filteredData = filteredData.filter(p => p.year === yearFilter);
-    }
-    if (seasonFilter !== 'All') {
-      filteredData = filteredData.filter(p => p.season === seasonFilter);
-    }
+    const teamCell = row.insertCell();
+    const teamLink = document.createElement('a');
+    teamLink.href = `team.html?team=${encodeURIComponent(player.team)}`;
+    teamLink.textContent = player.team;
+    teamCell.appendChild(teamLink);
     
-    console.log(`📊 Filtered to ${filteredData.length} records`);
+    row.insertCell().textContent = player.year;
+    row.insertCell().textContent = player.season;
+    row.insertCell().textContent = player.games;
+    row.insertCell().textContent = player.atBats;
+    row.insertCell().textContent = player.hits;
+    row.insertCell().textContent = player.runs;
+    row.insertCell().textContent = player.walks;
+    row.insertCell().textContent = player.AcesWar.toFixed(2);
+    row.insertCell().textContent = player.BA.toFixed(3);
+    row.insertCell().textContent = player.OBP.toFixed(3);
+    row.insertCell().textContent = player.sub;
+  });
+}
+
+// Update summary
+function updateSummary(data = allPlayerData) {
+  const summaryContent = document.getElementById('summaryContent');
+  summaryContent.classList.remove('loading');
+  
+  if (data.length === 0) {
+    summaryContent.innerHTML = '<div style="text-align:center;">No data available</div>';
+    return;
+  }
+  
+  const totalGames = data.reduce((sum, p) => sum + p.games, 0);
+  const totalAtBats = data.reduce((sum, p) => sum + p.atBats, 0);
+  const totalHits = data.reduce((sum, p) => sum + p.hits, 0);
+  const totalRuns = data.reduce((sum, p) => sum + p.runs, 0);
+  const totalWalks = data.reduce((sum, p) => sum + p.walks, 0);
+  
+  const qualifiedPlayers = allPlayerData.filter(p => p.atBats >= 10);
+  const topBA = qualifiedPlayers.reduce((max, p) => p.BA > max.BA ? p : max, {BA: 0});
+  const topOBP = qualifiedPlayers.reduce((max, p) => p.OBP > max.OBP ? p : max, {OBP: 0});
+  
+  summaryContent.innerHTML = `
+    <div class="summary-stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value">${data.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Games</div>
+        <div class="stat-value">${totalGames}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total At Bats</div>
+        <div class="stat-value">${totalAtBats}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Hits</div>
+        <div class="stat-value">${totalHits}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Runs</div>
+        <div class="stat-value">${totalRuns}</div>
+      </div>
+    </div>
+    <div class="leaders-text">
+      <strong>🏆 Single Season Leaders:</strong> 
+      AVG: ${topBA.name} (${topBA.BA.toFixed(3)}) • 
+      OBP: ${topOBP.name} (${topOBP.OBP.toFixed(3)})
+    </div>
+  `;
+}
+
+// Sort data
+function sortData(data, field, direction) {
+  data.sort((a, b) => {
+    let aVal = a[field];
+    let bVal = b[field];
     
-    // Sort if a sort field is selected, otherwise default to year/season
-    if (currentSortField) {
-      sortData(filteredData, currentSortField, currentSortDirection);
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return direction === 'asc' ? aVal - bVal : bVal - aVal;
     } else {
-      // Default sort: most recent first (2025 Fall, 2025 Summer, 2024 Fall, etc.)
-      sortData(filteredData, 'year', 'desc');
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
+      return direction === 'asc' ? 
+        (aVal < bVal ? -1 : aVal > bVal ? 1 : 0) :
+        (aVal > bVal ? -1 : aVal < bVal ? 1 : 0);
     }
-    
-    // Display the table
-    displayTable(filteredData);
-    updateSummary(filteredData);
-  }
+  });
+}
 
-  // Display table
-  function displayTable(data) {
-    const tbody = document.querySelector('#statsTable tbody');
-    tbody.innerHTML = '';
-    
-    if (data.length === 0) {
-      const row = tbody.insertRow();
-      const cell = row.insertCell();
-      cell.colSpan = 13;
-      cell.textContent = 'No data available for selected filters';
-      cell.style.textAlign = 'center';
-      cell.style.padding = '2rem';
-      return;
-    }
-    
-    data.forEach(player => {
-      const row = tbody.insertRow();
+// Initialize sorting
+function initializeSorting() {
+  document.querySelectorAll('#statsTable th[data-field]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.field;
       
-      // Name (with link to player page)
-      const nameCell = row.insertCell();
-      const nameLink = document.createElement('a');
-      nameLink.href = `player.html?name=${encodeURIComponent(player.name)}`;
-      nameLink.textContent = player.name;
-      nameLink.style.color = '#667eea';
-      nameLink.style.textDecoration = 'none';
-      nameLink.style.fontWeight = '600';
-      nameCell.appendChild(nameLink);
-      
-      // Team (with link to team page)
-      const teamCell = row.insertCell();
-      const teamLink = document.createElement('a');
-      teamLink.href = `team.html?team=${encodeURIComponent(player.team)}`;
-      teamLink.textContent = player.team;
-      teamLink.style.color = '#667eea';
-      teamLink.style.textDecoration = 'none';
-      teamCell.appendChild(teamLink);
-      
-      // Other fields
-      row.insertCell().textContent = player.year;
-      row.insertCell().textContent = player.season;
-      row.insertCell().textContent = player.games;
-      row.insertCell().textContent = player.atBats;
-      row.insertCell().textContent = player.hits;
-      row.insertCell().textContent = player.runs;
-      row.insertCell().textContent = player.walks;
-      row.insertCell().textContent = typeof player.AcesWar === 'number' ? player.AcesWar.toFixed(2) : player.AcesWar;
-      row.insertCell().textContent = typeof player.BA === 'number' ? player.BA.toFixed(3) : player.BA;
-      row.insertCell().textContent = typeof player.OBP === 'number' ? player.OBP.toFixed(3) : player.OBP;
-      row.insertCell().textContent = player.sub;
-    });
-  }
-
-  // Update summary statistics
-  function updateSummary(data = allPlayerData) {
-    const totalsText = document.getElementById('totalsText');
-    const leadersText = document.getElementById('leadersText');
-    
-    if (data.length === 0) {
-      totalsText.textContent = 'No data available';
-      leadersText.textContent = '';
-      return;
-    }
-    
-    // Calculate totals
-    const totalGames = data.reduce((sum, p) => sum + p.games, 0);
-    const totalAtBats = data.reduce((sum, p) => sum + p.atBats, 0);
-    const totalHits = data.reduce((sum, p) => sum + p.hits, 0);
-    const totalRuns = data.reduce((sum, p) => sum + p.runs, 0);
-    const totalWalks = data.reduce((sum, p) => sum + p.walks, 0);
-    
-    totalsText.textContent = `${data.length} player records | ${totalGames} total games | ${totalAtBats} at bats | ${totalHits} hits | ${totalRuns} runs | ${totalWalks} walks`;
-    
-    // Find all-time leaders (use all data, not just filtered)
-    const allTimeData = allPlayerData;
-    const qualifiedPlayers = allTimeData.filter(p => p.atBats >= 10);
-    
-    if (allTimeData.length > 0) {
-      // Counting stats leaders
-      const topGames = allTimeData.reduce((max, p) => p.games > max.games ? p : max);
-      const topAtBats = allTimeData.reduce((max, p) => p.atBats > max.atBats ? p : max);
-      const topHits = allTimeData.reduce((max, p) => p.hits > max.hits ? p : max);
-      const topRuns = allTimeData.reduce((max, p) => p.runs > max.runs ? p : max);
-      const topWalks = allTimeData.reduce((max, p) => p.walks > max.walks ? p : max);
-      
-      // Rate stats leaders (minimum 10 at bats)
-      const topBA = qualifiedPlayers.reduce((max, p) => p.BA > max.BA ? p : max, {BA: 0});
-      const topOBP = qualifiedPlayers.reduce((max, p) => p.OBP > max.OBP ? p : max, {OBP: 0});
-      
-      // AcesBPI leader
-      const topAcesWar = allTimeData.filter(p => typeof p.AcesWar === 'number').reduce((max, p) => p.AcesWar > max.AcesWar ? p : max, {AcesWar: 0});
-      
-      leadersText.innerHTML = `All-Time Single Season Leaders — Games: ${topGames.name} (${topGames.games}) | At Bats: ${topAtBats.name} (${topAtBats.atBats}) | Hits: ${topHits.name} (${topHits.hits}) | Runs: ${topRuns.name} (${topRuns.runs}) | Walks: ${topWalks.name} (${topWalks.walks}) | BA: ${topBA.name} (${topBA.BA.toFixed(3)}) | OBP: ${topOBP.name} (${topOBP.OBP.toFixed(3)}) | AcesBPI: ${topAcesWar.name} (${topAcesWar.AcesWar.toFixed(2)})`;
-    } else {
-      leadersText.textContent = '';
-    }
-  }
-
-  // Sort functionality
-  function sortData(data, field, direction) {
-    data.sort((a, b) => {
-      // Always sort by year first, then season, then team (for default grouping)
-      // unless a specific field is being sorted
-      
-      if (field === 'year' || field === 'season' || !field) {
-        // First sort by year (descending - newest first)
-        const yearA = parseInt(a.year) || 0;
-        const yearB = parseInt(b.year) || 0;
-        
-        if (yearA !== yearB) {
-          return direction === 'asc' ? yearA - yearB : yearB - yearA;
-        }
-        
-        // Within same year, sort by season (Fall > Summer > Spring)
-        const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
-        const seasonA = seasonOrder[a.season] || 0;
-        const seasonB = seasonOrder[b.season] || 0;
-        
-        if (seasonA !== seasonB) {
-          return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA;
-        }
-        
-        // Within same year and season, sort by team name alphabetically
-        const teamA = String(a.team).toLowerCase();
-        const teamB = String(b.team).toLowerCase();
-        return teamA.localeCompare(teamB);
-      }
-      
-      // If sorting by team field specifically
-      if (field === 'team') {
-        const teamA = String(a.team).toLowerCase();
-        const teamB = String(b.team).toLowerCase();
-        const teamCompare = teamA.localeCompare(teamB);
-        
-        if (teamCompare !== 0) {
-          return direction === 'asc' ? teamCompare : -teamCompare;
-        }
-        
-        // Within same team, still maintain year/season order
-        const yearA = parseInt(a.year) || 0;
-        const yearB = parseInt(b.year) || 0;
-        if (yearA !== yearB) return yearB - yearA;
-        
-        const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
-        const seasonA = seasonOrder[a.season] || 0;
-        const seasonB = seasonOrder[b.season] || 0;
-        return seasonB - seasonA;
-      }
-      
-      // Regular sorting for other fields
-      let aVal = a[field];
-      let bVal = b[field];
-      
-      // Handle numeric vs string comparison
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        const numCompare = direction === 'asc' ? aVal - bVal : bVal - aVal;
-        
-        // If values are equal, fall back to year/season/team order
-        if (numCompare === 0) {
-          const yearA = parseInt(a.year) || 0;
-          const yearB = parseInt(b.year) || 0;
-          if (yearA !== yearB) return yearB - yearA;
-          
-          const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
-          const seasonA = seasonOrder[a.season] || 0;
-          const seasonB = seasonOrder[b.season] || 0;
-          if (seasonA !== seasonB) return seasonB - seasonA;
-          
-          const teamA = String(a.team).toLowerCase();
-          const teamB = String(b.team).toLowerCase();
-          return teamA.localeCompare(teamB);
-        }
-        
-        return numCompare;
+      if (currentSortField === field) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
       } else {
-        aVal = String(aVal).toLowerCase();
-        bVal = String(bVal).toLowerCase();
-        
-        const strCompare = direction === 'asc' ? 
-          (aVal < bVal ? -1 : aVal > bVal ? 1 : 0) :
-          (aVal > bVal ? -1 : aVal < bVal ? 1 : 0);
-        
-        // If values are equal, fall back to year/season/team order
-        if (strCompare === 0) {
-          const yearA = parseInt(a.year) || 0;
-          const yearB = parseInt(b.year) || 0;
-          if (yearA !== yearB) return yearB - yearA;
-          
-          const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
-          const seasonA = seasonOrder[a.season] || 0;
-          const seasonB = seasonOrder[b.season] || 0;
-          if (seasonA !== seasonB) return seasonB - seasonA;
-          
-          const teamA = String(a.team).toLowerCase();
-          const teamB = String(b.team).toLowerCase();
-          return teamA.localeCompare(teamB);
-        }
-        
-        return strCompare;
+        currentSortField = field;
+        currentSortDirection = 'desc';
       }
-    });
-  }
-
-  // Add click handlers to table headers
-  function initializeSorting() {
-    document.querySelectorAll('#statsTable th[data-field]').forEach(th => {
-      th.addEventListener('click', () => {
-        const field = th.dataset.field;
-        
-        // Toggle direction if same field, otherwise default to desc
-        if (currentSortField === field) {
-          currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-          currentSortField = field;
-          currentSortDirection = 'desc';
-        }
-        
-        // Update header classes
-        document.querySelectorAll('#statsTable th').forEach(h => {
-          h.classList.remove('asc', 'desc');
-        });
-        th.classList.add(currentSortDirection);
-        
-        // Re-filter and display
-        filterAndDisplayStats();
+      
+      document.querySelectorAll('#statsTable th').forEach(h => {
+        h.classList.remove('asc', 'desc');
       });
+      th.classList.add(currentSortDirection);
+      
+      filterAndDisplayStats();
     });
-  }
+  });
+}
 
-  // Initialize page when DOM is ready
-  function initPage() {
-    console.log('📄 Initializing page...');
-    console.log('Checking for filter elements:');
-    console.log('  - yearFilter:', document.getElementById('yearFilter'));
-    console.log('  - seasonFilter:', document.getElementById('seasonFilter'));
-    console.log('  - statsTable:', document.getElementById('statsTable'));
-    console.log('  - totalsText:', document.getElementById('totalsText'));
-    
-    initializeSorting();
-    loadData();
-  }
-  
-  // Wait for DOM to be fully ready
-  if (document.readyState === 'loading') {
-    console.log('⏳ Waiting for DOM to load...');
-    document.addEventListener('DOMContentLoaded', initPage);
-  } else {
-    // DOM is already loaded
-    console.log('✅ DOM already loaded');
-    initPage();
-  }
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  initializeSorting();
+  loadData();
+});
 </script>
-<script src="mobile-enhancements.js"></script>
 </body>
 </html>
