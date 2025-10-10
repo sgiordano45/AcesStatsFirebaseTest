@@ -1524,4 +1524,98 @@
         
         const html = `
           <div class="bracket-title">Projected Double Elimination Playoff Bracket</div>
+          <div class="bracket-section">
+            <h4>Playoff Seeding (Top 10 Teams)</h4>
+            <div style="overflow-x: auto;">
+              <table class="bracket-table">
+                <thead>
+                  <tr><th>Seed</th><th>Team</th><th>Record</th><th>Win%</th></tr>
+                </thead>
+                <tbody>
+                  ${playoffTeams.map((team, index) => `
+                    <tr>
+                      <td><strong>${index + 1}</strong></td>
+                      <td class="team-name">${team.name}</td>
+                      <td>${team.wins}-${team.losses}${team.ties > 0 ? `-${team.ties}` : ''}</td>
+                      <td class="win-pct">${(team.winPct * 100).toFixed(1)}%</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bracket-section">
+            <h4>First Round Playoff Matchups</h4>
+            <div class="bracket-visual">
+              ${[
+                { game: 1, seed1: 1, seed2: 'Winner 8v9', desc: '#1 vs Winner of 8v9' },
+                { game: 2, seed1: 2, seed2: 'Winner 7v10', desc: '#2 vs Winner of 7v10' },
+                { game: 3, seed1: 3, seed2: 6, desc: '#3 vs #6' },
+                { game: 4, seed1: 4, seed2: 5, desc: '#4 vs #5' }
+              ].map(m => `
+                <div class="bracket-round">
+                  <h4>First Round - Game ${m.game}</h4>
+                  <div class="matchup">
+                    <div class="team-in-bracket">
+                      <span><strong>#${m.seed1}</strong> ${playoffTeams[m.seed1-1].name}</span>
+                      <span>${playoffTeams[m.seed1-1].wins}-${playoffTeams[m.seed1-1].losses}</span>
+                    </div>
+                    <div class="team-in-bracket">
+                      <span>${typeof m.seed2 === 'number' ? `<strong>#${m.seed2}</strong> ${playoffTeams[m.seed2-1].name}` : m.seed2}</span>
+                      <span>${typeof m.seed2 === 'number' ? `${playoffTeams[m.seed2-1].wins}-${playoffTeams[m.seed2-1].losses}` : 'TBD'}</span>
+                    </div>
+                    <div style="text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+                      ${m.desc}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <h4>Play-in Games</h4>
+            <div class="bracket-visual">
+              ${[
+                { game: 1, seed1: 7, seed2: 10, winner: '#2' },
+                { game: 2, seed1: 8, seed2: 9, winner: '#1' }
+              ].map(m => `
+                <div class="bracket-round">
+                  <h4>Play-in Game ${m.game}</h4>
+                  <div class="matchup">
+                    <div class="team-in-bracket">
+                      <span><strong>#${m.seed1}</strong> ${playoffTeams[m.seed1-1].name}</span>
+                      <span>${playoffTeams[m.seed1-1].wins}-${playoffTeams[m.seed1-1].losses}</span>
+                    </div>
+                    <div class="team-in-bracket">
+                      <span><strong>#${m.seed2}</strong> ${playoffTeams[m.seed2-1].name}</span>
+                      <span>${playoffTeams[m.seed2-1].wins}-${playoffTeams[m.seed2-1].losses}</span>
+                    </div>
+                    <div style="text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+                      Winner faces ${m.winner} in First Round
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        document.getElementById('bracketContent').innerHTML = html;
+      }
+
+      function showError() {
+        const errorHtml = '<div class="no-data">Error loading season data. Please try again later.</div>';
+        document.getElementById('standingsContent').innerHTML = errorHtml;
+        document.getElementById('leadersContent').innerHTML = errorHtml;
+        document.getElementById('scheduleContent').innerHTML = errorHtml;
+        document.getElementById('resultsContent').innerHTML = errorHtml;
+        document.getElementById('bracketContent').innerHTML = errorHtml;
+      }
+
+      document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+  <script src="team-colors.js"></script>
+  <script src="mobile-enhancements.js"></script>
+</body>
+</html>
           
