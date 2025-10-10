@@ -1013,6 +1013,9 @@
       }
 
       function updateSeasonLeaders(playerData, pitchingData) {
+        const leadersElement = document.getElementById('leadersContent');
+        leadersElement.classList.remove('loading');
+        
         let leadersHtml = '';
 
         if (playerData.length > 0) {
@@ -1167,24 +1170,27 @@
           leadersHtml = '<div class="no-data">No player statistics available for this season yet.</div>';
         }
 
-        document.getElementById('leadersContent').innerHTML = leadersHtml;
+        leadersElement.innerHTML = leadersHtml;
       }
 
       function updateStandings(games) {
+        const standingsElement = document.getElementById('standingsContent');
+        standingsElement.classList.remove('loading');
+        
         const completedGames = games.filter(g =>
           parseGameDate(g.date) < today && g.winner && g.winner.trim() !== ""
         );
         const regularGames = completedGames.filter(g => g.game_type === 'Regular');
         
         if (regularGames.length === 0) {
-          document.getElementById('standingsContent').innerHTML =
+          standingsElement.innerHTML =
             '<div class="no-data">No completed games yet this season.</div>';
           return;
         }
 
         const standings = calculateStandings(regularGames, games);
         const html = generateStandingsTable('Regular Season Standings', standings);
-        document.getElementById('standingsContent').innerHTML = html;
+        standingsElement.innerHTML = html;
       }
 
       function calculateScheduleStrength(teamName, games, allStandings) {
@@ -1407,6 +1413,9 @@
       }
 
       function updateUpcomingSchedule(games) {
+          const scheduleElement = document.getElementById('scheduleContent');
+          scheduleElement.classList.remove('loading');
+          
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
           
@@ -1421,7 +1430,7 @@
           .sort((a, b) => parseGameDate(a.date) - parseGameDate(b.date));
 
         if (upcomingGames.length === 0) {
-          document.getElementById('scheduleContent').innerHTML = `
+          scheduleElement.innerHTML = `
             <div class="no-data">
               <h4>No Upcoming Regular Season Games</h4>
               <p>No upcoming regular season games scheduled at this time.</p>
@@ -1452,16 +1461,19 @@
           </div>
         `;
 
-        document.getElementById('scheduleContent').innerHTML = html;
+        scheduleElement.innerHTML = html;
       }
 
       function updateRecentResults(games) {
+        const resultsElement = document.getElementById('resultsContent');
+        resultsElement.classList.remove('loading');
+        
         const completedGames = games
           .filter(g => parseGameDate(g.date) < today && g.winner && g.winner.trim() !== "")
           .sort((a, b) => parseGameDate(b.date) - parseGameDate(a.date));
 
         if (completedGames.length === 0) {
-          document.getElementById('resultsContent').innerHTML =
+          resultsElement.innerHTML =
             '<div class="no-data">No completed games yet this season.</div>';
           return;
         }
@@ -1499,10 +1511,13 @@
           </div>
         `;
 
-        document.getElementById('resultsContent').innerHTML = html;
+        resultsElement.innerHTML = html;
       }
 
       function updatePlayoffBracket(games) {
+        const bracketElement = document.getElementById('bracketContent');
+        bracketElement.classList.remove('loading');
+        
         const completedGames = games.filter(g =>
           g.winner && g.winner.trim() !== "" && parseGameDate(g.date) < today
         );
@@ -1511,7 +1526,7 @@
         const standings = calculateStandings(regularGames);
         
         if (standings.length < 10) {
-          document.getElementById('bracketContent').innerHTML = `
+          bracketElement.innerHTML = `
             <div class="no-data">
               <h4>Projected Playoff Bracket</h4>
               <p>Need at least 10 teams to generate playoff bracket. Currently have ${standings.length} teams.</p>
@@ -1600,7 +1615,7 @@
           </div>
         `;
 
-        document.getElementById('bracketContent').innerHTML = html;
+        bracketElement.innerHTML = html;
       }
 
       function showError() {
