@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile - Mountainside Aces</title>
+<meta name="theme-color" content="#2d5016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root {
+  --primary-color: #2d5016;
+  --secondary-color: #1a6b4a;
+  --accent-color: #ffd700;
+  --card-bg: #ffffff;
+  --text-dark: #2d3748;
+  --text-light: #718096;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  min-height: 100vh;
+  color: var(--text-dark);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.softball-spinner::before {
+  content: '⚾';
+  font-size: 80px;
+  animation: spin 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  padding: 3rem 2rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 300px;
+  height: 300px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-header-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  color: white;
+}
+
+.profile-photo-container {
+  position: relative;
+}
+
+.profile-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,0.3);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.profile-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+  background: white;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-tabs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-tabs-container::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab {
+  padding: 1.2rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-light);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-tab:hover {
+  color: var(--primary-color);
+  background: rgba(45, 80, 22, 0.05);
+}
+
+.nav-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: rgba(45, 80, 22, 0.05);
+}
+
+/* Main Content */
+.main-content {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem 2rem;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards */
+.section-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid;
+  border-image: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%) 1;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-icon {
+  font-size: 1.8rem;
+}
+
+/* Form Elements */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.form-input,
+.form-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+}
+
+.form-input:disabled,
+.form-select:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Favorites Section */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.favorite-card {
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.favorite-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.favorite-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.favorite-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  font-size: 1.5rem;
+}
+
+.favorite-card-title {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+.remove-favorite {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  font-size: 1.2rem;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.remove-favorite:hover {
+  color: #dc3545;
+}
+
+.favorite-stats {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-light);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-state-text {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* Toggle Switch */
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 26px;
+  transition: 0.4s;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* Quick Links */
+.quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.quick-link-card {
+  background: linear-gradient(135deg, rgba(45, 80, 22, 0.05) 0%, rgba(26, 107, 74, 0.05) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.quick-link-card:hover {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(45, 80, 22, 0.1) 0%, rgba(26, 107, 74, 0.1) 100%);
+  transform: translateX(5px);
+}
+
+.quick-link-icon {
+  font-size: 2rem;
+}
+
+.quick-link-content h3 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  color: var(--primary-color);
+}
+
+.quick-link-content p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-header-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-info h1 {
+    font-size: 2rem;
+  }
+
+  .nav-tab {
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .main-content {
+    padding: 0 1rem 1rem;
+  }
+
+  .section-card {
+    padding: 1.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-links {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Success Message */
+.success-message {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: none;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-message.show {
+  display: block;
+}
+</style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="softball-spinner"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="profile-header-section">
+        <div class="profile-photo-container">
+          <img src="" alt="Profile Photo" class="profile-photo" id="profilePhoto">
+        </div>
+        <div class="profile-info">
+          <h1 id="displayName">Loading...</h1>
+          <div class="profile-subtitle">
+            <span id="playerName">Player Name</span>
+            <span class="profile-badge" id="teamBadge">Team Name</span>
+            <span class="profile-badge" id="memberSince">Member since 2024</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <div class="nav-tabs-container">
+      <button class="nav-tab active" data-tab="overview">
+        <span>📊</span> Overview
+      </button>
+      <button class="nav-tab" data-tab="player-info">
+        <span>⚾</span> Player Info
+      </button>
+      <button class="nav-tab" data-tab="favorites">
+        <span>⭐</span> Favorites
+      </button>
+      <button class="nav-tab" data-tab="preferences">
+        <span>⚙️</span> Preferences
+      </button>
+      <button class="nav-tab" data-tab="security">
+        <span>🔒</span> Security
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Overview Tab -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">📈</span> Season Statistics</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statGames">0</div>
+            <div class="stat-label">Games Played</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statAvg">.000</div>
+            <div class="stat-label">Batting Average</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statHits">0</div>
+            <div class="stat-label">Total Hits</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statRuns">0</div>
+            <div class="stat-label">Runs Scored</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🔗</span> Quick Links</h2>
+        </div>
+        <div class="quick-links">
+          <a href="#" class="quick-link-card" id="linkMyStats">
+            <div class="quick-link-icon">📊</div>
+            <div class="quick-link-content">
+              <h3>View My Stats</h3>
+              <p>Full career statistics</p>
+            </div>
+          </a>
+          <a href="#" class="quick-link-card" id="linkMyTeam">
+            <div class="quick-link-icon">👥</div>
+            <div class="quick-link-content">
+              <h3>My Team</h3>
+              <p>Team roster & schedule</p>
+            </div>
+          </a>
+          <a href="favorites.html" class="quick-link-card">
+            <div class="quick-link-icon">⭐</div>
+            <div class="quick-link-content">
+              <h3>My Favorites</h3>
+              <p>Track teams & players</p>
+            </div>
+          </a>
+          <a href="#" class="quick-link-card" id="linkRSVP">
+            <div class="quick-link-icon">✓</div>
+            <div class="quick-link-content">
+              <h3>Game RSVPs</h3>
+              <p>Manage availability</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player Info Tab -->
+    <div class="tab-content" id="tab-player-info">
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">⚾</span> Player Information</h2>
+        </div>
+        <div id="successMessagePlayerInfo" class="success-message">
+          Changes saved successfully!
+        </div>
+        <form id="playerInfoForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="nickname">Nickname</label>
+              <input type="text" id="nickname" class="form-input" placeholder="Enter nickname">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="jerseyNumber">Jersey Number(s)</label>
+              <input type="text" id="jerseyNumber" class="form-input" placeholder="e.g., 24, 42">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="battingSide">Bats</label>
+              <select id="battingSide" class="form-select">
+                <option value="">Select...</option>
+                <option value="right">Right</option>
+                <option value="left">Left</option>
+                <option value="switch">Switch</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="throwingArm">Throws</label>
+              <select id="throwingArm" class="form-select">
+                <option value="">Select...</option>
+                <option value="right">Right</option>
+                <option value="left">Left</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="primaryPosition">Primary Position</label>
+              <select id="primaryPosition" class="form-select">
+                <option value="">Select...</option>
+                <option value="pitcher">Pitcher</option>
+                <option value="catcher">Catcher</option>
+                <option value="1b">First Base</option>
+                <option value="2b">Second Base</option>
+                <option value="3b">Third Base</option>
+                <option value="ss">Shortstop</option>
+                <option value="lf">Left Field</option>
+                <option value="cf">Center Field</option>
+                <option value="rf">Right Field</option>
+                <option value="utility">Utility</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="secondaryPositions">Secondary Positions</label>
+              <input type="text" id="secondaryPositions" class="form-input" placeholder="e.g., 2B, SS, OF">
+            </div>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+              💾 Save Changes
+            </button>
+            <button type="button" class="btn btn-secondary" id="cancelPlayerInfo">
+              ✖️ Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Favorites Tab -->
+    <div class="tab-content" id="tab-favorites">
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🏆</span> Favorite Teams</h2>
+          <button class="btn btn-secondary" id="addFavoriteTeam">
+            + Add Team
+          </button>
+        </div>
+        <div class="favorites-grid" id="favoriteTeamsGrid">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">⭐</span> Favorite Players (Max 10)</h2>
+          <button class="btn btn-secondary" id="addFavoritePlayer">
+            + Add Player
+          </button>
+        </div>
+        <div class="favorites-grid" id="favoritePlayersGrid">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Preferences Tab -->
+    <div class="tab-content" id="tab-preferences">
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🔔</span> Notifications</h2>
+        </div>
+        <div id="successMessagePreferences" class="success-message">
+          Preferences saved successfully!
+        </div>
+        <form id="preferencesForm">
+          <div class="form-group">
+            <label class="toggle-group">
+              <span class="form-label">Email Notifications for Game Reminders</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailGameReminders" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-group">
+              <span class="form-label">Email Notifications for Score Updates</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailScoreUpdates">
+                <span class="toggle-slider"></span>
+              </label>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-group">
+              <span class="form-label">Favorite Team Notifications</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="favoriteTeamNotifications" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-group">
+              <span class="form-label">Favorite Player Milestone Alerts</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="favoritePlayerAlerts" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🎨</span> Display Preferences</h2>
+        </div>
+        <form>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="defaultStatsView">Default Stats View</label>
+              <select id="defaultStatsView" class="form-select">
+                <option value="season">Current Season</option>
+                <option value="career">Career Stats</option>
+                <option value="recent">Recent Games</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="defaultSeason">Default Season</label>
+              <select id="defaultSeason" class="form-select">
+                <option value="current">Current Season</option>
+                <option value="2024-fall">2024 Fall</option>
+                <option value="2024-summer">2024 Summer</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+              💾 Save Preferences
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🔐</span> Privacy</h2>
+        </div>
+        <form>
+          <div class="form-group">
+            <label class="toggle-group">
+              <span class="form-label">Make my favorites visible to other users</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="publicFavorites">
+                <span class="toggle-slider"></span>
+              </label>
+            </label>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+              💾 Save Privacy Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Security Tab -->
+    <div class="tab-content" id="tab-security">
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🔐</span> Account Security</h2>
+        </div>
+        <div id="successMessageSecurity" class="success-message">
+          Password changed successfully!
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" id="accountEmail" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Type</label>
+          <input type="text" class="form-input" id="accountType" value="Google Sign-In" disabled>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🔑</span> Change Password</h2>
+        </div>
+        <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+          Since you're signed in with Google, password changes are managed through your Google account.
+        </p>
+        <a href="https://myaccount.google.com/security" target="_blank" class="btn btn-primary">
+          Manage Google Account Security →
+        </a>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">🚪</span> Sign Out</h2>
+        </div>
+        <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+          Sign out from your Mountainside Aces account on this device.
+        </p>
+        <button class="btn btn-secondary" id="signOutBtn">
+          🚪 Sign Out
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth, onAuthStateChanged, signOut } from './firebase-config.js';
+    import { getUserProfile, updateUserProfile, getCurrentSeason, getSeasonPlayerStatsOptimized } from './firebase-data.js';
+
+    let currentUser = null;
+    let userProfile = null;
+
+    // Tab switching functionality
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active content
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(`tab-${targetTab}`).classList.add('active');
+      });
+    });
+
+    // Initialize auth state
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        await loadUserProfile(user);
+        await loadUserStats(user);
+        hideLoading();
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = 'auth-test.html';
+      }
+    });
+
+    async function loadUserProfile(user) {
+      try {
+        userProfile = await getUserProfile(user.uid);
+        
+        // Update header
+        document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
+        document.getElementById('displayName').textContent = user.displayName || 'User';
+        document.getElementById('playerName').textContent = userProfile?.linkedPlayer || 'Not linked';
+        document.getElementById('teamBadge').textContent = userProfile?.linkedTeam || 'No team';
+        document.getElementById('accountEmail').value = user.email;
+        
+        // Calculate member since
+        const createdDate = new Date(user.metadata.creationTime);
+        document.getElementById('memberSince').textContent = `Member since ${createdDate.getFullYear()}`;
+        
+        // Load player info form
+        if (userProfile) {
+          document.getElementById('nickname').value = userProfile.nickname || '';
+          document.getElementById('jerseyNumber').value = userProfile.jerseyNumber || '';
+          document.getElementById('battingSide').value = userProfile.battingSide || '';
+          document.getElementById('throwingArm').value = userProfile.throwingArm || '';
+          document.getElementById('primaryPosition').value = userProfile.primaryPosition || '';
+          document.getElementById('secondaryPositions').value = userProfile.secondaryPositions || '';
+          
+          // Load preferences
+          document.getElementById('emailGameReminders').checked = userProfile.preferences?.emailGameReminders ?? true;
+          document.getElementById('emailScoreUpdates').checked = userProfile.preferences?.emailScoreUpdates ?? false;
+          document.getElementById('favoriteTeamNotifications').checked = userProfile.preferences?.favoriteTeamNotifications ?? true;
+          document.getElementById('favoritePlayerAlerts').checked = userProfile.preferences?.favoritePlayerAlerts ?? true;
+          document.getElementById('publicFavorites').checked = userProfile.preferences?.publicFavorites ?? false;
+          
+          // Update quick links
+          if (userProfile.linkedPlayer) {
+            document.getElementById('linkMyStats').href = `player.html?name=${encodeURIComponent(userProfile.linkedPlayer)}`;
+          }
+          if (userProfile.linkedTeam) {
+            document.getElementById('linkMyTeam').href = `team.html?team=${encodeURIComponent(userProfile.linkedTeam)}`;
+          }
+          
+          // Load favorites
+          loadFavorites();
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    }
+
+    async function loadUserStats(user) {
+      try {
+        if (!userProfile?.linkedPlayer) return;
+        
+        const currentSeason = await getCurrentSeason();
+        const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+        
+        const playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+        
+        if (playerStats) {
+          document.getElementById('statGames').textContent = playerStats.games || 0;
+          document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
+          document.getElementById('statHits').textContent = playerStats.hits || 0;
+          document.getElementById('statRuns').textContent = playerStats.runs || 0;
+        }
+      } catch (error) {
+        console.error('Error loading user stats:', error);
+      }
+    }
+
+    function loadFavorites() {
+      // Load favorite teams
+      const favoriteTeams = userProfile?.favoriteTeams || [];
+      const teamsGrid = document.getElementById('favoriteTeamsGrid');
+      
+      if (favoriteTeams.length === 0) {
+        teamsGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🏆</div>
+            <div class="empty-state-text">No favorite teams yet</div>
+            <p>Click "Add Team" to start tracking your favorites</p>
+          </div>
+        `;
+      } else {
+        teamsGrid.innerHTML = favoriteTeams.map(team => `
+          <div class="favorite-card">
+            <button class="remove-favorite" data-type="team" data-name="${team}">✖</button>
+            <div class="favorite-card-header">
+              <div class="favorite-icon">🏆</div>
+              <div class="favorite-card-title">${team}</div>
+            </div>
+            <div class="favorite-stats">
+              <a href="team.html?team=${encodeURIComponent(team)}">View team page →</a>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // Load favorite players
+      const favoritePlayers = userProfile?.favoritePlayers || [];
+      const playersGrid = document.getElementById('favoritePlayersGrid');
+      
+      if (favoritePlayers.length === 0) {
+        playersGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⭐</div>
+            <div class="empty-state-text">No favorite players yet</div>
+            <p>Click "Add Player" to start tracking up to 10 favorites</p>
+          </div>
+        `;
+      } else {
+        playersGrid.innerHTML = favoritePlayers.map(player => `
+          <div class="favorite-card">
+            <button class="remove-favorite" data-type="player" data-name="${player}">✖</button>
+            <div class="favorite-card-header">
+              <div class="favorite-icon">⭐</div>
+              <div class="favorite-card-title">${player}</div>
+            </div>
+            <div class="favorite-stats">
+              <a href="player.html?name=${encodeURIComponent(player)}">View player stats →</a>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // Add event listeners for remove buttons
+      document.querySelectorAll('.remove-favorite').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const type = e.target.dataset.type;
+          const name = e.target.dataset.name;
+          removeFavorite(type, name);
+        });
+      });
+    }
+
+    // Form submissions
+    document.getElementById('playerInfoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const updates = {
+        nickname: document.getElementById('nickname').value,
+        jerseyNumber: document.getElementById('jerseyNumber').value,
+        battingSide: document.getElementById('battingSide').value,
+        throwingArm: document.getElementById('throwingArm').value,
+        primaryPosition: document.getElementById('primaryPosition').value,
+        secondaryPositions: document.getElementById('secondaryPositions').value
+      };
+      
+      try {
+        await updateUserProfile(currentUser.uid, updates);
+        showSuccessMessage('successMessagePlayerInfo');
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        alert('Error saving changes. Please try again.');
+      }
+    });
+
+    document.getElementById('preferencesForm').addEventListener('change', async () => {
+      const preferences = {
+        emailGameReminders: document.getElementById('emailGameReminders').checked,
+        emailScoreUpdates: document.getElementById('emailScoreUpdates').checked,
+        favoriteTeamNotifications: document.getElementById('favoriteTeamNotifications').checked,
+        favoritePlayerAlerts: document.getElementById('favoritePlayerAlerts').checked,
+        publicFavorites: document.getElementById('publicFavorites').checked
+      };
+      
+      try {
+        await updateUserProfile(currentUser.uid, { preferences });
+        showSuccessMessage('successMessagePreferences');
+      } catch (error) {
+        console.error('Error updating preferences:', error);
+      }
+    });
+
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+    });
+
+    // Add favorite buttons
+    document.getElementById('addFavoriteTeam').addEventListener('click', () => {
+      // TODO: Implement team selection modal
+      alert('Team selection coming soon!');
+    });
+
+    document.getElementById('addFavoritePlayer').addEventListener('click', () => {
+      const favoritePlayers = userProfile?.favoritePlayers || [];
+      if (favoritePlayers.length >= 10) {
+        alert('You can only have up to 10 favorite players.');
+        return;
+      }
+      // TODO: Implement player selection modal
+      alert('Player selection coming soon!');
+    });
+
+    async function removeFavorite(type, name) {
+      if (!confirm(`Remove ${name} from favorites?`)) return;
+      
+      try {
+        const field = type === 'team' ? 'favoriteTeams' : 'favoritePlayers';
+        const current = userProfile[field] || [];
+        const updated = current.filter(item => item !== name);
+        
+        await updateUserProfile(currentUser.uid, { [field]: updated });
+        userProfile[field] = updated;
+        loadFavorites();
+      } catch (error) {
+        console.error('Error removing favorite:', error);
+        alert('Error removing favorite. Please try again.');
+      }
+    }
+
+    function showSuccessMessage(id) {
+      const msg = document.getElementById(id);
+      msg.classList.add('show');
+      setTimeout(() => {
+        msg.classList.remove('show');
+      }, 3000);
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
