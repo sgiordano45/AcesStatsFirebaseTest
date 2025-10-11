@@ -5,13 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Current Season Team - Aces Stats</title>
 <style>
+  :root {
+    --primary-color: #2d5016;
+    --secondary-color: #1a6b4a;
+    --accent-color: #ffd700;
+    --card-bg: #ffffff;
+    --text-dark: #2d3748;
+    --text-light: #718096;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+  }
+
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
     min-height: 100vh;
     line-height: 1.6;
+    color: var(--text-dark);
   }
   
   .page-container {
@@ -20,13 +34,49 @@
     padding: 2rem;
   }
   
+  /* Loading Spinner */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+  }
+
+  .loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .softball-spinner::before {
+    content: '⚾';
+    font-size: 80px;
+    animation: spin 1.5s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    0%, 100% { 
+      transform: rotate(0deg) scale(1); 
+    }
+    50% { 
+      transform: rotate(180deg) scale(1.1); 
+    }
+  }
+  
+  /* Team Header */
   .team-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     color: white;
-    padding: 3rem 2rem;
-    border-radius: 12px;
+    padding: 4rem 2rem;
+    border-radius: 16px;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-lg);
     display: flex;
     align-items: center;
     gap: 2rem;
@@ -37,11 +87,22 @@
   .team-header::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  
+  .team-header::after {
+    content: '⚾';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    font-size: 200px;
+    opacity: 0.08;
+    transform: rotate(-15deg);
   }
   
   .team-logo {
@@ -50,36 +111,55 @@
     object-fit: contain;
     border: 4px solid rgba(255,255,255,0.3);
     border-radius: 12px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.15);
     padding: 1rem;
     display: none;
+    transition: all 0.4s ease;
+    z-index: 1;
   }
   
   .team-logo.loaded {
     display: block;
+    animation: fadeInScale 0.6s ease backwards;
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
   
   .team-info {
     flex: 1;
+    z-index: 1;
   }
   
   .team-header h1 {
     margin: 0;
-    font-size: 2.5rem;
-    font-weight: bold;
+    font-size: 3rem;
+    font-weight: 800;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    animation: fadeInUp 0.6s ease backwards 0.1s;
   }
   
   .season-info {
     font-size: 1.1rem;
-    opacity: 0.9;
+    opacity: 0.95;
     margin: 1rem 0 0 0;
+    font-weight: 500;
+    animation: fadeInUp 0.6s ease backwards 0.2s;
   }
 
   .quick-stats {
     display: flex;
     gap: 2rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    animation: fadeInUp 0.6s ease backwards 0.3s;
   }
 
   .quick-stat {
@@ -87,23 +167,39 @@
   }
 
   .quick-stat-value {
-    font-size: 1.8rem;
-    font-weight: bold;
+    font-size: 2rem;
+    font-weight: 800;
     display: block;
+    color: var(--accent-color);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
   }
 
   .quick-stat-label {
     font-size: 0.9rem;
-    opacity: 0.8;
+    opacity: 0.9;
+    font-weight: 600;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
+  /* Navigation */
   .filters-nav {
-    background: white;
+    background: var(--card-bg);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: 16px;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border: 1px solid #e1e5e9;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    animation: fadeInUp 0.6s ease backwards 0.4s;
   }
 
   .nav-container {
@@ -115,81 +211,168 @@
   }
 
   .nav-link {
-    padding: 0.8rem 1.5rem;
-    border: 2px solid #667eea;
+    padding: 1rem 1.75rem;
+    border: 2px solid var(--primary-color);
     background: white;
-    color: #667eea;
+    color: var(--primary-color);
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 600;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: -1;
+  }
+
+  .nav-link:hover::before {
+    transform: translateX(0);
   }
 
   .nav-link:hover {
-    background: #667eea;
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    box-shadow: var(--shadow-md);
+    border-color: var(--secondary-color);
   }
 
+  /* Section Styling */
   .section {
-    background: white;
-    border-radius: 12px;
+    background: var(--card-bg);
+    border-radius: 16px;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
-    border: 1px solid #e1e5e9;
+    border: 1px solid var(--border-color);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.6s ease backwards;
+  }
+
+  .section:nth-child(5) { animation-delay: 0.5s; }
+  .section:nth-child(6) { animation-delay: 0.6s; }
+  .section:nth-child(7) { animation-delay: 0.7s; }
+  .section:nth-child(8) { animation-delay: 0.8s; }
+
+  .section:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
   }
 
   .section-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     color: white;
     padding: 1.5rem 2rem;
-    font-size: 1.4rem;
-    font-weight: bold;
+    font-size: 1.5rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    position: relative;
+  }
+
+  .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-color);
   }
 
   .section-content {
     padding: 2rem;
   }
 
+  /* Roster Grid */
   .roster-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
   }
 
   .player-card {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
     text-align: center;
-    border-left: 4px solid #667eea;
-    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .player-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .player-card:hover::before {
+    opacity: 1;
+  }
+
+  .player-card::after {
+    content: '⚾';
+    position: absolute;
+    bottom: -15px;
+    right: -15px;
+    font-size: 80px;
+    opacity: 0;
+    color: var(--primary-color);
+    transition: all 0.4s ease;
   }
 
   .player-card:hover {
-    background: #e9ecef;
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--secondary-color);
+  }
+
+  .player-card:hover::after {
+    opacity: 0.05;
+    bottom: -10px;
+    right: -10px;
   }
 
   .player-name {
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: var(--text-dark);
   }
 
   .player-stats {
-    font-size: 0.85rem;
-    color: #666;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 500;
   }
 
+  /* Tables */
   .stats-table, .schedule-table {
     width: 100%;
     border-collapse: collapse;
@@ -198,120 +381,188 @@
 
   .stats-table th, .schedule-table th,
   .stats-table td, .schedule-table td {
-    padding: 12px 8px;
+    padding: 14px 10px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
   }
 
   .stats-table th, .schedule-table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
-    color: #333;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 700;
+    color: var(--text-dark);
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--primary-color);
   }
 
   .stats-table tr:nth-child(even), 
   .schedule-table tr:nth-child(even) {
-    background-color: #fafafa;
+    background-color: #fafbfc;
   }
 
   .stats-table tr:hover, 
   .schedule-table tr:hover {
-    background-color: #f0f0f0;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e9f0f7 100%);
   }
 
   .player-link {
-    color: #667eea;
+    color: var(--primary-color);
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
+    transition: all 0.2s ease;
   }
 
   .player-link:hover {
+    color: var(--secondary-color);
     text-decoration: underline;
   }
 
+  /* Game Results */
   .upcoming-game {
-    background-color: #fff3cd !important;
+    background: linear-gradient(135deg, #fff8dc 0%, #fffacd 100%) !important;
+    border-left: 4px solid var(--accent-color);
   }
 
   .completed-game {
-    opacity: 0.8;
+    opacity: 0.85;
   }
 
   .win-result {
-    color: #28a745;
-    font-weight: bold;
+    color: #22c55e;
+    font-weight: 800;
+    text-shadow: 0 1px 2px rgba(34, 197, 94, 0.2);
   }
 
   .loss-result {
-    color: #dc3545;
-    font-weight: bold;
+    color: #ef4444;
+    font-weight: 800;
+    text-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
   }
 
   .tie-result {
-    color: #6c757d;
-    font-weight: bold;
+    color: #6b7280;
+    font-weight: 800;
   }
 
+  /* Loading and Empty States */
   .loading {
     text-align: center;
     padding: 3rem;
-    color: #666;
+    color: var(--text-light);
     font-style: italic;
+    font-size: 1.1rem;
   }
 
   .no-data {
     text-align: center;
-    padding: 2rem;
-    color: #666;
+    padding: 3rem 2rem;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
   }
 
   .table-container {
-    max-height: 500px;
+    max-height: 600px;
     overflow-y: auto;
-    border: 1px solid #eee;
-    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
   }
 
+  .table-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 12px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border-radius: 12px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+  }
+
+  /* Summary Stats Cards */
   .summary-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
     margin-bottom: 2rem;
   }
 
   .stat-card {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1.5rem 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 1.75rem 1.25rem;
     text-align: center;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .stat-card:hover::before {
+    opacity: 1;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--secondary-color);
   }
 
   .stat-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-dark);
     display: block;
     margin-bottom: 0.5rem;
   }
 
   .stat-label {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
+  /* Swipe Indicator */
   .swipe-indicator {
     text-align: center;
-    padding: 0.5rem;
-    background: #fff3cd;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
     color: #856404;
     font-size: 0.85rem;
-    border-bottom: 1px solid #ffeaa7;
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent-color);
     display: none;
   }
 
+  /* Responsive Design */
   @media (max-width: 768px) {
     .page-container {
       padding: 1rem;
@@ -320,37 +571,77 @@
     .team-header {
       flex-direction: column;
       text-align: center;
-      padding: 2rem 1rem;
+      padding: 2.5rem 1.5rem;
     }
     
     .team-header h1 {
       font-size: 2rem;
     }
 
+    .team-header::after {
+      font-size: 150px;
+      bottom: -20px;
+      left: -20px;
+    }
+
     .quick-stats {
       justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .quick-stat-value {
+      font-size: 1.6rem;
     }
     
     .roster-grid {
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .section-header {
+      font-size: 1.2rem;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .section-content {
+      padding: 1.5rem;
     }
 
     .stats-table th,
     .stats-table td,
     .schedule-table th,
     .schedule-table td {
-      padding: 8px 4px;
-      font-size: 0.8rem;
+      padding: 10px 6px;
+      font-size: 0.85rem;
+    }
+
+    .summary-stats {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
     }
 
     .swipe-indicator {
       display: block;
+    }
+
+    .nav-link {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
     }
   }
 </style>
 <link rel="stylesheet" href="mobile-enhancements.css">
 </head>
 <body>
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="softball-spinner"></div>
+</div>
+
 <div class="page-container">
   <!-- Mobile Navigation -->
   <div class="mobile-nav-container">
@@ -503,6 +794,13 @@
 <script type="module">
   console.log('🚀 Script started - loading Firebase data...');
   
+  // Hide loading overlay when page loads
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }, 800);
+  });
+  
   // Import Firebase helper functions
   import {
     getSeasonGames,
@@ -599,34 +897,24 @@
         })
         .map(p => ({
           name: p.playerName || p.name || p.id,
-          team: teamName, // Use the team from URL for consistency
+          team: teamName,
           games: Number(p.games) || 0,
           atBats: Number(p.atBats) || 0,
           hits: Number(p.hits) || 0,
           runs: Number(p.runs) || 0,
           walks: Number(p.walks) || 0,
-          acesBPI: p.acesBPI || "N/A", // Firebase field: acesBPI (not acesWar!)
+          acesBPI: p.acesBPI || "N/A",
           battingAverage: p.battingAverage || 0,
           onBasePercentage: p.onBasePercentage || 0
         }));
       
       console.log(`✅ Filtered to ${playerData.length} players on team ${teamName}`);
-      if (playerData.length > 0) {
-        console.log('📊 Sample player data:', playerData[0]);
-        console.log('🔍 AcesBPI field check:', {
-          acesBPI: playerData[0].acesBPI,
-          typeof: typeof playerData[0].acesBPI,
-          isNA: playerData[0].acesBPI === "N/A"
-        });
-      }
       
       // Initialize page
       initializePage();
       
     } catch (error) {
       console.error('❌ Error loading team data:', error);
-      console.error('Error details:', error.message);
-      console.error('Error stack:', error.stack);
       document.body.innerHTML = `
         <div class="page-container">
           <h1>Error loading team data</h1>
@@ -814,6 +1102,9 @@
   }
 
   function updateSummaryStats() {
+    const element = document.getElementById("summary-stats");
+    element.classList.remove('loading');
+    
     let totalGames = 0, totalAB = 0, totalHits = 0, totalRuns = 0, totalWalks = 0;
     
     playerData.forEach(p => {
@@ -870,19 +1161,22 @@
         <div class="stat-label">Runs Against</div>
       </div>
       <div class="stat-card">
-        <span class="stat-value" style="color: ${runDiff >= 0 ? '#28a745' : '#dc3545'}">
+        <span class="stat-value" style="color: ${runDiff >= 0 ? '#22c55e' : '#ef4444'}">
           ${runDiff >= 0 ? '+' : ''}${runDiff}
         </span>
         <div class="stat-label">Run Differential</div>
       </div>
     `;
 
-    document.getElementById("summary-stats").innerHTML = summaryHTML;
+    element.innerHTML = summaryHTML;
   }
 
   function updateRoster() {
+    const element = document.getElementById("roster-grid");
+    element.classList.remove('loading');
+    
     if (playerData.length === 0) {
-      document.getElementById("roster-grid").innerHTML = '<div class="no-data">No players found for current season</div>';
+      element.innerHTML = '<div class="no-data">No players found for current season</div>';
       return;
     }
 
@@ -902,11 +1196,12 @@
       `;
     }).join('');
 
-    document.getElementById("roster-grid").innerHTML = rosterHTML;
+    element.innerHTML = rosterHTML;
   }
 
   function updatePlayerStats() {
     const tbody = document.querySelector("#player-stats-table tbody");
+    tbody.classList.remove('loading');
     
     if (playerData.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="no-data">No player statistics available</td></tr>';
@@ -933,7 +1228,6 @@
       const ba = atBats > 0 ? (hits / atBats).toFixed(3) : '.000';
       const obp = (atBats + walks) > 0 ? ((hits + walks) / (atBats + walks)).toFixed(3) : '.000';
       
-      // Handle AcesBPI - Firebase field is acesBPI
       const acesBPIValue = player.acesBPI;
       const acesBPI = (acesBPIValue !== "N/A" && acesBPIValue !== null && acesBPIValue !== undefined && !isNaN(acesBPIValue)) 
         ? Number(acesBPIValue).toFixed(2) 
@@ -959,6 +1253,7 @@
 
   function updateSchedule() {
     const tbody = document.querySelector("#schedule-table tbody");
+    tbody.classList.remove('loading');
     
     const teamGames = allGames.filter(g => 
       g["home team"] === teamName || g["away team"] === teamName
