@@ -839,7 +839,7 @@ body {
 import {
   getCurrentSeason,
   getSeasonGames,
-  getSeasonPreviews,
+  getSeasonPreviews,f
   getAllPlayerStatsOptimized
 } from './firebase-data.js';
 
@@ -936,10 +936,6 @@ async function loadWeekendData() {
     
     console.log(`✅ Mapped: ${allGames.length} games, ${playerData.length} player records`);
     
-    if (previewResponse.ok) {
-      previewData = await previewResponse.json();
-      console.log(`✅ Loaded ${previewData.length} game previews`);
-    }
     
     generateWeekendPreview();
     
