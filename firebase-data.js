@@ -4,6 +4,29 @@
 import { db, collection, doc, getDocs, getDoc, query, where, orderBy, limit } from './firebase-config.js';
 
 // ============================================
+// IMPORTANT: Export app and db for firebase-auth.js
+// ============================================
+
+// Re-import app from firebase-config to export it
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+
+// Your Firebase configuration (copy from firebase-config.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyCAEWkrTcprzJ2KPPJu-vFJPvYOVU4ky20",
+  authDomain: "acessoftballreference-84791.firebaseapp.com",
+  projectId: "acessoftballreference-84791",
+  storageBucket: "acessoftballreference-84791.firebasestorage.app",
+  messagingSenderId: "777699560175",
+  appId: "1:777699560175:web:4092b422e7d7116352e91a"
+};
+
+// Initialize app here so we can export it
+const app = initializeApp(firebaseConfig);
+
+// Export app and db for firebase-auth.js to use
+export { app, db };
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -135,8 +158,6 @@ export async function getAllPlayerStatsOptimized() {
   }
 }
 
-// ADD THIS FUNCTION to firebase-data.js after getAllPlayerStatsOptimized
-
 /**
  * Get all pitching stats from aggregated collection (OPTIMIZED - FAST!)
  * Uses single collection instead of subcollections
@@ -172,7 +193,6 @@ export async function getAllPitchingStatsOptimized() {
   }
 }
 
-
 /**
  * Get single player's complete stats from aggregated collection (OPTIMIZED - FAST!)
  * FAST: 1 read vs 10-20 reads with original function
@@ -201,10 +221,6 @@ export async function getPlayerStatsOptimized(userId) {
     return null;
   }
 }
-
-// REPLACE these functions in firebase-data.js
-// The issue: Season keys include team names like "2025-fall-orange"
-// Solution: Use startsWith() to match any key beginning with the season
 
 /**
  * Get ALL players' stats for a specific season from aggregated collection (FIXED!)
@@ -732,6 +748,58 @@ export async function getSeasonGames(seasonId) {
     id: doc.id,
     ...doc.data()
   }));
+}
+
+// ============================================
+// ADD THIS FUNCTION TO firebase-data.js
+// ============================================
+// Add after the getSeasonGames() function
+
+/**
+ * Get all game previews for a season
+ * @param {string} seasonId - Season ID (e.g., "2025-fall")
+ * @returns {Array} Array of preview objects
+ */
+export async function getSeasonPreviews(seasonId) {
+  try {
+    const previewsSnapshot = await getDocs(
+      collection(db, 'seasons', seasonId, 'previews')
+    );
+    
+    const previews = previewsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      
+      // Convert Firebase Timestamp to date string if needed
+      let dateString = "";
+      if (data.date && data.date.seconds) {
+        const dateObj = new Date(data.date.seconds * 1000);
+        dateString = dateObj.toLocaleDateString('en-US');
+      } else if (data.date) {
+        dateString = data.date;
+      }
+      
+      return {
+        id: doc.id,
+        "home team": data.homeTeam || "",
+        "away team": data.awayTeam || "",
+        homeTeamId: data.homeTeamId || "",
+        awayTeamId: data.awayTeamId || "",
+        "home odds": data.homeOdds !== undefined ? data.homeOdds : null,
+        "away odds": data.awayOdds !== undefined ? data.awayOdds : null,
+        date: dateString,
+        time: data.time || "",
+        preview: data.preview || "",
+        status: data.status || ""
+      };
+    });
+    
+    console.log(`✅ Loaded ${previews.length} previews for season ${seasonId}`);
+    return previews;
+    
+  } catch (error) {
+    console.error(`Error fetching previews for ${seasonId}:`, error);
+    return [];
+  }
 }
 
 /**

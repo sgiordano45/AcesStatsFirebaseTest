@@ -839,6 +839,7 @@ body {
 import {
   getCurrentSeason,
   getSeasonGames,
+  getSeasonPreviews,
   getAllPlayerStatsOptimized
 } from './firebase-data.js';
 
@@ -878,12 +879,13 @@ async function loadWeekendData() {
     
     const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
     
-    const [games, players, previewResponse] = await Promise.all([
+    const [games, players, previews] = await Promise.all([
       getSeasonGames(currentSeasonData.id),
       getAllPlayerStatsOptimized(),
-      fetch('previews.json').catch(() => ({ ok: false }))
+      getSeasonPreviews(currentSeasonData.id)  // ← Load from Firebase!
     ]);
-    
+
+    previewData = previews || [];
     console.log(`✅ Loaded: ${games?.length || 0} games, ${players?.length || 0} players`);
     
     allGames = (games || []).map(g => {
