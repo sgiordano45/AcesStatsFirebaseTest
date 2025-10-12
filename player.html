@@ -42,7 +42,7 @@
   }
   
   .softball-spinner::before {
-    content: 'âš¾';
+    content: '⚾';
     font-size: 80px;
     display: block;
     animation: spin 1.5s ease-in-out infinite;
@@ -95,7 +95,7 @@
   }
   
   .player-header::after {
-    content: 'âš¾';
+    content: '⚾';
     position: absolute;
     bottom: -40px;
     left: -40px;
@@ -210,7 +210,7 @@
   }
   
   .captain-badge::before {
-    content: "â­";
+    content: "⭐";
     font-size: 1.1em;
   }
   
@@ -228,7 +228,7 @@
   }
   
   .master-chef-section::before {
-    content: "ðŸ'¨â€ðŸ³";
+    content: "👨‍🍳";
     position: absolute;
     top: -20px;
     right: -20px;
@@ -319,11 +319,6 @@
     gap: 12px;
   }
   
-  .awards-section h2::before {
-    content: "ðŸ…";
-    font-size: 1.3em;
-  }
-  
   .awards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -347,6 +342,15 @@
   }
   
   .award-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
+  
+  .award-icon.fallback {
+    width: auto;
+    height: auto;
     font-size: 1.8em;
   }
   
@@ -582,7 +586,7 @@
   <!-- Master Chef Recognition Section -->
   <div class="master-chef-section" id="masterChefSection">
     <div class="master-chef-title">
-      <div class="chef-icon">ðŸ'¨â€ðŸ³</div>
+      <div class="chef-icon">👨‍🍳</div>
       <div>
         <h2>Master Chef Recognition</h2>
         <div class="chef-subtitle">The heart and soul of every game day feast</div>
@@ -591,25 +595,25 @@
     
     <div class="chef-achievements">
       <div class="chef-achievement">
-        <span class="chef-achievement-icon">ðŸ½ï¸</span>
+        <span class="chef-achievement-icon">🍽️</span>
         <div class="chef-achievement-title">Every Game Chef</div>
         <div class="chef-achievement-desc">Cooks for every single game - rain or shine</div>
       </div>
       
       <div class="chef-achievement">
-        <span class="chef-achievement-icon">ðŸ'¨â€ðŸ'¦</span>
+        <span class="chef-achievement-icon">👨‍👦</span>
         <div class="chef-achievement-title">Team Dad</div>
         <div class="chef-achievement-desc">Father of Andrew Streaman, supporting the next generation</div>
       </div>
       
       <div class="chef-achievement">
-        <span class="chef-achievement-icon">ðŸ†</span>
+        <span class="chef-achievement-icon">🏆</span>
         <div class="chef-achievement-title">Culinary MVP</div>
         <div class="chef-achievement-desc">Keeping the team well-fed and energized</div>
       </div>
       
       <div class="chef-achievement">
-        <span class="chef-achievement-icon">â¤ï¸</span>
+        <span class="chef-achievement-icon">❤️</span>
         <div class="chef-achievement-title">Team Spirit</div>
         <div class="chef-achievement-desc">Bringing everyone together through food</div>
       </div>
@@ -734,7 +738,13 @@
   document.getElementById('pageTitle').textContent = `${playerName} - Player Stats`;
 
   function hideLoadingIndicator() {
-    document.getElementById('loadingOverlay').classList.add('hidden');
+    // Hide the loading overlay with smooth transition
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+    }
+    
+    // Show content
     document.getElementById('playerHeader').style.display = 'flex';
     document.getElementById('statsContainer').style.display = 'block';
   }
@@ -1003,13 +1013,61 @@
   function populateAwards(awards) {
     const awardsSection = document.getElementById('awardsSection');
     const awardsGrid = document.getElementById('awardsGrid');
+    
+    // Award icons mapping
+    const awardIcons = {
+      'Team MVP': 'team_mvp.png',
+      'All Aces': 'all_aces.png',
+      'Gold Glove': 'gold_glove.png',
+      'Team of the Year': 'team_of_the_year.png',
+      'Rookie of the Year': 'rookie_of_the_year.png',
+      'Most Improved Ace': 'most_improved_ace.png',
+      'Comeback Player of the Year': 'comeback_player.png',
+      'Slugger of the Year': 'slugger_of_the_year.png',
+      'Pitcher of the Year': 'pitcher_of_the_year.png',
+      'Captain of the Year': 'captain_of_the_year.png',
+      'Al Pineda Good Guy Award': 'al_pineda_good_guy_award.png',
+      'Iron Man Award': 'iron_man_award.png',
+      'Sub of the Year': 'sub_of_the_year.png',
+      'Andrew Streaman Boner Award': 'andrew_streaman_boner_award.png',
+      'Erik Lund Perservenance Award': 'erik_lund_perservenance_award.png',
+      'Mr. Streaman Award for Excellence': 'mr_streaman_award_for_excellence.png'
+    };
+    
+    // Fallback emojis
+    const fallbackEmojis = {
+      'Team MVP': '👑',
+      'All Aces': '⭐',
+      'Gold Glove': '🥇',
+      'Team of the Year': '🏆',
+      'Rookie of the Year': '🌟',
+      'Most Improved Ace': '📈',
+      'Comeback Player of the Year': '🔄',
+      'Slugger of the Year': '💪',
+      'Pitcher of the Year': '🥎',
+      'Captain of the Year': '🎖️',
+      'Al Pineda Good Guy Award': '🤝',
+      'Iron Man Award': '💯',
+      'Sub of the Year': '🏅',
+      'Andrew Streaman Boner Award': '🎪',
+      'Erik Lund Perservenance Award': '⚡',
+      'Mr. Streaman Award for Excellence': '🌟'
+    };
+    
     awardsGrid.innerHTML = awards.map(award => {
       const season = award.season ? award.season.charAt(0).toUpperCase() + award.season.slice(1) : '';
+      const awardType = award.category || 'Award';
+      const iconFile = awardIcons[awardType];
+      const fallbackEmoji = fallbackEmojis[awardType] || '🏆';
+      
       return `
         <div class="award-item">
-          <span class="award-icon">ðŸ…</span>
+          ${iconFile ? 
+            `<img src="awards/${iconFile}" alt="${awardType}" class="award-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="award-icon fallback" style="display: none;">${fallbackEmoji}</span>` :
+            `<span class="award-icon fallback">${fallbackEmoji}</span>`
+          }
           <div class="award-details">
-            <div class="award-name">${award.category || 'Award'}</div>
+            <div class="award-name">${awardType}</div>
             <div class="award-season">${award.year} ${season}</div>
           </div>
         </div>
