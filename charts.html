@@ -1011,7 +1011,7 @@ function processRealData(battingData, gamesData, seasons) {
                 walks: walks,
                 battingAvg: battingAvg,
                 obp: obp,
-                acesBPI: 0,
+                acesBPI: player.acesBPI || player.acesWar || player.AcesWar || 0,
                 Sub: player.Sub || player.sub || ""
             });
             
