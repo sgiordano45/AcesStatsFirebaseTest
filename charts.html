@@ -895,6 +895,7 @@ async function initializeCharts() {
                         hits: Number(season.hits || 0),
                         runs: Number(season.runs || 0),
                         walks: Number(season.walks || 0),
+                        acesBPI: Number(season.acesBPI || 0),
                         Sub: season.Sub || season.sub || ""
                     });
                 }
@@ -972,7 +973,7 @@ function processRealData(battingData, gamesData, seasons) {
     if (battingData && battingData.length > 0) {
         console.log('📊 Processing batting data from', battingData.length, 'records');
         
-        battingData.forEach(player => {
+        battingData.forEach((player, index) => {
             if (!player.team || !player.name) return;
             
             const teamName = player.team.trim();
@@ -1000,6 +1001,16 @@ function processRealData(battingData, gamesData, seasons) {
             const battingAvg = atBats > 0 ? hits / atBats : 0;
             const plateAppearances = atBats + walks;
             const obp = plateAppearances > 0 ? (hits + walks) / plateAppearances : 0;
+            
+            // DIAGNOSTIC: Log acesBPI for first few players
+            if (index < 3) {
+                console.log(`🔍 AcesBPI check #${index + 1}:`, {
+                    name: playerName,
+                    acesBPI: player.acesBPI,
+                    typeof: typeof player.acesBPI,
+                    Sub: player.Sub
+                });
+            }
             
             playerData[seasonKey][teamName].push({
                 name: playerName,
