@@ -27,11 +27,14 @@
     justify-content: center;
     z-index: 9999;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+    opacity: 1;
+    visibility: visible;
   }
   
   .loading-overlay.hidden {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
   }
   
   .softball-spinner {
