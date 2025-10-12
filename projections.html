@@ -960,7 +960,7 @@
         const playoffSeed = index < 10 ? `<span class="playoff-seed">#${index + 1}</span>` : '';
         standingsHTML += `
           <tr>
-            <td>${index + 1} ${playoffSeed}</td>
+            <td style="text-align: center;">${playoffSeed}</td>
             <td class="team-name">${team.name}</td>
             <td>${team.currentWins}-${team.currentLosses}</td>
             <td>${team.projectedWins}-${team.projectedLosses}</td>
