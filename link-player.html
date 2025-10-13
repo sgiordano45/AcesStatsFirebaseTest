@@ -4,7 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Link Player Account - Mountainside Aces</title>
+  <meta name="theme-color" content="#2d5016">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mountainside Aces">
   <style>
+    :root {
+      --primary-color: #2d5016;
+      --secondary-color: #1a6b4a;
+      --accent-color: #ffd700;
+      --card-bg: #ffffff;
+      --text-dark: #2d3748;
+      --text-light: #718096;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+    }
+    
     * {
       box-sizing: border-box;
       margin: 0;
@@ -12,187 +29,374 @@
     }
     
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
       min-height: 100vh;
       padding: 20px;
     }
     
     .container {
-      max-width: 800px;
+      max-width: 1400px;
       margin: 0 auto;
     }
     
     .header {
-      background: white;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       padding: 2rem;
-      border-radius: 12px;
+      border-radius: 16px;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
     }
     
-    .header h1 {
-      color: #333;
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .header::after {
+      content: '⚾';
+      position: absolute;
+      bottom: -40px;
+      left: -30px;
+      font-size: 200px;
+      opacity: 0.05;
+    }
+    
+    .header-left {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .header-left h1 {
+      color: white;
       margin-bottom: 0.5rem;
+      font-size: 2rem;
+      font-weight: 700;
     }
     
-    .header p {
-      color: #666;
+    .header-left p {
+      color: rgba(255,255,255,0.9);
       font-size: 14px;
     }
     
-    .card {
+    .logout-btn {
+      padding: 1rem 1.75rem;
       background: white;
+      color: var(--primary-color);
+      border: 2px solid white;
       border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+    
+    .logout-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--accent-color);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: -1;
+    }
+    
+    .logout-btn:hover::before {
+      transform: translateX(0);
+    }
+    
+    .logout-btn:hover {
+      color: var(--primary-color);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
       padding: 2rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+    
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border-radius: 16px 16px 0 0;
     }
     
     .user-info {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      border-radius: 8px;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      border-radius: 12px;
       margin-bottom: 1.5rem;
+      border: 1px solid var(--border-color);
     }
     
     .user-avatar {
-      width: 60px;
-      height: 60px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      border: 3px solid #667eea;
+      border: 4px solid var(--primary-color);
+      box-shadow: var(--shadow-md);
     }
     
     .user-details h3 {
       margin-bottom: 0.25rem;
-      color: #333;
+      color: var(--text-dark);
+      font-size: 20px;
+      font-weight: 700;
     }
     
     .user-details p {
-      color: #666;
+      color: var(--text-light);
       font-size: 14px;
     }
     
-    .section-title {
-      font-size: 18px;
+    .user-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 12px;
+      font-size: 12px;
       font-weight: 600;
-      color: #333;
-      margin-bottom: 1rem;
+      margin-top: 8px;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 1.5rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 1rem;
+    }
+    
+    .section-title::before {
+      content: "";
+      width: 8px;
+      height: 36px;
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border-radius: 4px;
     }
     
     .search-box {
       width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #e1e5e9;
-      border-radius: 8px;
+      padding: 14px 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
       font-size: 16px;
-      margin-bottom: 1rem;
-      transition: border-color 0.2s;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
     
     .search-box:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
     }
     
     .team-section {
       margin-bottom: 1.5rem;
+      animation: fadeInUp 0.6s ease backwards;
+    }
+    
+    .team-section:nth-child(1) { animation-delay: 0.1s; }
+    .team-section:nth-child(2) { animation-delay: 0.2s; }
+    .team-section:nth-child(3) { animation-delay: 0.3s; }
+    .team-section:nth-child(4) { animation-delay: 0.4s; }
+    .team-section:nth-child(5) { animation-delay: 0.5s; }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .team-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       color: white;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
       font-weight: 600;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
     }
     
     .team-header:hover {
-      opacity: 0.9;
+      transform: translateX(8px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .team-count {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
     }
     
     .player-list {
       display: grid;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
     
     .player-item {
-      padding: 1rem;
-      border: 2px solid #e1e5e9;
-      border-radius: 8px;
+      padding: 1.25rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .player-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary-color);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
     }
     
     .player-item:hover {
-      border-color: #667eea;
-      background: #f8f9fa;
+      border-color: var(--primary-color);
+      background: #f7fafc;
+      transform: translateX(8px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .player-item:hover::before {
+      transform: scaleY(1);
     }
     
     .player-item.selected {
-      border-color: #667eea;
-      background: #eff6ff;
-      box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+      border-color: var(--primary-color);
+      background: linear-gradient(135deg, rgba(45, 80, 22, 0.05) 0%, rgba(26, 107, 74, 0.05) 100%);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .player-item.selected::before {
+      transform: scaleY(1);
     }
     
     .player-item.suggested {
-      border-color: #10b981;
-      background: #d1fae5;
+      border-color: var(--accent-color);
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+    }
+    
+    .player-item.suggested::before {
+      background: var(--accent-color);
+      transform: scaleY(1);
     }
     
     .player-name {
       font-weight: 600;
-      color: #333;
+      color: var(--text-dark);
       margin-bottom: 0.25rem;
+      font-size: 16px;
     }
     
     .player-stats {
       font-size: 13px;
-      color: #666;
+      color: var(--text-light);
     }
     
     .suggestion-badge {
-      background: #10b981;
-      color: white;
-      padding: 4px 12px;
+      background: var(--accent-color);
+      color: var(--primary-color);
+      padding: 6px 14px;
       border-radius: 12px;
       font-size: 12px;
       font-weight: 600;
     }
     
     .btn {
-      padding: 12px 24px;
+      padding: 14px 28px;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      font-family: inherit;
     }
     
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       color: white;
       width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .btn-primary:hover:not(:disabled)::before {
+      opacity: 1;
     }
     
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+      box-shadow: var(--shadow-md);
     }
     
     .btn-primary:disabled {
@@ -200,77 +404,124 @@
       cursor: not-allowed;
     }
     
+    .btn-primary span {
+      position: relative;
+      z-index: 1;
+    }
+    
     .btn-secondary {
-      background: #6b7280;
+      background: var(--text-light);
       color: white;
     }
     
     .btn-secondary:hover {
-      background: #4b5563;
+      background: var(--text-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     
     .alert {
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      animation: slideIn 0.3s ease;
+      border: 2px solid;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .alert-success {
       background: #d1fae5;
-      border: 1px solid #10b981;
+      border-color: #10b981;
       color: #065f46;
     }
     
     .alert-info {
       background: #dbeafe;
-      border: 1px solid #3b82f6;
+      border-color: #3b82f6;
       color: #1e40af;
-    }
-    
-    .alert-warning {
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      color: #92400e;
     }
     
     .loading {
       text-align: center;
-      padding: 2rem;
-      color: #666;
+      padding: 3rem;
+      color: var(--text-light);
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
     .empty-state {
       text-align: center;
       padding: 3rem 2rem;
-      color: #666;
+      color: var(--text-light);
     }
     
     .empty-state-icon {
-      font-size: 48px;
+      font-size: 64px;
       margin-bottom: 1rem;
     }
     
-    .linked-player-card {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-    }
-    
-    .linked-player-card h3 {
+    .empty-state h3 {
+      color: var(--text-dark);
       margin-bottom: 0.5rem;
     }
     
-    .linked-player-card p {
-      opacity: 0.9;
-      font-size: 14px;
+    .linked-player-card {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
     }
     
-    .actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
+    .linked-player-card::after {
+      content: '⚾';
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      font-size: 120px;
+      opacity: 0.1;
+    }
+    
+    .linked-player-card h3 {
+      margin-bottom: 0.75rem;
+      font-size: 22px;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .linked-player-card p {
+      opacity: 0.95;
+      font-size: 15px;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
     }
     
     @media (max-width: 768px) {
@@ -278,12 +529,36 @@
         padding: 10px;
       }
       
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .header-left h1 {
+        font-size: 1.6rem;
+      }
+      
       .header, .card {
         padding: 1.5rem;
       }
       
-      .actions {
+      .user-info {
         flex-direction: column;
+        text-align: center;
+      }
+      
+      .section-title {
+        font-size: 1.6rem;
+      }
+      
+      .section-title::after {
+        display: none;
+      }
+      
+      .logout-btn {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
@@ -291,21 +566,27 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔗 Link Player Account</h1>
-      <p>Connect your Google account to your player profile in the league</p>
+      <div class="header-left">
+        <h1>🔗 Link Player Account</h1>
+        <p>Connect your Google account to your player profile</p>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
     </div>
     
     <div id="loadingState" class="card">
-      <div class="loading">Loading...</div>
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading your profile...</p>
+      </div>
     </div>
     
     <div id="notLoggedIn" class="card" style="display: none;">
       <div class="empty-state">
-        <div class="empty-state-icon">🔐</div>
+        <div class="empty-state-icon">🔒</div>
         <h3>Please Sign In</h3>
-        <p style="margin-bottom: 1rem;">You need to sign in with Google to link your player account</p>
-        <button class="btn btn-primary" onclick="window.location.href='auth-test.html'">
-          Sign In with Google
+        <p style="margin-bottom: 1.5rem;">You need to sign in with Google to link your player account</p>
+        <button class="btn btn-primary" onclick="window.location.href='signin.html'">
+          <span>Sign In with Google</span>
         </button>
       </div>
     </div>
@@ -318,14 +599,15 @@
           <div class="user-details">
             <h3 id="userName"></h3>
             <p id="userEmail"></p>
+            <span class="user-badge">✓ Google Account</span>
           </div>
         </div>
         
         <div id="alreadyLinkedSection" style="display: none;">
           <div class="linked-player-card">
             <h3>✅ Account Linked</h3>
-            <p>Your account is linked to: <strong id="linkedPlayerName"></strong></p>
-            <p>Team: <strong id="linkedTeamName"></strong></p>
+            <p><strong>Player:</strong> <span id="linkedPlayerName"></span></p>
+            <p><strong>Team:</strong> <span id="linkedTeamName"></span></p>
           </div>
           <button class="btn btn-secondary" onclick="unlinkPlayer()">
             Change Player Link
@@ -336,7 +618,7 @@
       <!-- Player Selection -->
       <div id="selectionSection" class="card" style="display: none;">
         <div class="section-title">
-          👤 Select Your Player
+          👤 Select Your Player Profile
         </div>
         
         <div id="suggestionAlert" class="alert alert-info" style="display: none;">
@@ -347,117 +629,23 @@
           type="text" 
           id="searchBox" 
           class="search-box" 
-          placeholder="Search for your name..."
+          placeholder="🔍 Search for your name..."
         >
+        
+        <!-- Confirm button at the top -->
+        <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmLink()" style="margin-bottom: 2rem;">
+          <span>Confirm Link</span>
+        </button>
         
         <div id="playersContainer">
           <!-- Players will be loaded here -->
         </div>
-        
-        <div class="actions">
-          <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmLink()">
-            Confirm Link
-          </button>
-        </div>
-        
-        <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e1e5e9;">
-          <p style="color: #666; margin-bottom: 1rem;">
-            Don't see your name? You might be a new player!
-          </p>
-          <button class="btn btn-secondary" onclick="showNewPlayerForm()">
-            ➕ I'm a New Player
-          </button>
-        </div>
-      </div>
-      
-      <!-- New Player Form -->
-      <div id="newPlayerSection" class="card" style="display: none;">
-        <div class="section-title">
-          ➕ Create New Player Profile
-        </div>
-        
-        <div class="alert alert-info">
-          <strong>New Player Registration</strong><br>
-          Fill out the form below to create your player profile. A team captain will need to approve you before you can join a team.
-        </div>
-        
-        <form id="newPlayerForm" onsubmit="handleNewPlayerSubmit(event)">
-          <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
-              Full Name *
-            </label>
-            <input 
-              type="text" 
-              id="newPlayerName"
-              class="search-box" 
-              placeholder="Enter your full name"
-              required
-              style="margin-bottom: 0;"
-            >
-            <p style="font-size: 12px; color: #666; margin-top: 0.25rem;">
-              Use your real name as you want it to appear on rosters
-            </p>
-          </div>
-          
-          <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
-              Preferred Team (Optional)
-            </label>
-            <select id="preferredTeam" class="search-box" style="margin-bottom: 0;">
-              <option value="">No preference</option>
-              <option value="black">Black</option>
-              <option value="blue">Blue</option>
-              <option value="carolina">Carolina</option>
-              <option value="gold">Gold</option>
-              <option value="green">Green</option>
-              <option value="orange">Orange</option>
-              <option value="purple">Purple</option>
-              <option value="red">Red</option>
-              <option value="silver">Silver</option>
-              <option value="white">White</option>
-            </select>
-          </div>
-          
-          <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
-              Experience Level *
-            </label>
-            <select id="experienceLevel" class="search-box" required style="margin-bottom: 0;">
-              <option value="">Select your experience</option>
-              <option value="beginner">Beginner (0-1 seasons)</option>
-              <option value="intermediate">Intermediate (2-5 seasons)</option>
-              <option value="advanced">Advanced (5+ seasons)</option>
-            </select>
-          </div>
-          
-          <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
-              Additional Notes (Optional)
-            </label>
-            <textarea 
-              id="additionalNotes"
-              class="search-box"
-              rows="3"
-              placeholder="Tell us anything else (preferred position, availability, etc.)"
-              style="margin-bottom: 0; resize: vertical;"
-            ></textarea>
-          </div>
-          
-          <div class="actions">
-            <button type="button" class="btn btn-secondary" onclick="cancelNewPlayer()">
-              Cancel
-            </button>
-            <button type="submit" class="btn btn-primary">
-              Submit Registration
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   </div>
   
   <script type="module">
-    import { getCurrentUser, onAuthChange, getUserProfile } from './firebase-auth.js';
+    import { getCurrentUser, onAuthChange, getUserProfile, logoutUser } from './firebase-auth.js';
     import { linkPlayerToUser } from './firebase-auth.js';
     import { getAllPlayerStatsOptimized } from './firebase-data.js';
     
@@ -477,20 +665,29 @@
     });
     
     async function handleUserLoggedIn(user) {
+      console.log('✓ User logged in:', user.email);
+      
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('notLoggedIn').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
       
       // Display user info
-      document.getElementById('userName').textContent = user.displayName;
+      document.getElementById('userName').textContent = user.displayName || 'Google User';
       document.getElementById('userEmail').textContent = user.email;
-      document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/60';
+      document.getElementById('userAvatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.email);
       
       // Check if already linked
-      const profile = await getUserProfile(user.uid);
-      if (profile.success && profile.data.linkedPlayer) {
-        showAlreadyLinked(profile.data);
-      } else {
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (profile.success && profile.data.linkedPlayer) {
+          console.log('✓ User already linked to:', profile.data.linkedPlayer);
+          showAlreadyLinked(profile.data);
+        } else {
+          console.log('→ User not linked, showing selection');
+          await showPlayerSelection();
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
         await showPlayerSelection();
       }
     }
@@ -514,7 +711,9 @@
       
       // Load all players
       try {
+        console.log('Loading all players...');
         allPlayers = await getAllPlayerStatsOptimized();
+        console.log(`✓ Loaded ${allPlayers.length} players`);
         
         // Group by current team
         const playersByTeam = groupPlayersByTeam(allPlayers);
@@ -522,6 +721,7 @@
         // Try to find matching player
         const suggestedPlayer = findMatchingPlayer(currentUser.displayName, allPlayers);
         if (suggestedPlayer) {
+          console.log('✓ Found suggested player:', suggestedPlayer.name);
           document.getElementById('suggestionAlert').style.display = 'block';
         }
         
@@ -531,7 +731,7 @@
       } catch (error) {
         console.error('Error loading players:', error);
         document.getElementById('playersContainer').innerHTML = 
-          '<div class="empty-state"><p>Error loading players. Please try again.</p></div>';
+          '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Error loading players. Please refresh the page.</p></div>';
       }
     }
     
@@ -555,27 +755,29 @@
     }
     
     function findMatchingPlayer(googleName, players) {
-      // Handle null or empty names (email/password users without displayName)
       if (!googleName || googleName.trim() === '') {
         return null;
       }
       
       const nameLower = googleName.toLowerCase();
-      const [firstName, lastName] = nameLower.split(' ');
+      const nameParts = nameLower.split(' ');
       
-      // Try exact match
+      // Try exact match first
       let match = players.find(p =>
         p.name && p.name.toLowerCase() === nameLower
       );
       
       if (match) return match;
       
-      // Try first and last name match
-      match = players.find(p => {
-        if (!p.name) return false;
-        const playerName = p.name.toLowerCase();
-        return playerName.includes(firstName) && playerName.includes(lastName);
-      });
+      // Try partial match (at least 2 matching parts)
+      if (nameParts.length >= 2) {
+        match = players.find(p => {
+          if (!p.name) return false;
+          const playerNameLower = p.name.toLowerCase();
+          const matchCount = nameParts.filter(part => playerNameLower.includes(part)).length;
+          return matchCount >= 2;
+        });
+      }
       
       return match;
     }
@@ -592,7 +794,10 @@
         
         const teamHeader = document.createElement('div');
         teamHeader.className = 'team-header';
-        teamHeader.textContent = `${team} (${playersByTeam[team].length} players)`;
+        teamHeader.innerHTML = `
+          <span>${team}</span>
+          <span class="team-count">${playersByTeam[team].length} players</span>
+        `;
         
         const playerList = document.createElement('div');
         playerList.className = 'player-list';
@@ -643,7 +848,7 @@
       if (suggestedPlayer && player.id === suggestedPlayer.id) {
         const badge = document.createElement('span');
         badge.className = 'suggestion-badge';
-        badge.textContent = 'Suggested Match';
+        badge.textContent = 'Suggested';
         item.appendChild(badge);
       }
       
@@ -664,6 +869,8 @@
       
       // Enable confirm button
       document.getElementById('confirmBtn').disabled = false;
+      
+      console.log('Selected player:', player.name);
     }
     
     function setupSearch() {
@@ -679,6 +886,12 @@
             item.style.display = 'none';
           }
         });
+        
+        // Hide empty team sections
+        document.querySelectorAll('.team-section').forEach(section => {
+          const visiblePlayers = section.querySelectorAll('.player-item[style="display: flex;"]');
+          section.style.display = visiblePlayers.length > 0 ? 'block' : 'none';
+        });
       });
     }
     
@@ -686,18 +899,22 @@
       if (!selectedPlayer || !currentUser) return;
       
       const confirmBtn = document.getElementById('confirmBtn');
+      const btnText = confirmBtn.querySelector('span');
       confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Linking...';
+      btnText.textContent = 'Linking...';
       
       try {
+        console.log('Linking user to player:', selectedPlayer.name);
+        
         const result = await linkPlayerToUser(
           currentUser.uid,
           selectedPlayer.name,
           selectedPlayer.currentTeam,
-          false // Not captain by default
+          false
         );
         
         if (result.success) {
+          console.log('✅ Link successful!');
           alert('✅ Player linked successfully!');
           window.location.reload();
         } else {
@@ -708,7 +925,7 @@
         console.error('Error linking player:', error);
         alert('❌ Failed to link player. Please try again.');
         confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm Link';
+        btnText.textContent = 'Confirm Link';
       }
     }
     
@@ -718,6 +935,7 @@
       }
       
       try {
+        console.log('Unlinking player...');
         await linkPlayerToUser(currentUser.uid, null, null, false);
         window.location.reload();
       } catch (error) {
@@ -726,87 +944,24 @@
       }
     }
     
+    async function handleLogout() {
+      if (!confirm('Are you sure you want to sign out?')) {
+        return;
+      }
+      
+      try {
+        await logoutUser();
+        window.location.href = 'signin.html';
+      } catch (error) {
+        console.error('Error signing out:', error);
+        alert('Error signing out. Please try again.');
+      }
+    }
+    
     // Make functions available globally
     window.confirmLink = confirmLink;
     window.unlinkPlayer = unlinkPlayer;
-    window.showNewPlayerForm = showNewPlayerForm;
-    window.cancelNewPlayer = cancelNewPlayer;
-    window.handleNewPlayerSubmit = handleNewPlayerSubmit;
-    
-    function showNewPlayerForm() {
-      document.getElementById('selectionSection').style.display = 'none';
-      document.getElementById('newPlayerSection').style.display = 'block';
-      
-      // Pre-fill name if possible
-      if (currentUser && currentUser.displayName) {
-        document.getElementById('newPlayerName').value = currentUser.displayName;
-      }
-    }
-    
-    function cancelNewPlayer() {
-      document.getElementById('newPlayerSection').style.display = 'none';
-      document.getElementById('selectionSection').style.display = 'block';
-    }
-    
-    async function handleNewPlayerSubmit(event) {
-      event.preventDefault();
-      
-      const submitBtn = event.target.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating Profile...';
-      
-      const playerName = document.getElementById('newPlayerName').value.trim();
-      const preferredTeam = document.getElementById('preferredTeam').value;
-      const experienceLevel = document.getElementById('experienceLevel').value;
-      const additionalNotes = document.getElementById('additionalNotes').value.trim();
-      
-      try {
-        // Create a pending player registration in Firestore
-        const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        const { db } = await import('./firebase-data.js');
-        
-        const registrationRef = doc(db, 'pendingPlayers', currentUser.uid);
-        
-        await setDoc(registrationRef, {
-          userId: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
-          playerName: playerName,
-          preferredTeam: preferredTeam || null,
-          experienceLevel: experienceLevel,
-          additionalNotes: additionalNotes || null,
-          status: 'pending', // pending, approved, rejected
-          createdAt: serverTimestamp(),
-          approvedBy: null,
-          approvedAt: null
-        });
-        
-        // Also link to user profile temporarily with pending status
-        await linkPlayerToUser(
-          currentUser.uid,
-          playerName,
-          preferredTeam || 'unassigned',
-          false
-        );
-        
-        // Update user profile to mark as pending
-        const { updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-          registrationStatus: 'pending',
-          updatedAt: serverTimestamp()
-        });
-        
-        alert('✅ Registration submitted! A team captain will review your request. You can still use the roster management features while your registration is pending.');
-        window.location.reload();
-        
-      } catch (error) {
-        console.error('Error creating new player:', error);
-        alert('❌ Failed to submit registration. Please try again or contact a league administrator.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Registration';
-      }
-    }
+    window.handleLogout = handleLogout;
   </script>
 </body>
 </html>
