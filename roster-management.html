@@ -241,6 +241,7 @@ function RosterManagement({ currentUser }) {
       
       if (profileResult.success && profileResult.data) {
         setUserProfile(profileResult.data);
+        setCurrentUserId(currentUser.uid);
         
         // Auto-select user's team if they have one
         if (profileResult.data.linkedTeam) {
@@ -260,26 +261,32 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('🔄 Loading team data for:', selectedTeam);
       
-      // Get team players
-      const teamPlayers = await window.FirebaseRoster.getAllPlayerStatsOptimized();
-      const filteredPlayers = teamPlayers.filter(p => 
-        p.currentTeam === selectedTeam && !p.migrated
+      // Import the function if not available
+      const { getSeasonPlayerStatsOptimized } = await import('./firebase-data.js');
+      
+      // Get team players FOR THIS SEASON ONLY
+      const seasonPlayers = await getSeasonPlayerStatsOptimized(currentSeason.id);
+      console.log('📊 All season players:', seasonPlayers.length);
+      
+      const filteredPlayers = seasonPlayers.filter(p =>
+        p.team === selectedTeam && !p.migrated
       );
+      console.log('📊 Filtered to team:', filteredPlayers.length);
       
       // Format players
       const formattedPlayers = filteredPlayers.map((player, index) => {
         const name = player.name || player.playerName;
         const nameParts = name.trim().split(' ');
-        const avatar = nameParts.length > 1 ? 
+        const avatar = nameParts.length > 1 ?
           (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() :
           name.substring(0, 2).toUpperCase();
         
-        const battingAvg = player.career?.battingAverage 
-          ? player.career.battingAverage.toFixed(3) 
+        const battingAvg = player.battingAverage
+          ? player.battingAverage.toFixed(3)
           : '.000';
         
         return {
-          id: player.id,
+          id: player.playerId || player.id,
           name,
           jersey: player.number || (index + 1),
           avatar,
@@ -289,26 +296,35 @@ function RosterManagement({ currentUser }) {
       }).sort((a, b) => a.name.localeCompare(b.name));
       
       setPlayers(formattedPlayers);
+      console.log('✅ Formatted players:', formattedPlayers.length);
       
       // Get upcoming games for this team
       const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(
-        selectedTeam, 
+        selectedTeam,
         currentSeason.id
       );
       
       const formattedGames = upcomingGames.map(game => {
-        const gameDate = game.date.seconds 
+        const gameDate = game.date.seconds
           ? new Date(game.date.seconds * 1000).toLocaleDateString()
           : game.date;
+        
+        // Determine home/away and opponent
+        const teamLower = selectedTeam.toLowerCase();
+        const homeTeamLower = (game.homeTeam || game.homeTeamId || '').toLowerCase();
+        const awayTeamLower = (game.awayTeam || game.awayTeamId || '').toLowerCase();
+        
+        const isHome = homeTeamLower === teamLower;
+        const opponent = isHome ? (game.awayTeam || game.awayTeamId) : (game.homeTeam || game.homeTeamId);
         
         return {
           id: game.id,
           date: gameDate,
-          homeTeam: game.homeTeam,
-          awayTeam: game.awayTeam,
-          opponent: game.opponent,
+          homeTeam: game.homeTeam || game.homeTeamId,
+          awayTeam: game.awayTeam || game.awayTeamId,
+          opponent: opponent,
           gameType: game.gameType || 'Regular',
-          isHome: game.isHome
+          isHome: isHome
         };
       });
       
@@ -384,7 +400,11 @@ function RosterManagement({ currentUser }) {
 
   const handleRSVPClick = async (playerId, gameId) => {
     // Only allow captain or the player themselves to change RSVP
-    if (!isCaptain && currentUserId !== playerId) return;
+    const canEdit = isCaptain || userProfile?.linkedPlayer === players.find(p => p.id === playerId)?.name;
+    if (!canEdit) {
+      console.log('❌ Cannot edit RSVP');
+      return;
+    }
     
     const key = `${playerId}-${gameId}`;
     const status = rsvps[key] || 'none';
@@ -735,7 +755,7 @@ function RosterManagement({ currentUser }) {
                   </thead>
                   <tbody>
                     {players.map(player => {
-                      const isCurrentUserRow = player.id === currentUser.uid;
+                        const isCurrentUserRow = userProfile?.linkedPlayer === player.name;
                       return (
                         <tr key={player.id} style={{ background: isCurrentUserRow ? '#eff6ff' : 'white', borderLeft: isCurrentUserRow ? '4px solid #667eea' : 'none' }}>
                           <td style={{ position: 'sticky', left: 0, background: isCurrentUserRow ? '#eff6ff' : 'white', zIndex: 10, borderBottom: '1px solid #ccc', padding: '8px' }}>
@@ -756,7 +776,7 @@ function RosterManagement({ currentUser }) {
                             const key = `${player.id}-${game.id}`;
                             const status = rsvps[key] || 'none';
                             const statusInfo = RSVP_STATUS[status];
-                            const canEdit = isCaptain || player.id === currentUser.uid;
+                            const canEdit = isCaptain || userProfile?.linkedPlayer === player.name;
                             
                             return (
                               <td key={game.id} style={{ borderBottom: '1px solid #ccc', padding: '8px', textAlign: 'center' }}>
