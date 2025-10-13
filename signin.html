@@ -342,7 +342,7 @@
   </div>
   
   <script type="module">
-    import { loginWithGoogle, onAuthChange } from './firebase-auth.js';
+    import { loginWithGoogle, onAuthChange, getUserProfile } from './firebase-auth.js';
     
     function showAlert(message, type = 'info') {
       const container = document.getElementById('alertContainer');
@@ -384,12 +384,31 @@
         const result = await loginWithGoogle();
         
         if (result.success) {
-          showAlert('✅ Signed in successfully! Redirecting...', 'success');
+          showAlert('✅ Signed in successfully! Checking profile...', 'success');
           
-          // Give user time to see the success message
-          setTimeout(() => {
-            window.location.href = 'link-player.html';
-          }, 1500);
+          // Check if user has linked player
+          try {
+            const profile = await getUserProfile(result.user.uid);
+            
+            if (profile.success && profile.data && profile.data.linkedPlayer) {
+              console.log('✓ User has linked player, redirecting to profile...');
+              showAlert('✅ Welcome back! Redirecting to your profile...', 'success');
+              setTimeout(() => {
+                window.location.href = 'profile.html';
+              }, 1500);
+            } else {
+              console.log('→ User needs to link player, redirecting to link page...');
+              showAlert('✅ Signed in! Please link your player account...', 'success');
+              setTimeout(() => {
+                window.location.href = 'link-player.html';
+              }, 1500);
+            }
+          } catch (error) {
+            console.error('Error checking profile:', error);
+            setTimeout(() => {
+              window.location.href = 'link-player.html';
+            }, 1500);
+          }
         } else {
           // Handle specific error cases
           let errorMessage = result.message || 'Sign-in failed';
@@ -411,13 +430,37 @@
     };
     
     // Check if user is already signed in
-    onAuthChange((user) => {
+    onAuthChange(async (user) => {
       if (user) {
         console.log('✓ User already signed in:', user.email);
-        showAlert('Already signed in! Redirecting...', 'success');
-        setTimeout(() => {
-          window.location.href = 'link-player.html';
-        }, 1000);
+        showAlert('Already signed in! Checking profile...', 'success');
+        
+        try {
+          // Check if user has linked a player
+          const profile = await getUserProfile(user.uid);
+          
+          if (profile.success && profile.data && profile.data.linkedPlayer) {
+            // User has linked player, go to profile
+            console.log('✓ User has linked player, redirecting to profile...');
+            showAlert('Welcome back! Redirecting to your profile...', 'success');
+            setTimeout(() => {
+              window.location.href = 'profile.html';
+            }, 1000);
+          } else {
+            // User hasn't linked player, go to link page
+            console.log('→ User needs to link player, redirecting to link page...');
+            showAlert('Please link your player account...', 'info');
+            setTimeout(() => {
+              window.location.href = 'link-player.html';
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          // If error, default to link page
+          setTimeout(() => {
+            window.location.href = 'link-player.html';
+          }, 1000);
+        }
       }
     });
   </script>
