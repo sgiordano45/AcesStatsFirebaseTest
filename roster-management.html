@@ -55,8 +55,7 @@ import { onAuthChange, getCurrentUser, getUserProfile } from './firebase-auth.js
 import {
   getCurrentSeason,
   getAllTeams,
-  getPlayersByTeamOptimized,
-  getAllPlayerStatsOptimized
+  getSeasonPlayerStatsOptimized
 } from './firebase-data.js';
 import {
   getGameRSVPs,
@@ -113,9 +112,8 @@ window.FirebaseRoster = {
   getUpcomingTeamGames,
   getCurrentSeason,
   getAllTeams,
-  getPlayersByTeamOptimized,
-  getAllPlayerStatsOptimized,
-  getUserProfile // Add this!
+  getSeasonPlayerStatsOptimized,
+  getUserProfile
 };
 </script>
 
@@ -217,7 +215,7 @@ function RosterManagement({ currentUser }) {
 
   async function loadInitialData() {
     try {
-      console.log('🔄 Loading initial data...');
+      console.log('📄 Loading initial data...');
       
       // Get current season
       const seasonData = await window.FirebaseRoster.getCurrentSeason();
@@ -241,7 +239,7 @@ function RosterManagement({ currentUser }) {
       
       if (profileResult.success && profileResult.data) {
         setUserProfile(profileResult.data);
-        setCurrentUserId(currentUser.uid);
+        setCurrentUserId(currentUser.uid); // FIX #1: Set current user ID
         
         // Auto-select user's team if they have one
         if (profileResult.data.linkedTeam) {
@@ -259,13 +257,10 @@ function RosterManagement({ currentUser }) {
 
   async function loadTeamData() {
     try {
-      console.log('🔄 Loading team data for:', selectedTeam);
+      console.log('📄 Loading team data for:', selectedTeam);
       
-      // Import the function if not available
-      const { getSeasonPlayerStatsOptimized } = await import('./firebase-data.js');
-      
-      // Get team players FOR THIS SEASON ONLY
-      const seasonPlayers = await getSeasonPlayerStatsOptimized(currentSeason.id);
+      // FIX #2: Use getSeasonPlayerStatsOptimized instead of getAllPlayerStatsOptimized
+      const seasonPlayers = await window.FirebaseRoster.getSeasonPlayerStatsOptimized(currentSeason.id);
       console.log('📊 All season players:', seasonPlayers.length);
       
       const filteredPlayers = seasonPlayers.filter(p =>
@@ -281,6 +276,7 @@ function RosterManagement({ currentUser }) {
           (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() :
           name.substring(0, 2).toUpperCase();
         
+        // FIX #2: Use player.battingAverage directly, not player.career?.battingAverage
         const battingAvg = player.battingAverage
           ? player.battingAverage.toFixed(3)
           : '.000';
@@ -343,7 +339,7 @@ function RosterManagement({ currentUser }) {
 
   async function loadGameData() {
     try {
-      console.log('🔄 Loading game data for:', selectedGame);
+      console.log('📄 Loading game data for:', selectedGame);
       
       // Get RSVPs for this game
       const gameRsvps = await window.FirebaseRoster.getGameRSVPs(selectedGame);
@@ -399,7 +395,7 @@ function RosterManagement({ currentUser }) {
   }
 
   const handleRSVPClick = async (playerId, gameId) => {
-    // Only allow captain or the player themselves to change RSVP
+    // FIX #5: Only allow captain or the player themselves to change RSVP
     const canEdit = isCaptain || userProfile?.linkedPlayer === players.find(p => p.id === playerId)?.name;
     if (!canEdit) {
       console.log('❌ Cannot edit RSVP');
@@ -755,7 +751,8 @@ function RosterManagement({ currentUser }) {
                   </thead>
                   <tbody>
                     {players.map(player => {
-                        const isCurrentUserRow = userProfile?.linkedPlayer === player.name;
+                      // FIX #3: Check using linkedPlayer name, not player.id
+                      const isCurrentUserRow = userProfile?.linkedPlayer === player.name;
                       return (
                         <tr key={player.id} style={{ background: isCurrentUserRow ? '#eff6ff' : 'white', borderLeft: isCurrentUserRow ? '4px solid #667eea' : 'none' }}>
                           <td style={{ position: 'sticky', left: 0, background: isCurrentUserRow ? '#eff6ff' : 'white', zIndex: 10, borderBottom: '1px solid #ccc', padding: '8px' }}>
@@ -776,6 +773,7 @@ function RosterManagement({ currentUser }) {
                             const key = `${player.id}-${game.id}`;
                             const status = rsvps[key] || 'none';
                             const statusInfo = RSVP_STATUS[status];
+                            // FIX #4: Check using linkedPlayer name, not player.id
                             const canEdit = isCaptain || userProfile?.linkedPlayer === player.name;
                             
                             return (
