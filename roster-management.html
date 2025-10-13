@@ -292,7 +292,7 @@ function RosterManagement({ currentUser }) {
       
       // Get upcoming games for this team
       const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(
-        selectedTeam.toLowerCase(), 
+        selectedTeam, 
         currentSeason.id
       );
       

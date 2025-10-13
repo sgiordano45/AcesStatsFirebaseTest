@@ -289,7 +289,7 @@ export async function getBenchPlayers(gameId, teamId) {
 
 /**
  * Get upcoming games for a team
- * @param {string} teamId - The team ID (lowercase)
+ * @param {string} teamId - The team ID (can be any case)
  * @param {string} seasonId - The season ID
  * @returns {Array} Array of upcoming games
  */
@@ -297,55 +297,72 @@ export async function getUpcomingTeamGames(teamId, seasonId) {
   try {
     const gamesRef = collection(db, 'seasons', seasonId, 'games');
     const now = new Date();
+    now.setHours(0, 0, 0, 0); // Start of today
     
-    // Query for home games
-    const homeQuery = query(
-      gamesRef,
-      where('homeTeamId', '==', teamId),
-      where('status', '==', 'upcoming')
-    );
+    console.log(`🔍 Looking for games for team: "${teamId}" in season: ${seasonId}`);
     
-    // Query for away games
-    const awayQuery = query(
-      gamesRef,
-      where('awayTeamId', '==', teamId),
-      where('status', '==', 'upcoming')
-    );
-    
-    const [homeSnap, awaySnap] = await Promise.all([
-      getDocs(homeQuery),
-      getDocs(awayQuery)
-    ]);
+    // Get ALL games for this season (we'll filter by date client-side)
+    const allGamesSnap = await getDocs(gamesRef);
     
     const games = [];
-    homeSnap.forEach(doc => {
-      const data = doc.data();
-      games.push({
-        id: doc.id,
-        ...data,
-        isHome: true,
-        opponent: data.awayTeam
-      });
-    });
+    const teamIdLower = teamId.toLowerCase();
     
-    awaySnap.forEach(doc => {
+    allGamesSnap.forEach(doc => {
       const data = doc.data();
-      games.push({
-        id: doc.id,
-        ...data,
-        isHome: false,
-        opponent: data.homeTeam
-      });
+      
+      // Check if this team is involved (check both homeTeamId and homeTeam fields)
+      const homeTeamMatch = 
+        data.homeTeamId?.toLowerCase() === teamIdLower ||
+        data.homeTeam?.toLowerCase() === teamIdLower;
+        
+      const awayTeamMatch = 
+        data.awayTeamId?.toLowerCase() === teamIdLower ||
+        data.awayTeam?.toLowerCase() === teamIdLower;
+      
+      if (!homeTeamMatch && !awayTeamMatch) {
+        return; // Not this team's game
+      }
+      
+      // Parse the game date
+      let gameDate;
+      if (data.date?.seconds) {
+        gameDate = new Date(data.date.seconds * 1000);
+      } else if (data.date) {
+        gameDate = new Date(data.date);
+      } else {
+        return; // No valid date
+      }
+      
+      gameDate.setHours(0, 0, 0, 0);
+      
+      // Only include future games
+      if (gameDate >= now) {
+        games.push({
+          id: doc.id,
+          ...data,
+          isHome: homeTeamMatch,
+          opponent: homeTeamMatch ? data.awayTeam : data.homeTeam
+        });
+      }
     });
     
     // Sort by date
     games.sort((a, b) => {
-      const dateA = a.date?.seconds || 0;
-      const dateB = b.date?.seconds || 0;
+      const dateA = a.date?.seconds || new Date(a.date).getTime() / 1000 || 0;
+      const dateB = b.date?.seconds || new Date(b.date).getTime() / 1000 || 0;
       return dateA - dateB;
     });
     
     console.log(`✅ Loaded ${games.length} upcoming games for ${teamId}`);
+    if (games.length > 0) {
+      console.log('First game:', {
+        date: games[0].date,
+        home: games[0].homeTeam,
+        away: games[0].awayTeam,
+        opponent: games[0].opponent
+      });
+    }
+    
     return games;
   } catch (error) {
     console.error('Error loading team games:', error);
