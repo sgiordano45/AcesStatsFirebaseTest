@@ -652,16 +652,39 @@ body {
         const teamData = teams.find(t => t.name === teamName || t.id === teamName.toLowerCase());
         
         // Calculate team record
-        const teamGames = games.filter(g => 
-          g.homeTeamName === teamName || g.awayTeamName === teamName
-        );
+        const teamGames = games.filter(g => {
+          const homeTeam = g.homeTeamName || g.homeTeam;
+          const awayTeam = g.awayTeamName || g.awayTeam;
+          return homeTeam === teamName || awayTeam === teamName;
+        });
+        
+        console.log(`🏆 Team ${teamName}: Found ${teamGames.length} games`);
         
         let wins = 0, losses = 0, ties = 0;
         teamGames.forEach(g => {
-          if (g.winner === teamName) wins++;
-          else if (g.winner && g.winner.toLowerCase() === 'tie') ties++;
-          else if (g.winner) losses++;
-        });
+                  const winner = g.winner;
+                  const homeTeam = g.homeTeamName || g.homeTeam;
+                  const awayTeam = g.awayTeamName || g.awayTeam;
+                  
+                  console.log(`  Game: ${homeTeam} vs ${awayTeam}, Winner: ${winner}`);
+                  
+                  // Only count completed games with a winner
+                  if (winner && winner.trim() !== '') {
+                    if (winner.toLowerCase() === 'tie') {
+                      ties++;
+                    } else if (winner === teamName) {
+                      wins++;
+                    } else {
+                      // Winner is not the team and not a tie, so it's a loss
+                      // Only count if this team actually played in this game
+                      if (homeTeam === teamName || awayTeam === teamName) {
+                        losses++;
+                      }
+                    }
+                  }
+                });
+
+        console.log(`  Record: ${wins}-${losses}-${ties}`);
 
         const winPct = (wins + losses + ties) > 0 ? (wins / (wins + losses + ties)) : 0;
 
