@@ -1,11 +1,11 @@
 // firebase-roster.js
-import {
-  doc,
-  setDoc,
-  getDoc,
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
   getDocs,
-  updateDoc,
-  collection,
+  updateDoc, 
+  collection, 
   query,
   where,
   serverTimestamp,
@@ -289,7 +289,7 @@ export async function getBenchPlayers(gameId, teamId) {
 
 /**
  * Get upcoming games for a team
- * @param {string} teamId - The team ID
+ * @param {string} teamId - The team ID (lowercase)
  * @param {string} seasonId - The season ID
  * @returns {Array} Array of upcoming games
  */
@@ -298,12 +298,14 @@ export async function getUpcomingTeamGames(teamId, seasonId) {
     const gamesRef = collection(db, 'seasons', seasonId, 'games');
     const now = new Date();
     
+    // Query for home games
     const homeQuery = query(
       gamesRef,
       where('homeTeamId', '==', teamId),
       where('status', '==', 'upcoming')
     );
     
+    // Query for away games
     const awayQuery = query(
       gamesRef,
       where('awayTeamId', '==', teamId),
@@ -338,8 +340,8 @@ export async function getUpcomingTeamGames(teamId, seasonId) {
     
     // Sort by date
     games.sort((a, b) => {
-      const dateA = a.date.seconds || 0;
-      const dateB = b.date.seconds || 0;
+      const dateA = a.date?.seconds || 0;
+      const dateB = b.date?.seconds || 0;
       return dateA - dateB;
     });
     

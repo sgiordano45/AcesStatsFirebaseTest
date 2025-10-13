@@ -51,8 +51,8 @@
 
 <script type="module">
 // Import Firebase functions
-import { onAuthChange, getCurrentUser } from './firebase-auth.js';
-import { 
+import { onAuthChange, getCurrentUser, getUserProfile } from './firebase-auth.js';
+import {
   getCurrentSeason,
   getAllTeams,
   getPlayersByTeamOptimized,
@@ -75,25 +75,25 @@ import {
 let rsvpListeners = [];
 
 // Initialize and render the app
-async function initializeApp() {
-  const currentUser = getCurrentUser();
-  
-  if (!currentUser) {
-    // Redirect to signin if not authenticated
+async function initializeApp(user) {
+  if (!user) {
     window.location.href = 'signin.html';
     return;
   }
   
+  // Hide loading overlay
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  
   // Render the React app
   const container = document.getElementById('root');
   const root = ReactDOM.createRoot(container);
-  root.render(React.createElement(RosterManagement, { currentUser }));
+  root.render(React.createElement(RosterManagement, { currentUser: user }));
 }
 
 // Wait for auth state to be determined
 onAuthChange((user) => {
   if (user) {
-    initializeApp();
+    initializeApp(user);
   } else {
     window.location.href = 'signin.html';
   }
@@ -114,7 +114,8 @@ window.FirebaseRoster = {
   getCurrentSeason,
   getAllTeams,
   getPlayersByTeamOptimized,
-  getAllPlayerStatsOptimized
+  getAllPlayerStatsOptimized,
+  getUserProfile // Add this!
 };
 </script>
 
