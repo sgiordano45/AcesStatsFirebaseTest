@@ -1,16 +1,21 @@
 // firebase-data.js
 // Helper functions to fetch data from Firebase
 
-import { db, collection, doc, getDocs, getDoc, query, where, orderBy, limit } from './firebase-config.js';
-
-// ============================================
-// IMPORTANT: Export app and db for firebase-auth.js
-// ============================================
-
-// Re-import app from firebase-config to export it
+// Import Firebase SDK
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  query,
+  where,
+  orderBy,
+  limit
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Your Firebase configuration (copy from firebase-config.js)
+// Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCAEWkrTcprzJ2KPPJu-vFJPvYOVU4ky20",
   authDomain: "acessoftballreference-84791.firebaseapp.com",
@@ -20,10 +25,11 @@ const firebaseConfig = {
   appId: "1:777699560175:web:4092b422e7d7116352e91a"
 };
 
-// Initialize app here so we can export it
+// Initialize Firebase - ONE instance for everything
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// Export app and db for firebase-auth.js to use
+// Export app and db for firebase-auth.js AND all functions below
 export { app, db };
 
 // ============================================
