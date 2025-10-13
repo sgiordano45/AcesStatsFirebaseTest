@@ -266,10 +266,17 @@ function RosterManagement({ currentUser }) {
       const seasonPlayers = await window.FirebaseRoster.getSeasonPlayerStatsOptimized(currentSeason.id);
       console.log('📊 All season players:', seasonPlayers.length);
       
-      const filteredPlayers = seasonPlayers.filter(p =>
-        p.team === selectedTeam && !p.migrated
-      );
-      console.log('📊 Filtered to team:', filteredPlayers.length);
+      // Filter by team and exclude migrated users
+      const filteredPlayers = seasonPlayers.filter(p => {
+        const teamMatch = p.team === selectedTeam;
+        const notMigrated = !p.migrated;
+        console.log(`Player: ${p.name}, team: ${p.team}, migrated: ${p.migrated}, include: ${teamMatch && notMigrated}`);
+        return teamMatch && notMigrated;
+      });
+      console.log('📊 Filtered to team (excluding migrated):', filteredPlayers.length);
+      
+      // Get current user's profile to identify them
+      const myProfile = userProfile;
       
       // Format players
       const formattedPlayers = filteredPlayers.map((player, index) => {
@@ -284,18 +291,24 @@ function RosterManagement({ currentUser }) {
           ? player.battingAverage.toFixed(3)
           : '.000';
         
+        // For jersey number and captain status:
+        // Check if this player IS the current logged-in user by matching names
+        const isCurrentUser = myProfile?.linkedPlayer === name;
+        
         return {
           id: player.playerId || player.id,
           name,
-          jersey: player.number || (index + 1),
+          jersey: player.number || (index + 1), // Use number from aggregated stats if available
           avatar,
           battingAvg,
-          isCaptain: player.isCaptain || false
+          isCaptain: isCurrentUser ? (myProfile?.isCaptain || false) : false,
+          isMe: isCurrentUser
         };
       }).sort((a, b) => a.name.localeCompare(b.name));
       
       setPlayers(formattedPlayers);
       console.log('✅ Formatted players:', formattedPlayers.length);
+      console.log('Sample player:', formattedPlayers[0]);
       
       // Get upcoming games for this team
       const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(
