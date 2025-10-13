@@ -86,7 +86,15 @@ async function initializeApp(user) {
   document.getElementById('loadingOverlay').classList.add('hidden');
   
   // Render the React app - MUST pass currentUser
+  // Use createRoot only once
   const container = document.getElementById('root');
+  
+  // Check if already rendered
+  if (container._reactRootContainer) {
+    console.log('⚠️ Already rendered, skipping');
+    return;
+  }
+  
   const root = ReactDOM.createRoot(container);
   root.render(React.createElement(RosterManagement, { currentUser: user }));
 }
@@ -220,6 +228,12 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading initial data...');
       
+      // CRITICAL: Ensure currentUser exists before proceeding
+      if (!currentUser || !currentUser.uid) {
+        console.error('❌ No currentUser available!');
+        return;
+      }
+      
       // Get current season
       const seasonData = await window.FirebaseRoster.getCurrentSeason();
       setCurrentSeason(seasonData);
@@ -243,6 +257,12 @@ function RosterManagement({ currentUser }) {
       if (profileResult.success && profileResult.data) {
         setUserProfile(profileResult.data);
         setCurrentUserId(currentUser.uid); // FIX #1: Set current user ID
+        
+        console.log('👤 User profile loaded:', {
+          name: profileResult.data.linkedPlayer,
+          isCaptain: profileResult.data.isCaptain,
+          team: profileResult.data.linkedTeam
+        });
         
         // Auto-select user's team if they have one
         if (profileResult.data.linkedTeam) {
@@ -291,14 +311,22 @@ function RosterManagement({ currentUser }) {
           ? player.battingAverage.toFixed(3)
           : '.000';
         
-        // For jersey number and captain status:
         // Check if this player IS the current logged-in user by matching names
         const isCurrentUser = myProfile?.linkedPlayer === name;
+        
+        // Jersey number: Try userProfile's number field if it's the current user, otherwise sequential
+        let jerseyNum = (index + 1);
+        if (isCurrentUser && myProfile?.number) {
+          // Parse the number from string to integer
+          jerseyNum = parseInt(myProfile.number) || (index + 1);
+        }
+        
+        console.log(`Player ${name}: jersey=${jerseyNum}, isMe=${isCurrentUser}, isCaptain=${isCurrentUser && myProfile?.isCaptain}`);
         
         return {
           id: player.playerId || player.id,
           name,
-          jersey: player.number || (index + 1), // Use number from aggregated stats if available
+          jersey: jerseyNum,
           avatar,
           battingAvg,
           isCaptain: isCurrentUser ? (myProfile?.isCaptain || false) : false,
