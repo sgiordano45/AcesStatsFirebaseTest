@@ -80,10 +80,12 @@ async function initializeApp(user) {
     return;
   }
   
+  console.log('🚀 Initializing app for user:', user.displayName);
+  
   // Hide loading overlay
   document.getElementById('loadingOverlay').classList.add('hidden');
   
-  // Render the React app
+  // Render the React app - MUST pass currentUser
   const container = document.getElementById('root');
   const root = ReactDOM.createRoot(container);
   root.render(React.createElement(RosterManagement, { currentUser: user }));
@@ -91,6 +93,7 @@ async function initializeApp(user) {
 
 // Wait for auth state to be determined
 onAuthChange((user) => {
+  console.log('🔐 Auth state changed:', user ? user.displayName : 'No user');
   if (user) {
     initializeApp(user);
   } else {
@@ -234,8 +237,8 @@ function RosterManagement({ currentUser }) {
       setAllTeams(teamNames);
       
       // Get user profile to check team and captain status
-      const { getUserProfile } = await import('./firebase-auth.js');
-      const profileResult = await getUserProfile(currentUser.uid);
+      // Use the globally available function instead of import
+      const profileResult = await window.FirebaseRoster.getUserProfile(currentUser.uid);
       
       if (profileResult.success && profileResult.data) {
         setUserProfile(profileResult.data);
@@ -720,7 +723,7 @@ function RosterManagement({ currentUser }) {
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: '600' }}>Logged in as:</span>
-              <span>{currentUser.displayName}</span>
+              <span>{currentUser?.displayName || 'Loading...'}</span>
               {isCaptain && <span style={{ background: '#667eea', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>Captain</span>}
             </div>
           </div>
