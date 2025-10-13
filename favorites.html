@@ -670,9 +670,12 @@ body {
                   
                   // Only count completed games with a winner
                   if (winner && winner.trim() !== '') {
+                    // Case-insensitive comparison for tie
                     if (winner.toLowerCase() === 'tie') {
                       ties++;
-                    } else if (winner === teamName) {
+                    }
+                    // Case-insensitive comparison for winner
+                    else if (winner.toLowerCase() === teamName.toLowerCase()) {
                       wins++;
                     } else {
                       // Winner is not the team and not a tie, so it's a loss
