@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Player Account - Mountainside Aces</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid #667eea;
+    }
+    
+    .user-details h3 {
+      margin-bottom: 0.25rem;
+      color: #333;
+    }
+    
+    .user-details p {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+    
+    .search-box:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .team-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .team-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .team-header:hover {
+      opacity: 0.9;
+    }
+    
+    .player-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+    
+    .player-item {
+      padding: 1rem;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .player-item:hover {
+      border-color: #667eea;
+      background: #f8f9fa;
+    }
+    
+    .player-item.selected {
+      border-color: #667eea;
+      background: #eff6ff;
+      box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    }
+    
+    .player-item.suggested {
+      border-color: #10b981;
+      background: #d1fae5;
+    }
+    
+    .player-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.25rem;
+    }
+    
+    .player-stats {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .suggestion-badge {
+      background: #10b981;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 100%;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+    
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .alert-success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    
+    .alert-info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
+    
+    .alert-warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #666;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 1rem;
+    }
+    
+    .linked-player-card {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+    
+    .linked-player-card h3 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .linked-player-card p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      
+      .header, .card {
+        padding: 1.5rem;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔗 Link Player Account</h1>
+      <p>Connect your Google account to your player profile in the league</p>
+    </div>
+    
+    <div id="loadingState" class="card">
+      <div class="loading">Loading...</div>
+    </div>
+    
+    <div id="notLoggedIn" class="card" style="display: none;">
+      <div class="empty-state">
+        <div class="empty-state-icon">🔐</div>
+        <h3>Please Sign In</h3>
+        <p style="margin-bottom: 1rem;">You need to sign in with Google to link your player account</p>
+        <button class="btn btn-primary" onclick="window.location.href='auth-test.html'">
+          Sign In with Google
+        </button>
+      </div>
+    </div>
+    
+    <div id="mainContent" style="display: none;">
+      <!-- Current User Info -->
+      <div class="card">
+        <div class="user-info">
+          <img id="userAvatar" class="user-avatar" src="" alt="User">
+          <div class="user-details">
+            <h3 id="userName"></h3>
+            <p id="userEmail"></p>
+          </div>
+        </div>
+        
+        <div id="alreadyLinkedSection" style="display: none;">
+          <div class="linked-player-card">
+            <h3>✅ Account Linked</h3>
+            <p>Your account is linked to: <strong id="linkedPlayerName"></strong></p>
+            <p>Team: <strong id="linkedTeamName"></strong></p>
+          </div>
+          <button class="btn btn-secondary" onclick="unlinkPlayer()">
+            Change Player Link
+          </button>
+        </div>
+      </div>
+      
+      <!-- Player Selection -->
+      <div id="selectionSection" class="card" style="display: none;">
+        <div class="section-title">
+          👤 Select Your Player
+        </div>
+        
+        <div id="suggestionAlert" class="alert alert-info" style="display: none;">
+          <strong>💡 Suggestion:</strong> We found a player that matches your name. Is this you?
+        </div>
+        
+        <input 
+          type="text" 
+          id="searchBox" 
+          class="search-box" 
+          placeholder="Search for your name..."
+        >
+        
+        <div id="playersContainer">
+          <!-- Players will be loaded here -->
+        </div>
+        
+        <div class="actions">
+          <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmLink()">
+            Confirm Link
+          </button>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e1e5e9;">
+          <p style="color: #666; margin-bottom: 1rem;">
+            Don't see your name? You might be a new player!
+          </p>
+          <button class="btn btn-secondary" onclick="showNewPlayerForm()">
+            ➕ I'm a New Player
+          </button>
+        </div>
+      </div>
+      
+      <!-- New Player Form -->
+      <div id="newPlayerSection" class="card" style="display: none;">
+        <div class="section-title">
+          ➕ Create New Player Profile
+        </div>
+        
+        <div class="alert alert-info">
+          <strong>New Player Registration</strong><br>
+          Fill out the form below to create your player profile. A team captain will need to approve you before you can join a team.
+        </div>
+        
+        <form id="newPlayerForm" onsubmit="handleNewPlayerSubmit(event)">
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+              Full Name *
+            </label>
+            <input 
+              type="text" 
+              id="newPlayerName"
+              class="search-box" 
+              placeholder="Enter your full name"
+              required
+              style="margin-bottom: 0;"
+            >
+            <p style="font-size: 12px; color: #666; margin-top: 0.25rem;">
+              Use your real name as you want it to appear on rosters
+            </p>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+              Preferred Team (Optional)
+            </label>
+            <select id="preferredTeam" class="search-box" style="margin-bottom: 0;">
+              <option value="">No preference</option>
+              <option value="black">Black</option>
+              <option value="blue">Blue</option>
+              <option value="carolina">Carolina</option>
+              <option value="gold">Gold</option>
+              <option value="green">Green</option>
+              <option value="orange">Orange</option>
+              <option value="purple">Purple</option>
+              <option value="red">Red</option>
+              <option value="silver">Silver</option>
+              <option value="white">White</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+              Experience Level *
+            </label>
+            <select id="experienceLevel" class="search-box" required style="margin-bottom: 0;">
+              <option value="">Select your experience</option>
+              <option value="beginner">Beginner (0-1 seasons)</option>
+              <option value="intermediate">Intermediate (2-5 seasons)</option>
+              <option value="advanced">Advanced (5+ seasons)</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+              Additional Notes (Optional)
+            </label>
+            <textarea 
+              id="additionalNotes"
+              class="search-box"
+              rows="3"
+              placeholder="Tell us anything else (preferred position, availability, etc.)"
+              style="margin-bottom: 0; resize: vertical;"
+            ></textarea>
+          </div>
+          
+          <div class="actions">
+            <button type="button" class="btn btn-secondary" onclick="cancelNewPlayer()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Submit Registration
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { getCurrentUser, onAuthChange, getUserProfile } from './firebase-auth.js';
+    import { linkPlayerToUser } from './firebase-auth.js';
+    import { getAllPlayerStatsOptimized } from './firebase-data.js';
+    
+    let currentUser = null;
+    let selectedPlayer = null;
+    let allPlayers = [];
+    
+    // Initialize
+    onAuthChange(async (user) => {
+      currentUser = user;
+      
+      if (user) {
+        await handleUserLoggedIn(user);
+      } else {
+        handleUserLoggedOut();
+      }
+    });
+    
+    async function handleUserLoggedIn(user) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('notLoggedIn').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      
+      // Display user info
+      document.getElementById('userName').textContent = user.displayName;
+      document.getElementById('userEmail').textContent = user.email;
+      document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/60';
+      
+      // Check if already linked
+      const profile = await getUserProfile(user.uid);
+      if (profile.success && profile.data.linkedPlayer) {
+        showAlreadyLinked(profile.data);
+      } else {
+        await showPlayerSelection();
+      }
+    }
+    
+    function handleUserLoggedOut() {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('notLoggedIn').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'none';
+    }
+    
+    function showAlreadyLinked(profileData) {
+      document.getElementById('alreadyLinkedSection').style.display = 'block';
+      document.getElementById('selectionSection').style.display = 'none';
+      document.getElementById('linkedPlayerName').textContent = profileData.linkedPlayer || 'Unknown';
+      document.getElementById('linkedTeamName').textContent = profileData.linkedTeam || 'Unknown';
+    }
+    
+    async function showPlayerSelection() {
+      document.getElementById('alreadyLinkedSection').style.display = 'none';
+      document.getElementById('selectionSection').style.display = 'block';
+      
+      // Load all players
+      try {
+        allPlayers = await getAllPlayerStatsOptimized();
+        
+        // Group by current team
+        const playersByTeam = groupPlayersByTeam(allPlayers);
+        
+        // Try to find matching player
+        const suggestedPlayer = findMatchingPlayer(currentUser.displayName, allPlayers);
+        if (suggestedPlayer) {
+          document.getElementById('suggestionAlert').style.display = 'block';
+        }
+        
+        renderPlayers(playersByTeam, suggestedPlayer);
+        setupSearch();
+        
+      } catch (error) {
+        console.error('Error loading players:', error);
+        document.getElementById('playersContainer').innerHTML = 
+          '<div class="empty-state"><p>Error loading players. Please try again.</p></div>';
+      }
+    }
+    
+    function groupPlayersByTeam(players) {
+      const teams = {};
+      
+      players.forEach(player => {
+        const team = player.currentTeam || 'Unknown';
+        if (!teams[team]) {
+          teams[team] = [];
+        }
+        teams[team].push(player);
+      });
+      
+      // Sort players within each team by name
+      Object.keys(teams).forEach(team => {
+        teams[team].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      });
+      
+      return teams;
+    }
+    
+    function findMatchingPlayer(googleName, players) {
+      // Handle null or empty names (email/password users without displayName)
+      if (!googleName || googleName.trim() === '') {
+        return null;
+      }
+      
+      const nameLower = googleName.toLowerCase();
+      const [firstName, lastName] = nameLower.split(' ');
+      
+      // Try exact match
+      let match = players.find(p =>
+        p.name && p.name.toLowerCase() === nameLower
+      );
+      
+      if (match) return match;
+      
+      // Try first and last name match
+      match = players.find(p => {
+        if (!p.name) return false;
+        const playerName = p.name.toLowerCase();
+        return playerName.includes(firstName) && playerName.includes(lastName);
+      });
+      
+      return match;
+    }
+    
+    function renderPlayers(playersByTeam, suggestedPlayer) {
+      const container = document.getElementById('playersContainer');
+      container.innerHTML = '';
+      
+      const teams = Object.keys(playersByTeam).sort();
+      
+      teams.forEach(team => {
+        const teamSection = document.createElement('div');
+        teamSection.className = 'team-section';
+        
+        const teamHeader = document.createElement('div');
+        teamHeader.className = 'team-header';
+        teamHeader.textContent = `${team} (${playersByTeam[team].length} players)`;
+        
+        const playerList = document.createElement('div');
+        playerList.className = 'player-list';
+        
+        playersByTeam[team].forEach(player => {
+          const playerItem = createPlayerItem(player, suggestedPlayer);
+          playerList.appendChild(playerItem);
+        });
+        
+        teamSection.appendChild(teamHeader);
+        teamSection.appendChild(playerList);
+        container.appendChild(teamSection);
+      });
+    }
+    
+    function createPlayerItem(player, suggestedPlayer) {
+      const item = document.createElement('div');
+      item.className = 'player-item';
+      
+      if (suggestedPlayer && player.id === suggestedPlayer.id) {
+        item.classList.add('suggested');
+      }
+      
+      item.dataset.playerId = player.id;
+      item.dataset.playerName = player.name;
+      item.dataset.team = player.currentTeam;
+      
+      const info = document.createElement('div');
+      
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'player-name';
+      nameDiv.textContent = player.name || 'Unknown Player';
+      
+      const statsDiv = document.createElement('div');
+      statsDiv.className = 'player-stats';
+      
+      const careerGames = player.career?.games || 0;
+      const careerBA = player.career?.battingAverage 
+        ? player.career.battingAverage.toFixed(3) 
+        : '0.000';
+      
+      statsDiv.textContent = `${careerGames} career games • BA: ${careerBA}`;
+      
+      info.appendChild(nameDiv);
+      info.appendChild(statsDiv);
+      item.appendChild(info);
+      
+      if (suggestedPlayer && player.id === suggestedPlayer.id) {
+        const badge = document.createElement('span');
+        badge.className = 'suggestion-badge';
+        badge.textContent = 'Suggested Match';
+        item.appendChild(badge);
+      }
+      
+      item.addEventListener('click', () => selectPlayer(item, player));
+      
+      return item;
+    }
+    
+    function selectPlayer(element, player) {
+      // Remove previous selection
+      document.querySelectorAll('.player-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Select this one
+      element.classList.add('selected');
+      selectedPlayer = player;
+      
+      // Enable confirm button
+      document.getElementById('confirmBtn').disabled = false;
+    }
+    
+    function setupSearch() {
+      const searchBox = document.getElementById('searchBox');
+      searchBox.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        
+        document.querySelectorAll('.player-item').forEach(item => {
+          const playerName = item.dataset.playerName.toLowerCase();
+          if (playerName.includes(term)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    }
+    
+    async function confirmLink() {
+      if (!selectedPlayer || !currentUser) return;
+      
+      const confirmBtn = document.getElementById('confirmBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Linking...';
+      
+      try {
+        const result = await linkPlayerToUser(
+          currentUser.uid,
+          selectedPlayer.name,
+          selectedPlayer.currentTeam,
+          false // Not captain by default
+        );
+        
+        if (result.success) {
+          alert('✅ Player linked successfully!');
+          window.location.reload();
+        } else {
+          throw new Error('Link failed');
+        }
+        
+      } catch (error) {
+        console.error('Error linking player:', error);
+        alert('❌ Failed to link player. Please try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Link';
+      }
+    }
+    
+    async function unlinkPlayer() {
+      if (!confirm('Are you sure you want to change your linked player?')) {
+        return;
+      }
+      
+      try {
+        await linkPlayerToUser(currentUser.uid, null, null, false);
+        window.location.reload();
+      } catch (error) {
+        console.error('Error unlinking:', error);
+        alert('Failed to unlink. Please try again.');
+      }
+    }
+    
+    // Make functions available globally
+    window.confirmLink = confirmLink;
+    window.unlinkPlayer = unlinkPlayer;
+    window.showNewPlayerForm = showNewPlayerForm;
+    window.cancelNewPlayer = cancelNewPlayer;
+    window.handleNewPlayerSubmit = handleNewPlayerSubmit;
+    
+    function showNewPlayerForm() {
+      document.getElementById('selectionSection').style.display = 'none';
+      document.getElementById('newPlayerSection').style.display = 'block';
+      
+      // Pre-fill name if possible
+      if (currentUser && currentUser.displayName) {
+        document.getElementById('newPlayerName').value = currentUser.displayName;
+      }
+    }
+    
+    function cancelNewPlayer() {
+      document.getElementById('newPlayerSection').style.display = 'none';
+      document.getElementById('selectionSection').style.display = 'block';
+    }
+    
+    async function handleNewPlayerSubmit(event) {
+      event.preventDefault();
+      
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Profile...';
+      
+      const playerName = document.getElementById('newPlayerName').value.trim();
+      const preferredTeam = document.getElementById('preferredTeam').value;
+      const experienceLevel = document.getElementById('experienceLevel').value;
+      const additionalNotes = document.getElementById('additionalNotes').value.trim();
+      
+      try {
+        // Create a pending player registration in Firestore
+        const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const { db } = await import('./firebase-data.js');
+        
+        const registrationRef = doc(db, 'pendingPlayers', currentUser.uid);
+        
+        await setDoc(registrationRef, {
+          userId: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          playerName: playerName,
+          preferredTeam: preferredTeam || null,
+          experienceLevel: experienceLevel,
+          additionalNotes: additionalNotes || null,
+          status: 'pending', // pending, approved, rejected
+          createdAt: serverTimestamp(),
+          approvedBy: null,
+          approvedAt: null
+        });
+        
+        // Also link to user profile temporarily with pending status
+        await linkPlayerToUser(
+          currentUser.uid,
+          playerName,
+          preferredTeam || 'unassigned',
+          false
+        );
+        
+        // Update user profile to mark as pending
+        const { updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          registrationStatus: 'pending',
+          updatedAt: serverTimestamp()
+        });
+        
+        alert('✅ Registration submitted! A team captain will review your request. You can still use the roster management features while your registration is pending.');
+        window.location.reload();
+        
+      } catch (error) {
+        console.error('Error creating new player:', error);
+        alert('❌ Failed to submit registration. Please try again or contact a league administrator.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Registration';
+      }
+    }
+  </script>
+</body>
+</html>
