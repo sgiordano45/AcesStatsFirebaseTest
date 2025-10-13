@@ -1186,20 +1186,22 @@
   
   <!-- Auth State Management -->
   <script type="module">
-    import { auth } from './firebase-config.js';
-    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+    // Import auth from firebase-auth.js (which already initializes it)
+    import { auth, onAuthChange } from './firebase-auth.js';
 
     // Update UI based on auth state
-    onAuthStateChanged(auth, (user) => {
+    onAuthChange((user) => {
       const authSection = document.getElementById('authSection');
       const mobileAuthSection = document.getElementById('mobileAuthSection');
       const personalizationSection = document.getElementById('personalizationSection');
       
+      console.log('🔐 Auth state changed:', user ? user.email : 'No user');
+      
       if (user) {
         // User is signed in
-        console.log('User signed in:', user.email);
+        console.log('✅ User signed in:', user.email);
         
-        // Show personalization section
+        // Show personalization section with animation
         if (personalizationSection) {
           personalizationSection.style.display = 'block';
         }
@@ -1234,9 +1236,10 @@
           signOutBtn.addEventListener('click', async () => {
             try {
               await auth.signOut();
-              window.location.href = 'index.html';
+              console.log('✅ User signed out');
+              window.location.reload(); // Reload to reset UI
             } catch (error) {
-              console.error('Sign out error:', error);
+              console.error('❌ Sign out error:', error);
               alert('Error signing out. Please try again.');
             }
           });
@@ -1246,9 +1249,10 @@
           mobileSignOutBtn.addEventListener('click', async () => {
             try {
               await auth.signOut();
-              window.location.href = 'index.html';
+              console.log('✅ User signed out');
+              window.location.reload(); // Reload to reset UI
             } catch (error) {
-              console.error('Sign out error:', error);
+              console.error('❌ Sign out error:', error);
               alert('Error signing out. Please try again.');
             }
           });
@@ -1256,7 +1260,7 @@
         
       } else {
         // User is signed out
-        console.log('No user signed in');
+        console.log('ℹ️ No user signed in');
         
         // Hide personalization section
         if (personalizationSection) {
