@@ -214,6 +214,12 @@ export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = f
     };
     
     if (existingPlayerData) {
+        // CRITICAL FIX: Check for captain status in legacy profile
+        if (existingPlayerData.role === 'captain' || existingPlayerData.isCaptain === true) {
+          updateData.isCaptain = true;
+          console.log('✅ Setting isCaptain = true from legacy profile');
+        }
+        
       if (existingPlayerData.favoriteTeams) updateData.favoriteTeams = existingPlayerData.favoriteTeams;
       if (existingPlayerData.favoritePlayers) updateData.favoritePlayers = existingPlayerData.favoritePlayers;
       if (existingPlayerData.stats) updateData.stats = existingPlayerData.stats;
