@@ -49,7 +49,7 @@ function nameToUserId(name) {
  * "john_doe" -> "John Doe"
  */
 function userIdToName(userId) {
-  return userId.split('_').map(word => 
+  return userId.split('_').map(word =>
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ');
 }
@@ -137,6 +137,7 @@ export function pitchingSeasonsObjectToArray(playerData) {
  * Get all player stats from aggregated collection (OPTIMIZED - FAST!)
  * Uses single collection instead of subcollections
  * FAST: 1-50 reads vs 100-500 reads with original function
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @returns {Array} Array of player objects with complete stats
  */
 export async function getAllPlayerStatsOptimized() {
@@ -146,11 +147,18 @@ export async function getAllPlayerStatsOptimized() {
     
     const players = [];
     snapshot.forEach(doc => {
+      const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
       players.push({
         id: doc.id,
-        ...doc.data(),
+        ...data,
         playerId: doc.id,
-        playerName: doc.data().name
+        playerName: data.name
       });
     });
     
@@ -168,6 +176,7 @@ export async function getAllPlayerStatsOptimized() {
  * Get all pitching stats from aggregated collection (OPTIMIZED - FAST!)
  * Uses single collection instead of subcollections
  * FAST: 1-50 reads vs 100-500 reads with original function
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @returns {Array} Array of player objects with complete pitching stats
  */
 export async function getAllPitchingStatsOptimized() {
@@ -178,6 +187,12 @@ export async function getAllPitchingStatsOptimized() {
     const pitchers = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
       // Only include players who have pitching data
       if (data.pitchingSeasons && Object.keys(data.pitchingSeasons).length > 0) {
         pitchers.push({
@@ -211,11 +226,19 @@ export async function getPlayerStatsOptimized(userId) {
     const playerSnap = await getDoc(playerRef);
     
     if (playerSnap.exists()) {
+      const data = playerSnap.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        console.warn(`Player ${userId} is a migrated legacy profile, skipping`);
+        return null;
+      }
+      
       return {
         id: playerSnap.id,
-        ...playerSnap.data(),
+        ...data,
         playerId: playerSnap.id,
-        playerName: playerSnap.data().name
+        playerName: data.name
       };
     }
     
@@ -231,6 +254,7 @@ export async function getPlayerStatsOptimized(userId) {
 /**
  * Get ALL players' stats for a specific season from aggregated collection (FIXED!)
  * Handles team-specific season keys like "2025-fall-orange", "2025-fall-blue"
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @param {string} seasonId - Season ID (e.g., "2025-fall")
  * @returns {Array} Array of player stats for that season
  */
@@ -242,6 +266,11 @@ export async function getSeasonPlayerStatsOptimized(seasonId) {
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
       
       // Check if player has stats for this season
       if (!data.seasons) return;
@@ -290,6 +319,7 @@ export async function getSeasonPlayerStatsOptimized(seasonId) {
 /**
  * Get ALL pitching stats for a season from aggregated collection (FIXED!)
  * Handles team-specific season keys like "2025-fall-orange", "2025-fall-blue"
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @param {string} seasonId - Season ID (e.g., "2025-fall")
  * @returns {Array} Array of pitching stats for that season
  */
@@ -301,6 +331,11 @@ export async function getSeasonPitchingStatsOptimized(seasonId) {
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
       
       // Check if player has pitching stats for this season
       if (!data.pitchingSeasons) return;
@@ -347,6 +382,7 @@ export async function getSeasonPitchingStatsOptimized(seasonId) {
 
 /**
  * Search players by name using aggregated collection (OPTIMIZED)
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @param {string} searchTerm - Name to search for
  * @returns {Array} Matching players with stats
  */
@@ -360,6 +396,12 @@ export async function searchPlayersOptimized(searchTerm) {
     
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
       if (data.name && data.name.toLowerCase().includes(lowerSearch)) {
         players.push({
           id: doc.id,
@@ -381,6 +423,7 @@ export async function searchPlayersOptimized(searchTerm) {
 
 /**
  * Get top players by a specific stat from aggregated collection (OPTIMIZED)
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @param {string} statPath - Path to stat (e.g., 'career.battingAverage')
  * @param {number} limitCount - Number of top players to return
  * @param {number} minGames - Minimum games played to qualify (default: 0)
@@ -394,6 +437,12 @@ export async function getTopPlayersByStat(statPath, limitCount = 10, minGames = 
     const players = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
       // Filter by minimum games if specified
       if (minGames > 0 && (!data.career || data.career.games < minGames)) {
         return;
@@ -440,7 +489,7 @@ export async function getTopSeasonPlayersByStat(seasonId, statName, limitCount =
     const seasonPlayers = await getSeasonPlayerStatsOptimized(seasonId);
     
     // Filter by minimum at-bats if specified
-    const qualifiedPlayers = minAtBats > 0 
+    const qualifiedPlayers = minAtBats > 0
       ? seasonPlayers.filter(p => (p.atBats || 0) >= minAtBats)
       : seasonPlayers;
     
@@ -461,6 +510,7 @@ export async function getTopSeasonPlayersByStat(seasonId, statName, limitCount =
 
 /**
  * Get players by team from aggregated collection (OPTIMIZED)
+ * SKIPS migrated legacy profiles to prevent duplicates
  * @param {string} teamName - Team name
  * @returns {Array} Players on that team
  */
@@ -476,11 +526,18 @@ export async function getPlayersByTeamOptimized(teamName) {
     
     const players = [];
     snapshot.forEach(doc => {
+      const data = doc.data();
+      
+      // CRITICAL: Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
       players.push({
         id: doc.id,
-        ...doc.data(),
+        ...data,
         playerId: doc.id,
-        playerName: doc.data().name
+        playerName: data.name
       });
     });
     
