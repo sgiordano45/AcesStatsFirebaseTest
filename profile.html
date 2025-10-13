@@ -1082,12 +1082,33 @@ body {
         }
         
         const currentSeason = await getCurrentSeason();
-        console.log('📅 Current season:', currentSeason.id);
+        console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
+        
+        if (!currentSeason) {
+          console.log('⚠️ No current season found');
+          return;
+        }
         
         const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
-        console.log('📈 Stats loaded, searching for player:', userProfile.linkedPlayer);
+        console.log('📈 Stats loaded:', stats.length, 'players');
+        console.log('🔍 Searching for player:', userProfile.linkedPlayer);
         
-        const playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+        // Try multiple ways to find the player
+        let playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+        
+        if (!playerStats) {
+          // Try matching by name field
+          playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
+        }
+        
+        if (!playerStats) {
+          // Try case-insensitive match
+          const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
+          playerStats = stats.find(s => 
+            s.playerName?.toLowerCase() === linkedPlayerLower || 
+            s.name?.toLowerCase() === linkedPlayerLower
+          );
+        }
         
         if (playerStats) {
           console.log('✅ Player stats found:', playerStats);
@@ -1097,6 +1118,13 @@ body {
           document.getElementById('statRuns').textContent = playerStats.runs || 0;
         } else {
           console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
+          console.log('Available player names:', stats.slice(0, 5).map(s => s.playerName || s.name));
+          
+          // Set defaults to show 0s instead of leaving blank
+          document.getElementById('statGames').textContent = '0';
+          document.getElementById('statAvg').textContent = '.000';
+          document.getElementById('statHits').textContent = '0';
+          document.getElementById('statRuns').textContent = '0';
         }
       } catch (error) {
         console.error('❌ Error loading user stats:', error);
