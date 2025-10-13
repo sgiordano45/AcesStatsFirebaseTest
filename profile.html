@@ -1480,15 +1480,38 @@ body {
     // Form submissions
     document.getElementById('playerInfoForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+      // Fixed code:
+      const mapToCode = (fullWord, type) => {
+        if (!fullWord) return '';
+        if (type === 'bats') {
+          if (fullWord === 'right') return 'R';
+          if (fullWord === 'left') return 'L';
+          if (fullWord === 'switch') return 'S';
+        }
+        if (type === 'throws') {
+          if (fullWord === 'right') return 'R';
+          if (fullWord === 'left') return 'L';
+        }
+        if (type === 'position') {
+          const posMap = {
+            'pitcher': 'P', 'catcher': 'C', '1b': '1B', '2b': '2B',
+            '3b': '3B', 'ss': 'SS', 'if': 'IF', 'lf': 'LF',
+            'cf': 'CF', 'rf': 'RF', 'of': 'OF', 'utility': 'UTL'
+          };
+          return posMap[fullWord] || fullWord.toUpperCase();
+        }
+        return fullWord;
+      };
+
       const updates = {
         nickname: document.getElementById('nickname').value,
         number: document.getElementById('jerseyNumber').value,
-        bats: document.getElementById('battingSide').value,
-        throws: document.getElementById('throwingArm').value,
-        position: document.getElementById('primaryPosition').value,
+        bats: mapToCode(document.getElementById('battingSide').value, 'bats'),
+        throws: mapToCode(document.getElementById('throwingArm').value, 'throws'),
+        position: mapToCode(document.getElementById('primaryPosition').value, 'position'),
         secondaryPositions: document.getElementById('secondaryPositions').value
       };
+
       
       try {
         // Update the auth user profile
