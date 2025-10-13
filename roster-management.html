@@ -72,11 +72,18 @@ import {
 
 // Store unsubscribe functions
 let rsvpListeners = [];
+let appInitialized = false;
 
 // Initialize and render the app
 async function initializeApp(user) {
   if (!user) {
     window.location.href = 'signin.html';
+    return;
+  }
+  
+  // Prevent duplicate initialization
+  if (appInitialized) {
+    console.log('⚠️ App already initialized, skipping');
     return;
   }
   
@@ -86,17 +93,11 @@ async function initializeApp(user) {
   document.getElementById('loadingOverlay').classList.add('hidden');
   
   // Render the React app - MUST pass currentUser
-  // Use createRoot only once
   const container = document.getElementById('root');
-  
-  // Check if already rendered
-  if (container._reactRootContainer) {
-    console.log('⚠️ Already rendered, skipping');
-    return;
-  }
-  
   const root = ReactDOM.createRoot(container);
   root.render(React.createElement(RosterManagement, { currentUser: user }));
+  
+  appInitialized = true;
 }
 
 // Wait for auth state to be determined
