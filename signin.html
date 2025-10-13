@@ -356,16 +356,14 @@
   </div>
   
   <script type="module">
-    import { 
-      loginWithGoogle, 
-      loginUser, 
+    import {
+      loginWithGoogle,
+      loginUser,
       registerUser,
       resetPassword,
-      onAuthChange,
-      setAuthPersistence
+      onAuthChange
     } from './firebase-auth.js';
     
-    // Alert helper
     function showAlert(message, type = 'info') {
       const container = document.getElementById('alertContainer');
       container.innerHTML = `
@@ -374,7 +372,6 @@
         </div>
       `;
       
-      // Auto-hide success messages after 5 seconds
       if (type === 'success') {
         setTimeout(() => {
           container.innerHTML = '';
@@ -382,12 +379,9 @@
       }
     }
     
-    // Tab switching
-    window.switchTab = function(tab) {
-      // Get the event target (the clicked tab button)
+    window.switchTab = function(tab, event) {
       const clickedTab = event?.target || document.querySelector(`.tab[onclick*="${tab}"]`);
       
-      // Update tabs
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       
@@ -396,11 +390,9 @@
       }
       document.getElementById(`${tab}-tab`).classList.add('active');
       
-      // Clear alerts
       document.getElementById('alertContainer').innerHTML = '';
     };
     
-    // Google Sign-In
     window.handleGoogleSignIn = async function() {
       showAlert('Signing in with Google...', 'info');
       
@@ -416,25 +408,19 @@
       }
     };
     
-    // Email Sign-In
     window.handleEmailSignIn = async function(event) {
       event.preventDefault();
       
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
-      const rememberMe = document.getElementById('remember-me').checked;
       const btn = document.getElementById('signin-btn');
       
       btn.disabled = true;
       btn.innerHTML = 'Signing in<span class="loading"></span>';
       
-      // Set persistence based on "remember me" checkbox
-      await setAuthPersistence(rememberMe);
-      
       const result = await loginUser(email, password);
       
       if (result.success) {
-        // Check if email is verified
         if (!result.user.emailVerified) {
           showAlert('⚠️ Please verify your email. We sent a verification link to your inbox.', 'error');
           btn.disabled = false;
@@ -453,7 +439,6 @@
       }
     };
     
-    // Email Sign-Up
     window.handleEmailSignUp = async function(event) {
       event.preventDefault();
       
@@ -463,7 +448,6 @@
       const passwordConfirm = document.getElementById('signup-password-confirm').value;
       const btn = document.getElementById('signup-btn');
       
-      // Validate passwords match
       if (password !== passwordConfirm) {
         showAlert('❌ Passwords do not match', 'error');
         return;
@@ -477,10 +461,9 @@
       if (result.success) {
         showAlert('✅ Account created! Please check your email and click the verification link before signing in.', 'success');
         
-        // Switch to sign-in tab after 4 seconds
         setTimeout(() => {
           const tabs = document.querySelectorAll('.tab');
-          tabs[0].click(); // Click Sign In tab
+          tabs[0].click();
           document.getElementById('signin-email').value = email;
           showAlert('📧 Verification email sent! Check your inbox, then sign in.', 'info');
         }, 4000);
@@ -492,7 +475,6 @@
       btn.textContent = 'Create Account';
     };
     
-    // Forgot Password
     window.showForgotPassword = function() {
       document.getElementById('signin-tab').style.display = 'none';
       document.getElementById('forgot-password-section').style.display = 'block';
@@ -529,7 +511,6 @@
       btn.textContent = 'Send Reset Link';
     };
     
-    // Listen for auth state changes - redirect if already signed in
     onAuthChange((user) => {
       if (user) {
         console.log('User already signed in, redirecting...');
