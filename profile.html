@@ -963,11 +963,13 @@ body {
   </main>
 
   <script type="module">
-    import { auth, onAuthStateChanged, signOut } from './firebase-config.js';
-    import { getUserProfile, updateUserProfile, getCurrentSeason, getSeasonPlayerStatsOptimized } from './firebase-data.js';
+    import { onAuthChange, getCurrentUser, logoutUser, getUserProfile, updateUserProfile as updateUserProfileAuth, addFavoriteTeam, addFavoritePlayer } from './firebase-auth.js';
+    import { getCurrentSeason, getSeasonPlayerStatsOptimized, getAllTeams, getAllPlayerStatsOptimized } from './firebase-data.js';
 
     let currentUser = null;
     let userProfile = null;
+
+    console.log('🔄 Profile page loading...');
 
     // Tab switching functionality
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -987,21 +989,39 @@ body {
     });
 
     // Initialize auth state
-    onAuthStateChanged(auth, async (user) => {
+    onAuthChange(async (user) => {
+      console.log('🔐 Auth state changed:', user ? user.email : 'No user');
+      
       if (user) {
         currentUser = user;
-        await loadUserProfile(user);
-        await loadUserStats(user);
-        hideLoading();
+        try {
+          await loadUserProfile(user);
+          await loadUserStats(user);
+        } catch (error) {
+          console.error('❌ Error loading profile data:', error);
+          alert('Error loading profile. Check console for details.');
+        } finally {
+          hideLoading();
+        }
       } else {
-        // Redirect to login if not authenticated
-        window.location.href = 'auth-test.html';
+        console.log('⚠️ No user signed in, redirecting to signin page...');
+        window.location.href = 'signin.html';
       }
     });
 
     async function loadUserProfile(user) {
+      console.log('📋 Loading user profile for:', user.uid);
+      
       try {
-        userProfile = await getUserProfile(user.uid);
+        const result = await getUserProfile(user.uid);
+        console.log('✅ User profile result:', result);
+        
+        if (result.success && result.data) {
+          userProfile = result.data;
+        } else {
+          console.log('⚠️ No profile data found');
+          userProfile = null;
+        }
         
         // Update header
         document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
@@ -1042,27 +1062,45 @@ body {
           loadFavorites();
         }
       } catch (error) {
-        console.error('Error loading user profile:', error);
+        console.error('❌ Error loading user profile:', error);
+        // Continue anyway, show default values
+        document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
+        document.getElementById('displayName').textContent = user.displayName || 'User';
+        document.getElementById('playerName').textContent = 'Not linked';
+        document.getElementById('teamBadge').textContent = 'No team';
+        document.getElementById('accountEmail').value = user.email;
       }
     }
 
     async function loadUserStats(user) {
+      console.log('📊 Loading user stats...');
+      
       try {
-        if (!userProfile?.linkedPlayer) return;
+        if (!userProfile?.linkedPlayer) {
+          console.log('⚠️ No linked player, skipping stats load');
+          return;
+        }
         
         const currentSeason = await getCurrentSeason();
+        console.log('📅 Current season:', currentSeason.id);
+        
         const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+        console.log('📈 Stats loaded, searching for player:', userProfile.linkedPlayer);
         
         const playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
         
         if (playerStats) {
+          console.log('✅ Player stats found:', playerStats);
           document.getElementById('statGames').textContent = playerStats.games || 0;
           document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
           document.getElementById('statHits').textContent = playerStats.hits || 0;
           document.getElementById('statRuns').textContent = playerStats.runs || 0;
+        } else {
+          console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
         }
       } catch (error) {
-        console.error('Error loading user stats:', error);
+        console.error('❌ Error loading user stats:', error);
+        // Don't block page load for stats errors
       }
     }
 
@@ -1145,8 +1183,12 @@ body {
       };
       
       try {
-        await updateUserProfile(currentUser.uid, updates);
-        showSuccessMessage('successMessagePlayerInfo');
+        const result = await updateUserProfileAuth(currentUser.uid, updates);
+        if (result.success) {
+          showSuccessMessage('successMessagePlayerInfo');
+        } else {
+          throw new Error('Update failed');
+        }
       } catch (error) {
         console.error('Error updating profile:', error);
         alert('Error saving changes. Please try again.');
@@ -1163,8 +1205,10 @@ body {
       };
       
       try {
-        await updateUserProfile(currentUser.uid, { preferences });
-        showSuccessMessage('successMessagePreferences');
+        const result = await updateUserProfileAuth(currentUser.uid, { preferences });
+        if (result.success) {
+          showSuccessMessage('successMessagePreferences');
+        }
       } catch (error) {
         console.error('Error updating preferences:', error);
       }
@@ -1172,8 +1216,10 @@ body {
 
     document.getElementById('signOutBtn').addEventListener('click', async () => {
       try {
-        await signOut(auth);
-        window.location.href = 'index.html';
+        const result = await logoutUser();
+        if (result.success) {
+          window.location.href = 'index.html';
+        }
       } catch (error) {
         console.error('Error signing out:', error);
       }
@@ -1203,9 +1249,13 @@ body {
         const current = userProfile[field] || [];
         const updated = current.filter(item => item !== name);
         
-        await updateUserProfile(currentUser.uid, { [field]: updated });
-        userProfile[field] = updated;
-        loadFavorites();
+        const result = await updateUserProfileAuth(currentUser.uid, { [field]: updated });
+        if (result.success) {
+          userProfile[field] = updated;
+          loadFavorites();
+        } else {
+          throw new Error('Update failed');
+        }
       } catch (error) {
         console.error('Error removing favorite:', error);
         alert('Error removing favorite. Please try again.');
