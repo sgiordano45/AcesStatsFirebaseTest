@@ -1023,6 +1023,19 @@ body {
           userProfile = null;
         }
         
+        // If there's a mergedFromProfile, load that old profile data too
+        let mergedProfileData = null;
+        if (userProfile?.mergedFromProfile) {
+          console.log('🔗 Loading merged profile data from:', userProfile.mergedFromProfile);
+          try {
+            const { getPlayer } = await import('./firebase-data.js');
+            mergedProfileData = await getPlayer(userProfile.mergedFromProfile);
+            console.log('✅ Merged profile data loaded:', mergedProfileData);
+          } catch (error) {
+            console.warn('⚠️ Could not load merged profile:', error);
+          }
+        }
+        
         // Update header
         document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
         document.getElementById('displayName').textContent = user.displayName || 'User';
@@ -1034,14 +1047,57 @@ body {
         const createdDate = new Date(user.metadata.creationTime);
         document.getElementById('memberSince').textContent = `Member since ${createdDate.getFullYear()}`;
         
-        // Load player info form
+        // Load player info form - prefer merged profile data, fall back to current profile
         if (userProfile) {
-          document.getElementById('nickname').value = userProfile.nickname || '';
-          document.getElementById('jerseyNumber').value = userProfile.jerseyNumber || '';
-          document.getElementById('battingSide').value = userProfile.battingSide || '';
-          document.getElementById('throwingArm').value = userProfile.throwingArm || '';
-          document.getElementById('primaryPosition').value = userProfile.primaryPosition || '';
-          document.getElementById('secondaryPositions').value = userProfile.secondaryPositions || '';
+          const nickname = userProfile.nickname || mergedProfileData?.nickname || '';
+          const jerseyNumber = userProfile.number || mergedProfileData?.number || '';
+          
+          // Map single letter codes to full words
+          const mapBattingCode = (code) => {
+            if (!code) return '';
+            const upper = code.toUpperCase();
+            if (upper === 'R') return 'right';
+            if (upper === 'L') return 'left';
+            if (upper === 'S') return 'switch';
+            return code.toLowerCase();
+          };
+          
+          const mapThrowingCode = (code) => {
+            if (!code) return '';
+            const upper = code.toUpperCase();
+            if (upper === 'R') return 'right';
+            if (upper === 'L') return 'left';
+            return code.toLowerCase();
+          };
+          
+          const mapPosition = (pos) => {
+            if (!pos) return '';
+            const upper = pos.toUpperCase();
+            if (upper === '1B') return '1b';
+            if (upper === '2B') return '2b';
+            if (upper === '3B') return '3b';
+            if (upper === 'SS') return 'ss';
+            if (upper === 'OF' || upper === 'LF') return 'lf';
+            if (upper === 'CF') return 'cf';
+            if (upper === 'RF') return 'rf';
+            if (upper === 'P') return 'pitcher';
+            if (upper === 'C') return 'catcher';
+            return pos.toLowerCase();
+          };
+          
+          const battingSide = mapBattingCode(userProfile.bats || mergedProfileData?.bats);
+          const throwingArm = mapThrowingCode(userProfile.throws || mergedProfileData?.throws);
+          const primaryPosition = mapPosition(userProfile.position || mergedProfileData?.position);
+          const secondaryPositions = userProfile.secondaryPositions || '';
+          
+          document.getElementById('nickname').value = nickname;
+          document.getElementById('jerseyNumber').value = jerseyNumber;
+          document.getElementById('battingSide').value = battingSide;
+          document.getElementById('throwingArm').value = throwingArm;
+          document.getElementById('primaryPosition').value = primaryPosition;
+          document.getElementById('secondaryPositions').value = secondaryPositions;
+          
+          console.log('📝 Loaded player info:', { nickname, jerseyNumber, battingSide, throwingArm, primaryPosition });
           
           // Load preferences
           document.getElementById('emailGameReminders').checked = userProfile.preferences?.emailGameReminders ?? true;
