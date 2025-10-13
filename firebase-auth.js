@@ -1,8 +1,5 @@
-// firebase-auth.js (REFACTORED)
-// Authentication module that uses EXISTING player profile documents
-// No duplicate user documents created!
-
-import { getAuth, 
+// firebase-auth.js
+import { getAuth,
          createUserWithEmailAndPassword,
          signInWithEmailAndPassword,
          signInWithPopup,
@@ -11,15 +8,16 @@ import { getAuth,
          onAuthStateChanged,
          sendPasswordResetEmail,
          sendEmailVerification,
-         updateProfile
+         updateProfile,
+         setPersistence,
+         browserSessionPersistence,
+         browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Import your existing Firebase app and db
 import { app, db } from './firebase-data.js';
 
-// Initialize Firebase Authentication
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
@@ -28,20 +26,9 @@ googleProvider.setCustomParameters({
 });
 
 // ========================================
-// CORE CONCEPT:
-// - Firebase Auth creates authentication with UID
-// - We link that UID to existing player profile documents
-// - Player profiles are identified by snake_case name (e.g., "stephen_giordano")
-// - Auth info (email, photoURL, UID) stored IN the player profile
-// ========================================
-
-// ========================================
 // AUTHENTICATION FUNCTIONS
 // ========================================
 
-/**
- * Register new user with email and password
- */
 export async function registerUser(email, password, displayName) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -50,25 +37,21 @@ export async function registerUser(email, password, displayName) {
     await updateProfile(user, { displayName });
     await sendEmailVerification(user);
     
-    // Create a temporary auth-only record until they link to a player
-    await createTempAuthRecord(user.uid, {
+    await createUserProfile(user.uid, {
       email: user.email,
       displayName: displayName,
-      authProvider: 'email',
+      createdAt: serverTimestamp(),
       emailVerified: false
     });
     
     console.log('✅ User registered:', displayName);
     return { success: true, user, message: 'Account created! Please check your email to verify.' };
   } catch (error) {
-    console.error('❌ Registration error:', error.code);
+    console.error('❌ Registration error:', error.code, error);
     return { success: false, error: error.code, message: getErrorMessage(error.code) };
   }
 }
 
-/**
- * Sign in with email and password
- */
 export async function loginUser(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -80,9 +63,6 @@ export async function loginUser(email, password) {
   }
 }
 
-/**
- * Sign in with Google
- */
 export async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -90,34 +70,27 @@ export async function loginWithGoogle() {
     
     console.log('✅ Google sign-in successful:', user.displayName);
     
-    // Check if this Firebase Auth UID is already linked to a player profile
-    const linkedProfile = await findProfileByAuthUID(user.uid);
-    
-    if (!linkedProfile) {
-      // Not linked yet - create temporary auth record
-      await createTempAuthRecord(user.uid, {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!userDoc.exists()) {
+      await createUserProfile(user.uid, {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        authProvider: 'google',
+        createdAt: serverTimestamp(),
         emailVerified: user.emailVerified
       });
-      console.log('ℹ️ New user - needs to link to player profile');
+      console.log('✅ User profile created in Firestore');
     } else {
-      console.log('✅ Linked to player profile:', linkedProfile.id);
+      console.log('ℹ️ Existing user profile found');
     }
     
     return { success: true, user };
   } catch (error) {
     console.error('❌ Google sign-in error:', error.code, error.message);
-    console.error('Full error:', error);
     return { success: false, error: error.code, message: error.message || getErrorMessage(error.code) };
   }
 }
 
-/**
- * Sign out current user
- */
 export async function logoutUser() {
   try {
     await signOut(auth);
@@ -129,9 +102,6 @@ export async function logoutUser() {
   }
 }
 
-/**
- * Send password reset email
- */
 export async function resetPassword(email) {
   try {
     await sendPasswordResetEmail(auth, email);
@@ -143,203 +113,52 @@ export async function resetPassword(email) {
   }
 }
 
-/**
- * Get current user
- */
 export function getCurrentUser() {
   return auth.currentUser;
 }
 
-/**
- * Listen to authentication state changes
- */
 export function onAuthChange(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-// ========================================
-// PLAYER PROFILE LINKING (NEW APPROACH)
-// ========================================
-
-/**
- * Convert player name to document ID format
- * "Stephen Giordano" -> "stephen_giordano"
- */
-function nameToDocId(name) {
-  return name.toLowerCase().trim().replace(/\s+/g, '_');
-}
-
-/**
- * Convert document ID back to display name
- * "stephen_giordano" -> "Stephen Giordano"
- */
-function docIdToName(docId) {
-  return docId.split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * Find player profile by Firebase Auth UID
- */
-async function findProfileByAuthUID(authUID) {
+export async function setAuthPersistence(rememberMe = true) {
   try {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('authUID', '==', authUID));
-    const snapshot = await getDocs(q);
-    
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error finding profile by auth UID:', error);
-    return null;
-  }
-}
-
-/**
- * Create temporary auth-only record (stored with authUID as document ID)
- * This gets replaced when user links to actual player profile
- */
-async function createTempAuthRecord(authUID, data) {
-  const tempRef = doc(db, 'tempAuthUsers', authUID);
-  await setDoc(tempRef, {
-    ...data,
-    createdAt: serverTimestamp(),
-    isTemporary: true,
-    linkedToProfile: false
-  });
-}
-
-/**
- * Link Firebase Auth user to existing player profile
- * This is the KEY function - it connects auth to player profiles
- */
-export async function linkPlayerToUser(authUID, playerName, teamId, isCaptain = false) {
-  try {
-    const user = auth.currentUser;
-    if (!user || user.uid !== authUID) {
-      throw new Error('Auth user mismatch');
-    }
-    
-    // Convert player name to document ID
-    const playerDocId = nameToDocId(playerName);
-    
-    // Get the existing player profile document
-    const playerRef = doc(db, 'users', playerDocId);
-    const playerDoc = await getDoc(playerRef);
-    
-    if (!playerDoc.exists()) {
-      // Player profile doesn't exist - this might be a new player
-      // Create the profile document
-      await setDoc(playerRef, {
-        displayName: playerName,
-        name: playerName,
-        currentTeam: teamId,
-        isCaptain: isCaptain || false,
-        // Auth info
-        authUID: authUID,
-        email: user.email,
-        photoURL: user.photoURL || null,
-        authProvider: user.providerData[0]?.providerId || 'unknown',
-        emailVerified: user.emailVerified,
-        // Metadata
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        linkedAt: serverTimestamp()
-      });
-      console.log('✅ Created new player profile:', playerDocId);
-    } else {
-      // Player profile exists - add auth info to it
-      await updateDoc(playerRef, {
-        authUID: authUID,
-        email: user.email,
-        photoURL: user.photoURL || null,
-        authProvider: user.providerData[0]?.providerId || 'unknown',
-        emailVerified: user.emailVerified,
-        currentTeam: teamId,
-        isCaptain: isCaptain || false,
-        linkedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log('✅ Updated existing player profile with auth info:', playerDocId);
-    }
-    
-    // Delete temporary auth record if it exists
-    try {
-      const tempRef = doc(db, 'tempAuthUsers', authUID);
-      const tempDoc = await getDoc(tempRef);
-      if (tempDoc.exists()) {
-        await tempDoc.ref.delete();
-        console.log('🗑️ Deleted temporary auth record');
-      }
-    } catch (deleteError) {
-      console.warn('Could not delete temp auth record:', deleteError);
-    }
-    
-    console.log('✅ Successfully linked Firebase Auth to player profile');
-    return { success: true };
-    
-  } catch (error) {
-    console.error('❌ Error linking player:', error);
-    return { success: false, error: error.code || error.message };
-  }
-}
-
-/**
- * Unlink user from player profile (remove auth info from profile)
- */
-export async function unlinkPlayer(authUID) {
-  try {
-    // Find the profile linked to this auth UID
-    const linkedProfile = await findProfileByAuthUID(authUID);
-    
-    if (linkedProfile) {
-      const playerRef = doc(db, 'users', linkedProfile.id);
-      await updateDoc(playerRef, {
-        authUID: null,
-        email: null,
-        photoURL: null,
-        linkedAt: null,
-        updatedAt: serverTimestamp()
-      });
-      console.log('✅ Unlinked player profile');
-    }
-    
+    const persistenceMode = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceMode);
+    console.log(`✅ Auth persistence set to: ${rememberMe ? 'LOCAL' : 'SESSION'}`);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error unlinking player:', error);
+    console.error('❌ Error setting persistence:', error);
     return { success: false, error: error.code };
   }
 }
 
-/**
- * Get user profile (player profile with auth info)
- */
-export async function getUserProfile(authUID) {
+// ========================================
+// USER PROFILE FUNCTIONS
+// ========================================
+
+async function createUserProfile(userId, data) {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, {
+    ...data,
+    linkedPlayer: null,
+    linkedTeam: null,
+    isCaptain: false,
+    favoriteTeams: [],
+    favoritePlayers: [],
+    notificationsEnabled: true,
+    theme: 'light',
+    updatedAt: serverTimestamp()
+  });
+  console.log('✅ User profile created in Firestore for:', userId);
+}
+
+export async function getUserProfile(userId) {
   try {
-    // First, try to find by auth UID (linked profile)
-    const linkedProfile = await findProfileByAuthUID(authUID);
-    
-    if (linkedProfile) {
-      return { success: true, data: linkedProfile, isLinked: true };
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) {
+      return { success: true, data: userDoc.data() };
     }
-    
-    // Not linked yet - check for temp auth record
-    const tempRef = doc(db, 'tempAuthUsers', authUID);
-    const tempDoc = await getDoc(tempRef);
-    
-    if (tempDoc.exists()) {
-      return { 
-        success: true, 
-        data: { id: authUID, ...tempDoc.data() },
-        isLinked: false,
-        isTemporary: true
-      };
-    }
-    
     return { success: false, message: 'User profile not found' };
   } catch (error) {
     console.error('❌ Error getting user profile:', error);
@@ -347,25 +166,13 @@ export async function getUserProfile(authUID) {
   }
 }
 
-/**
- * Update user profile
- */
-export async function updateUserProfile(authUID, updates) {
+export async function updateUserProfile(userId, updates) {
   try {
-    // Find linked profile
-    const linkedProfile = await findProfileByAuthUID(authUID);
-    
-    if (!linkedProfile) {
-      throw new Error('No linked player profile found');
-    }
-    
-    const playerRef = doc(db, 'users', linkedProfile.id);
-    await updateDoc(playerRef, {
+    await updateDoc(doc(db, 'users', userId), {
       ...updates,
       updatedAt: serverTimestamp()
     });
-    
-    console.log('✅ User profile updated');
+    console.log('✅ User profile updated:', userId);
     return { success: true };
   } catch (error) {
     console.error('❌ Error updating user profile:', error);
@@ -373,22 +180,87 @@ export async function updateUserProfile(authUID, updates) {
   }
 }
 
-/**
- * Add favorite team
- */
-export async function addFavoriteTeam(authUID, teamId) {
+export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = false) {
   try {
-    const linkedProfile = await findProfileByAuthUID(authUID);
-    if (!linkedProfile) {
-      throw new Error('No linked player profile');
+    const user = auth.currentUser;
+    
+    let existingPlayerData = null;
+    let playerUserId = null;
+    
+    if (playerName) {
+      playerUserId = playerName.toLowerCase().replace(/\s+/g, '_');
+      
+      try {
+        const oldPlayerRef = doc(db, 'users', playerUserId);
+        const oldPlayerDoc = await getDoc(oldPlayerRef);
+        
+        if (oldPlayerDoc.exists()) {
+          console.log('✅ Found existing player profile:', playerUserId);
+          existingPlayerData = oldPlayerDoc.data();
+        } else {
+          console.log('ℹ️ No existing player profile found for:', playerUserId);
+        }
+      } catch (profileError) {
+        console.warn('Could not fetch old player profile:', profileError);
+      }
     }
     
-    const playerRef = doc(db, 'users', linkedProfile.id);
-    const currentFavorites = linkedProfile.favoriteTeams || [];
+    const userRef = doc(db, 'users', userId);
+    const updateData = {
+      linkedPlayer: playerName,
+      linkedTeam: teamId,
+      isCaptain: isCaptain,
+      updatedAt: serverTimestamp()
+    };
+    
+    if (existingPlayerData) {
+      if (existingPlayerData.favoriteTeams) updateData.favoriteTeams = existingPlayerData.favoriteTeams;
+      if (existingPlayerData.favoritePlayers) updateData.favoritePlayers = existingPlayerData.favoritePlayers;
+      if (existingPlayerData.stats) updateData.stats = existingPlayerData.stats;
+      if (existingPlayerData.seasonStats) updateData.seasonStats = existingPlayerData.seasonStats;
+      if (existingPlayerData.careerStats) updateData.careerStats = existingPlayerData.careerStats;
+      if (existingPlayerData.role) updateData.role = existingPlayerData.role;
+      if (existingPlayerData.currentTeam && !teamId) updateData.linkedTeam = existingPlayerData.currentTeam;
+      
+      updateData.mergedFromProfile = playerUserId;
+      updateData.mergedAt = serverTimestamp();
+      
+      console.log('✅ Merging data from old profile');
+    }
+    
+    await updateDoc(userRef, updateData);
+    
+    if (existingPlayerData && playerUserId) {
+      try {
+        const oldPlayerRef = doc(db, 'users', playerUserId);
+        await updateDoc(oldPlayerRef, {
+          migrated: true,
+          migratedTo: userId,
+          migratedAt: serverTimestamp()
+        });
+        console.log('✅ Marked legacy profile as migrated:', playerUserId);
+      } catch (migrationError) {
+        console.warn('Could not mark legacy profile as migrated:', migrationError);
+      }
+    }
+    
+    console.log('✅ Player linked to user:', playerName, 'Team:', teamId);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error linking player:', error);
+    return { success: false, error: error.code };
+  }
+}
+
+export async function addFavoriteTeam(userId, teamId) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    const currentFavorites = userDoc.data()?.favoriteTeams || [];
     
     if (!currentFavorites.includes(teamId)) {
       currentFavorites.push(teamId);
-      await updateDoc(playerRef, {
+      await updateDoc(userRef, {
         favoriteTeams: currentFavorites,
         updatedAt: serverTimestamp()
       });
@@ -402,22 +274,15 @@ export async function addFavoriteTeam(authUID, teamId) {
   }
 }
 
-/**
- * Add favorite player
- */
-export async function addFavoritePlayer(authUID, playerName) {
+export async function addFavoritePlayer(userId, playerName) {
   try {
-    const linkedProfile = await findProfileByAuthUID(authUID);
-    if (!linkedProfile) {
-      throw new Error('No linked player profile');
-    }
-    
-    const playerRef = doc(db, 'users', linkedProfile.id);
-    const currentFavorites = linkedProfile.favoritePlayers || [];
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    const currentFavorites = userDoc.data()?.favoritePlayers || [];
     
     if (!currentFavorites.includes(playerName)) {
       currentFavorites.push(playerName);
-      await updateDoc(playerRef, {
+      await updateDoc(userRef, {
         favoritePlayers: currentFavorites,
         updatedAt: serverTimestamp()
       });
@@ -452,5 +317,4 @@ function getErrorMessage(errorCode) {
   return errorMessages[errorCode] || 'An error occurred. Please try again.';
 }
 
-// Export auth instance and helper functions
-export { auth, nameToDocId, docIdToName };
+export { auth };
