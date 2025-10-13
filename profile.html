@@ -764,9 +764,11 @@ body {
                 <option value="2b">Second Base</option>
                 <option value="3b">Third Base</option>
                 <option value="ss">Shortstop</option>
+                <option value="if">Infield</option>
                 <option value="lf">Left Field</option>
                 <option value="cf">Center Field</option>
                 <option value="rf">Right Field</option>
+                <option value="of">Outfield</option>
                 <option value="utility">Utility</option>
               </select>
             </div>
@@ -1077,11 +1079,14 @@ body {
             if (upper === '2B') return '2b';
             if (upper === '3B') return '3b';
             if (upper === 'SS') return 'ss';
-            if (upper === 'OF' || upper === 'LF') return 'lf';
+            if (upper === 'IF') return 'if';
+            if (upper === 'LF') return 'lf';
             if (upper === 'CF') return 'cf';
             if (upper === 'RF') return 'rf';
+            if (upper === 'OF') return 'of';
             if (upper === 'P') return 'pitcher';
             if (upper === 'C') return 'catcher';
+            if (upper === 'UTILITY' || upper === 'UTL') return 'utility';
             return pos.toLowerCase();
           };
           
@@ -1259,20 +1264,42 @@ body {
       
       const updates = {
         nickname: document.getElementById('nickname').value,
-        jerseyNumber: document.getElementById('jerseyNumber').value,
-        battingSide: document.getElementById('battingSide').value,
-        throwingArm: document.getElementById('throwingArm').value,
-        primaryPosition: document.getElementById('primaryPosition').value,
+        number: document.getElementById('jerseyNumber').value,
+        bats: document.getElementById('battingSide').value,
+        throws: document.getElementById('throwingArm').value,
+        position: document.getElementById('primaryPosition').value,
         secondaryPositions: document.getElementById('secondaryPositions').value
       };
       
       try {
+        // Update the auth user profile
         const result = await updateUserProfileAuth(currentUser.uid, updates);
-        if (result.success) {
-          showSuccessMessage('successMessagePlayerInfo');
-        } else {
+        if (!result.success) {
           throw new Error('Update failed');
         }
+        
+        // ALSO update the merged player profile if it exists
+        if (userProfile?.mergedFromProfile) {
+          console.log('📝 Also updating merged profile:', userProfile.mergedFromProfile);
+          
+          try {
+            const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const { db } = await import('./firebase-data.js');
+            
+            const playerRef = doc(db, 'users', userProfile.mergedFromProfile);
+            await updateDoc(playerRef, {
+              ...updates,
+              updatedAt: serverTimestamp()
+            });
+            
+            console.log('✅ Merged profile updated successfully');
+          } catch (mergeError) {
+            console.warn('⚠️ Could not update merged profile:', mergeError);
+            // Don't fail the whole operation if merged profile update fails
+          }
+        }
+        
+        showSuccessMessage('successMessagePlayerInfo');
       } catch (error) {
         console.error('Error updating profile:', error);
         alert('Error saving changes. Please try again.');
