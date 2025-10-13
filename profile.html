@@ -1135,12 +1135,60 @@ body {
     </div>
   </main>
 
+  <!-- Team Selection Modal -->
+  <div class="modal" id="teamModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Favorite Team</h2>
+        <button class="modal-close" onclick="closeTeamModal()">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="modal-search" id="teamSearch" placeholder="🔍 Search teams...">
+        <div class="selection-list" id="teamList">
+          <!-- Teams will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTeamModal()">Cancel</button>
+        <button class="btn btn-primary" id="confirmTeamBtn" disabled onclick="confirmAddTeam()">
+          <span>Add Team</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Selection Modal -->
+  <div class="modal" id="playerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Favorite Player</h2>
+        <button class="modal-close" onclick="closePlayerModal()">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="modal-search" id="playerSearch" placeholder="🔍 Search players...">
+        <div class="selection-list" id="playerList">
+          <!-- Players will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePlayerModal()">Cancel</button>
+        <button class="btn btn-primary" id="confirmPlayerBtn" disabled onclick="confirmAddPlayer()">
+          <span>Add Player</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { onAuthChange, getCurrentUser, logoutUser, getUserProfile, updateUserProfile as updateUserProfileAuth, addFavoriteTeam, addFavoritePlayer } from './firebase-auth.js';
     import { getCurrentSeason, getSeasonPlayerStatsOptimized, getAllTeams, getAllPlayerStatsOptimized } from './firebase-data.js';
 
     let currentUser = null;
     let userProfile = null;
+    let selectedTeam = null;
+    let selectedPlayer = null;
+    let allTeams = [];
+    let allPlayers = [];
 
     console.log('🔄 Profile page loading...');
 
@@ -1508,19 +1556,17 @@ body {
     });
 
     // Add favorite buttons
-    document.getElementById('addFavoriteTeam').addEventListener('click', () => {
-      // TODO: Implement team selection modal
-      alert('Team selection coming soon!');
+    document.getElementById('addFavoriteTeam').addEventListener('click', async () => {
+      await openTeamModal();
     });
 
-    document.getElementById('addFavoritePlayer').addEventListener('click', () => {
+    document.getElementById('addFavoritePlayer').addEventListener('click', async () => {
       const favoritePlayers = userProfile?.favoritePlayers || [];
       if (favoritePlayers.length >= 10) {
-        alert('You can only have up to 10 favorite players.');
+        alert('You can only have up to 10 favorite players. Remove some to add more.');
         return;
       }
-      // TODO: Implement player selection modal
-      alert('Player selection coming soon!');
+      await openPlayerModal();
     });
 
     async function removeFavorite(type, name) {
@@ -1555,6 +1601,293 @@ body {
     function hideLoading() {
       document.getElementById('loadingOverlay').classList.add('hidden');
     }
+
+    // ========================================
+    // TEAM SELECTION MODAL
+    // ========================================
+
+    async function openTeamModal() {
+      console.log('📋 Opening team modal...');
+      
+      // Load teams if not already loaded
+      if (allTeams.length === 0) {
+        try {
+          allTeams = await getAllTeams();
+          console.log(`✅ Loaded ${allTeams.length} teams`);
+        } catch (error) {
+          console.error('❌ Error loading teams:', error);
+          alert('Error loading teams. Please try again.');
+          return;
+        }
+      }
+
+      // Render team list
+      renderTeamList(allTeams);
+      
+      // Show modal
+      document.getElementById('teamModal').classList.add('show');
+      
+      // Setup search
+      const searchInput = document.getElementById('teamSearch');
+      searchInput.value = '';
+      searchInput.addEventListener('input', handleTeamSearch);
+    }
+
+    function renderTeamList(teams) {
+      const list = document.getElementById('teamList');
+      list.innerHTML = '';
+
+      const favoriteTeams = userProfile?.favoriteTeams || [];
+      
+      // Sort teams alphabetically
+      const sortedTeams = [...teams].sort((a, b) => 
+        (a.name || a.id).localeCompare(b.name || b.id)
+      );
+
+      sortedTeams.forEach(team => {
+        const teamName = team.name || team.id;
+        const isAlreadyFavorite = favoriteTeams.includes(teamName);
+        
+        const item = document.createElement('div');
+        item.className = 'selection-item';
+        if (isAlreadyFavorite) {
+          item.classList.add('disabled');
+        }
+        
+        item.innerHTML = `
+          <div class="selection-item-info">
+            <div class="selection-item-name">${teamName}</div>
+            <div class="selection-item-details">${team.description || 'Team'}</div>
+          </div>
+          ${isAlreadyFavorite ? '<span class="selection-item-badge">Already Added</span>' : ''}
+        `;
+        
+        if (!isAlreadyFavorite) {
+          item.addEventListener('click', () => selectTeam(item, teamName));
+        }
+        
+        list.appendChild(item);
+      });
+    }
+
+    function selectTeam(element, teamName) {
+      // Remove previous selection
+      document.querySelectorAll('#teamList .selection-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Select this one
+      element.classList.add('selected');
+      selectedTeam = teamName;
+      
+      // Enable confirm button
+      document.getElementById('confirmTeamBtn').disabled = false;
+      
+      console.log('Selected team:', teamName);
+    }
+
+    function handleTeamSearch(e) {
+      const term = e.target.value.toLowerCase();
+      
+      document.querySelectorAll('#teamList .selection-item').forEach(item => {
+        const name = item.querySelector('.selection-item-name').textContent.toLowerCase();
+        if (name.includes(term)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    async function confirmAddTeam() {
+      if (!selectedTeam || !currentUser) return;
+      
+      const confirmBtn = document.getElementById('confirmTeamBtn');
+      const btnText = confirmBtn.querySelector('span');
+      confirmBtn.disabled = true;
+      btnText.textContent = 'Adding...';
+      
+      try {
+        console.log('Adding team to favorites:', selectedTeam);
+        
+        const result = await addFavoriteTeam(currentUser.uid, selectedTeam);
+        
+        if (result.success) {
+          console.log('✅ Team added successfully!');
+          // Update local profile
+          if (!userProfile.favoriteTeams) userProfile.favoriteTeams = [];
+          userProfile.favoriteTeams.push(selectedTeam);
+          // Reload favorites display
+          loadFavorites();
+          // Close modal
+          closeTeamModal();
+        } else {
+          throw new Error('Failed to add team');
+        }
+        
+      } catch (error) {
+        console.error('Error adding team:', error);
+        alert('Error adding team. Please try again.');
+        confirmBtn.disabled = false;
+        btnText.textContent = 'Add Team';
+      }
+    }
+
+    function closeTeamModal() {
+      document.getElementById('teamModal').classList.remove('show');
+      selectedTeam = null;
+      document.getElementById('confirmTeamBtn').disabled = true;
+    }
+
+    // ========================================
+    // PLAYER SELECTION MODAL
+    // ========================================
+
+    async function openPlayerModal() {
+      console.log('📋 Opening player modal...');
+      
+      // Load players if not already loaded
+      if (allPlayers.length === 0) {
+        try {
+          allPlayers = await getAllPlayerStatsOptimized();
+          console.log(`✅ Loaded ${allPlayers.length} players`);
+        } catch (error) {
+          console.error('❌ Error loading players:', error);
+          alert('Error loading players. Please try again.');
+          return;
+        }
+      }
+
+      // Render player list
+      renderPlayerList(allPlayers);
+      
+      // Show modal
+      document.getElementById('playerModal').classList.add('show');
+      
+      // Setup search
+      const searchInput = document.getElementById('playerSearch');
+      searchInput.value = '';
+      searchInput.addEventListener('input', handlePlayerSearch);
+    }
+
+    function renderPlayerList(players) {
+      const list = document.getElementById('playerList');
+      list.innerHTML = '';
+
+      const favoritePlayers = userProfile?.favoritePlayers || [];
+      
+      // Sort players alphabetically
+      const sortedPlayers = [...players].sort((a, b) => 
+        (a.name || a.playerName || a.id).localeCompare(b.name || b.playerName || b.id)
+      );
+
+      sortedPlayers.forEach(player => {
+        const playerName = player.name || player.playerName || player.id;
+        const isAlreadyFavorite = favoritePlayers.includes(playerName);
+        
+        const careerGames = player.career?.games || 0;
+        const careerBA = player.career?.battingAverage 
+          ? player.career.battingAverage.toFixed(3) 
+          : '0.000';
+        const team = player.currentTeam || 'Unknown';
+        
+        const item = document.createElement('div');
+        item.className = 'selection-item';
+        if (isAlreadyFavorite) {
+          item.classList.add('disabled');
+        }
+        
+        item.innerHTML = `
+          <div class="selection-item-info">
+            <div class="selection-item-name">${playerName}</div>
+            <div class="selection-item-details">${team} • ${careerGames} games • BA: ${careerBA}</div>
+          </div>
+          ${isAlreadyFavorite ? '<span class="selection-item-badge">Already Added</span>' : ''}
+        `;
+        
+        if (!isAlreadyFavorite) {
+          item.addEventListener('click', () => selectPlayer(item, playerName));
+        }
+        
+        list.appendChild(item);
+      });
+    }
+
+    function selectPlayer(element, playerName) {
+      // Remove previous selection
+      document.querySelectorAll('#playerList .selection-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Select this one
+      element.classList.add('selected');
+      selectedPlayer = playerName;
+      
+      // Enable confirm button
+      document.getElementById('confirmPlayerBtn').disabled = false;
+      
+      console.log('Selected player:', playerName);
+    }
+
+    function handlePlayerSearch(e) {
+      const term = e.target.value.toLowerCase();
+      
+      document.querySelectorAll('#playerList .selection-item').forEach(item => {
+        const name = item.querySelector('.selection-item-name').textContent.toLowerCase();
+        const details = item.querySelector('.selection-item-details').textContent.toLowerCase();
+        if (name.includes(term) || details.includes(term)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    async function confirmAddPlayer() {
+      if (!selectedPlayer || !currentUser) return;
+      
+      const confirmBtn = document.getElementById('confirmPlayerBtn');
+      const btnText = confirmBtn.querySelector('span');
+      confirmBtn.disabled = true;
+      btnText.textContent = 'Adding...';
+      
+      try {
+        console.log('Adding player to favorites:', selectedPlayer);
+        
+        const result = await addFavoritePlayer(currentUser.uid, selectedPlayer);
+        
+        if (result.success) {
+          console.log('✅ Player added successfully!');
+          // Update local profile
+          if (!userProfile.favoritePlayers) userProfile.favoritePlayers = [];
+          userProfile.favoritePlayers.push(selectedPlayer);
+          // Reload favorites display
+          loadFavorites();
+          // Close modal
+          closePlayerModal();
+        } else {
+          throw new Error('Failed to add player');
+        }
+        
+      } catch (error) {
+        console.error('Error adding player:', error);
+        alert('Error adding player. Please try again.');
+        confirmBtn.disabled = false;
+        btnText.textContent = 'Add Player';
+      }
+    }
+
+    function closePlayerModal() {
+      document.getElementById('playerModal').classList.remove('show');
+      selectedPlayer = null;
+      document.getElementById('confirmPlayerBtn').disabled = true;
+    }
+
+    // Make functions available globally for onclick handlers
+    window.closeTeamModal = closeTeamModal;
+    window.confirmAddTeam = confirmAddTeam;
+    window.closePlayerModal = closePlayerModal;
+    window.confirmAddPlayer = confirmAddPlayer;
   </script>
 </body>
 </html>
