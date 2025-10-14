@@ -1403,15 +1403,25 @@ body {
           document.getElementById('defaultStatsView').value = userProfile.preferences?.defaultStatsView || 'season';
           document.getElementById('defaultSeason').value = userProfile.preferences?.defaultSeason || 'current';
           
-          // Update these lines in loadUserProfile():
-          if (userProfile.linkedPlayer) {
-            // NEW: Use ID-based link
-            const playerId = user.uid; // The authenticated user's ID
-            document.getElementById('linkMyStats').href = `player.html?id=${encodeURIComponent(playerId)}`;
-          }
-          if (userProfile.linkedTeam) {
-            document.getElementById('linkMyTeam').href = `team.html?team=${encodeURIComponent(userProfile.linkedTeam)}`;
-          }
+// Update quick links
+// For stats link: use name-based if player is linked, otherwise use ID
+const playerId = user.uid;
+if (userProfile.linkedPlayer) {
+  // Use name-based link if player is linked
+  document.getElementById('linkMyStats').href = `player.html?name=${encodeURIComponent(userProfile.linkedPlayer)}`;
+} else {
+  // Use ID-based link for new users not yet linked
+  document.getElementById('linkMyStats').href = `player.html?id=${encodeURIComponent(playerId)}`;
+}
+
+if (userProfile.linkedTeam) {
+  document.getElementById('linkMyTeam').href = `team.html?team=${encodeURIComponent(userProfile.linkedTeam)}`;
+} else {
+  // Disable team link if no team assigned
+  document.getElementById('linkMyTeam').style.opacity = '0.5';
+  document.getElementById('linkMyTeam').style.pointerEvents = 'none';
+  document.getElementById('linkMyTeam').title = 'No team assigned yet';
+}
           
           // Load favorites
           loadFavorites();
@@ -1427,15 +1437,32 @@ body {
       }
     }
 
-    async function loadUserStats(user) {
-      console.log('📊 Loading user stats...');
+ async function loadUserStats(user) {
+  console.log('📊 Loading user stats...');
+  
+  try {
+    // Check if user has a linked player
+    const hasLinkedPlayer = userProfile?.linkedPlayer;
+    
+    if (!hasLinkedPlayer) {
+      console.log('🆕 New user with no linked player');
+      // Show dashes instead of zeros with explanatory note
+      document.getElementById('statGames').textContent = '-';
+      document.getElementById('statAvg').textContent = '-';
+      document.getElementById('statHits').textContent = '-';
+      document.getElementById('statRuns').textContent = '-';
       
-      try {
-        if (!userProfile?.linkedPlayer) {
-          console.log('⚠️ No linked player, skipping stats load');
-          return;
-        }
-        
+      // Add a small note below the stats
+      const statsSection = document.querySelector('.stats-grid').parentElement;
+      if (statsSection && !document.getElementById('newUserNote')) {
+        const note = document.createElement('p');
+        note.id = 'newUserNote';
+        note.style.cssText = 'color: #718096; text-align: center; margin-top: 1rem; font-style: italic;';
+        note.textContent = 'Your stats will appear here once you\'ve been added to a team roster and played your first game.';
+        statsSection.appendChild(note);
+      }
+      return;
+    }
         // Get the stats view preference
         const statsView = userProfile?.preferences?.defaultStatsView || 'season';
         const selectedSeason = userProfile?.preferences?.defaultSeason || 'current';
