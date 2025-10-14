@@ -32,7 +32,7 @@
 
     <!-- Firebase Integration Module -->
     <script type="module">
-        import { getCurrentUser, onAuthChange } from './firebase-auth.js';
+        import { getCurrentUser, onAuthChange, getUserProfile } from './firebase-auth.js';
         import { getCurrentSeason, getAllTeams, getSeasonPlayerStatsOptimized } from './firebase-data.js';
         import { getUpcomingTeamGames, getBattingOrder } from './firebase-roster.js';
 
@@ -40,6 +40,7 @@
         window.FirebaseGameTracker = {
             getCurrentUser,
             onAuthChange,
+            getUserProfile,
             getCurrentSeason,
             getAllTeams,
             getSeasonPlayerStatsOptimized,
@@ -177,6 +178,17 @@
                     
                     if (user) {
                         console.log('✅ Signed in as:', user.displayName || user.email);
+                        
+                        // Get user profile to find their linked team
+                        try {
+                            const profileResult = await window.FirebaseGameTracker.getUserProfile(user.uid);
+                            if (profileResult.success && profileResult.data?.linkedTeam) {
+                                console.log('✅ Auto-selecting team:', profileResult.data.linkedTeam);
+                                setSelectedTeam(profileResult.data.linkedTeam);
+                            }
+                        } catch (profileError) {
+                            console.warn('Could not load user profile:', profileError);
+                        }
                     } else {
                         console.log('ℹ️ Not signed in');
                     }
@@ -811,7 +823,8 @@
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {isHome ? `Top ${gameState.inning + 1}` : `Bottom ${gameState.inning}`} - {selectedTeam} Batting
+                                        {/* After your team bats, opponent bats next */}
+                                        {isHome ? `Top ${gameState.inning + 1} - ${opponentName} Batting` : `Bottom ${gameState.inning} - ${opponentName} Batting`}
                                     </button>
                                 </>
                             ) : (
@@ -826,7 +839,8 @@
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {isHome ? `Bottom ${gameState.inning}` : `Top ${gameState.inning + 1}`} - {selectedTeam} Batting
+                                        {/* After opponent bats, your team bats next */}
+                                        {isHome ? `Bottom ${gameState.inning} - ${selectedTeam} Batting` : `Top ${gameState.inning + 1} - ${selectedTeam} Batting`}
                                     </button>
                                 </>
                             )}
