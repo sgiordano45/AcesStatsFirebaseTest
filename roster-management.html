@@ -770,8 +770,17 @@ function RosterManagement({ currentUser }) {
   };
 
   const PlayerCard = ({ player, draggable = false, showStats = false, onRemove, size = 'normal' }) => {
+    // Guard against invalid player objects
+    if (!player || !player.name) {
+      console.warn('Invalid player object:', player);
+      return null;
+    }
+    
     const isSmall = size === 'small';
     const isCurrentUser = player.id === currentUserId;
+    
+    // Safely get display name
+    const displayName = isSmall ? (player.name.split(' ').pop() || player.name) : player.name;
     
     return (
       <div
@@ -793,7 +802,7 @@ function RosterManagement({ currentUser }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: isSmall ? '10px' : '12px', fontWeight: '600', flexShrink: 0
         }}>
-          {player.avatar}
+          {player.avatar || '?'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ 
@@ -802,7 +811,7 @@ function RosterManagement({ currentUser }) {
             display: 'flex', alignItems: 'center', gap: '4px',
             color: 'var(--text-dark)'
           }}>
-            {isSmall ? player.name.split(' ').pop() : player.name}
+            {displayName}
             {isCurrentUser && !isSmall && (
               <span style={{
                 fontSize: '10px', background: 'var(--primary-color)', color: 'white',
@@ -810,10 +819,10 @@ function RosterManagement({ currentUser }) {
               }}>You</span>
             )}
           </div>
-          {!isSmall && <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>#{player.jersey}</div>}
+          {!isSmall && <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>#{player.jersey || 'N/A'}</div>}
         </div>
         {showStats && !isSmall && (
-          <div style={{ fontSize: '11px', color: 'var(--text-dark)' }}>{player.battingAvg}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-dark)' }}>{player.battingAvg || '.000'}</div>
         )}
         {onRemove && isCaptain && (
           <button onClick={onRemove} className="remove-btn"
