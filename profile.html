@@ -1253,7 +1253,7 @@ body {
     let allTeams = [];
     let allPlayers = [];
 
-    console.log('🔄 Profile page loading...');
+    console.log('📄 Profile page loading...');
 
     // Tab switching functionality
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1399,6 +1399,7 @@ body {
           document.getElementById('favoriteTeamNotifications').checked = userProfile.preferences?.favoriteTeamNotifications ?? true;
           document.getElementById('favoritePlayerAlerts').checked = userProfile.preferences?.favoritePlayerAlerts ?? true;
           document.getElementById('publicFavorites').checked = userProfile.preferences?.publicFavorites ?? false;
+          document.getElementById('defaultStatsView').value = userProfile.preferences?.defaultStatsView || 'season';
           
           // Update these lines in loadUserProfile():
           if (userProfile.linkedPlayer) {
@@ -1433,79 +1434,92 @@ body {
           return;
         }
         
+        // Get the stats view preference
+        const statsView = userProfile?.preferences?.defaultStatsView || 'season';
+        console.log('📈 Stats view preference:', statsView);
+        
         const currentSeason = await getCurrentSeason();
         console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
         
-        if (!currentSeason) {
+        if (!currentSeason && statsView === 'season') {
           console.log('⚠️ No current season found');
           return;
         }
         
-        const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
-        console.log('📈 Stats loaded:', stats.length, 'players');
-        console.log('🔍 Searching for player:', userProfile.linkedPlayer);
-        console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
-        
-        // Try multiple ways to find the player
         let playerStats = null;
         
-        // First, try exact match on linkedPlayer name
-        playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
-        
-        if (!playerStats) {
-          // Try matching by name field
-          playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
-        }
-        
-        if (!playerStats) {
-          // Try case-insensitive match
-          const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
-          playerStats = stats.find(s =>
-            s.playerName?.toLowerCase() === linkedPlayerLower ||
-            s.name?.toLowerCase() === linkedPlayerLower
-          );
-        }
-        
-        // NEW: If still not found and we have a mergedFromProfile, try matching by ID
-        if (!playerStats && userProfile.mergedFromProfile) {
-          console.log('🔍 Trying to find stats by merged profile ID:', userProfile.mergedFromProfile);
-          playerStats = stats.find(s => s.id === userProfile.mergedFromProfile || s.playerId === userProfile.mergedFromProfile);
-        }
-        
-        // NEW: If still not found, try to load directly from aggregatedPlayerStats using the user's current ID
-        if (!playerStats) {
-          console.log('🔍 Trying to load stats directly using user ID:', user.uid);
+        if (statsView === 'career') {
+          // Load career stats
+          console.log('📊 Loading career stats...');
           try {
             const { getPlayerStatsOptimized } = await import('./firebase-data.js');
             const directPlayerData = await getPlayerStatsOptimized(user.uid);
-            if (directPlayerData) {
-              console.log('✅ Found player data directly:', directPlayerData);
-              
-              // Check if seasons object exists
-              if (directPlayerData.seasons && typeof directPlayerData.seasons === 'object') {
-                console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
+            
+            if (directPlayerData && directPlayerData.career) {
+              playerStats = directPlayerData.career;
+              console.log('✅ Career stats loaded:', playerStats);
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not load career stats:', error);
+          }
+        } else {
+          // Load season stats (default behavior)
+          const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+          console.log('📈 Stats loaded:', stats.length, 'players');
+          console.log('🔍 Searching for player:', userProfile.linkedPlayer);
+          console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
+          
+          // Try multiple ways to find the player
+          playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+          
+          if (!playerStats) {
+            playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
+          }
+          
+          if (!playerStats) {
+            const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
+            playerStats = stats.find(s =>
+              s.playerName?.toLowerCase() === linkedPlayerLower ||
+              s.name?.toLowerCase() === linkedPlayerLower
+            );
+          }
+          
+          if (!playerStats && userProfile.mergedFromProfile) {
+            console.log('🔍 Trying to find stats by merged profile ID:', userProfile.mergedFromProfile);
+            playerStats = stats.find(s => s.id === userProfile.mergedFromProfile || s.playerId === userProfile.mergedFromProfile);
+          }
+          
+          if (!playerStats) {
+            console.log('🔍 Trying to load stats directly using user ID:', user.uid);
+            try {
+              const { getPlayerStatsOptimized } = await import('./firebase-data.js');
+              const directPlayerData = await getPlayerStatsOptimized(user.uid);
+              if (directPlayerData) {
+                console.log('✅ Found player data directly:', directPlayerData);
                 
-                // Find season keys that start with currentSeason.id (e.g., "2025-fall")
-                const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
-                  key.startsWith(currentSeason.id)
-                );
-                
-                console.log('🔍 Matching season keys:', matchingKeys);
-                
-                if (matchingKeys.length > 0) {
-                  // Use the first matching key
-                  const seasonKey = matchingKeys[0];
-                  const seasonStats = directPlayerData.seasons[seasonKey];
+                if (directPlayerData.seasons && typeof directPlayerData.seasons === 'object') {
+                  console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
                   
-                  if (seasonStats) {
-                    playerStats = seasonStats;
-                    console.log('✅ Extracted season stats from key:', seasonKey, playerStats);
+                  const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
+                    key.startsWith(currentSeason.id)
+                  );
+                  
+                  console.log('🔍 Matching season keys:', matchingKeys);
+                  
+                  if (matchingKeys.length > 0) {
+                    const seasonKey = matchingKeys[0];
+                    const seasonStats = directPlayerData.seasons[seasonKey];
+                    
+                    if (seasonStats) {
+                      playerStats = seasonStats;
+                      console.log('✅ Extracted season stats from key:', seasonKey, playerStats);
+                    }
                   }
                 }
               }
+            } catch (directLoadError) {
+              console.warn('⚠️ Could not load stats directly:', directLoadError);
             }
-          } catch (directLoadError) {
-            console.warn('⚠️ Could not load stats directly:', directLoadError);
           }
         }
         
@@ -1517,10 +1531,6 @@ body {
           document.getElementById('statRuns').textContent = playerStats.runs || 0;
         } else {
           console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
-          console.log('Available player names:', stats.slice(0, 10).map(s => ({
-            name: s.playerName || s.name,
-            id: s.id || s.playerId
-          })));
           
           // Set defaults to show 0s instead of leaving blank
           document.getElementById('statGames').textContent = '0';
@@ -1747,6 +1757,32 @@ body {
         }
       } catch (error) {
         console.error('Error updating preferences:', error);
+      }
+    });
+
+    // Handle stats view preference changes
+    document.getElementById('defaultStatsView').addEventListener('change', async (e) => {
+      const statsView = e.target.value;
+      
+      try {
+        // Save preference
+        const result = await updateUserProfileAuth(currentUser.uid, { 
+          preferences: { 
+            ...userProfile.preferences,
+            defaultStatsView: statsView 
+          }
+        });
+        
+        if (result.success) {
+          userProfile.preferences = userProfile.preferences || {};
+          userProfile.preferences.defaultStatsView = statsView;
+          
+          // Reload stats with new view
+          await loadUserStats(currentUser);
+          showSuccessMessage('successMessagePreferences');
+        }
+      } catch (error) {
+        console.error('Error updating stats view:', error);
       }
     });
 
