@@ -692,7 +692,8 @@ function aggregatePlayerStats() {
     
     if (!playerStats[playerName]) {
       playerStats[playerName] = {
-        name: playerName,
+        id: player.id || player.userId || player.playerId,  // ← ADD THIS LINE
+		name: playerName,
         totalHits: 0,
         totalRuns: 0,
         totalWalks: 0
@@ -808,7 +809,7 @@ function generateMilestoneCategory(players, category) {
         categoryHTML += `
           <tr class="${rankClass}">
             <td class="rank">${rank}</td>
-            <td><a href="player.html?id=${encodeURIComponent(milestone.playerId || milestone.id)}">${player.name}</a></td>
+            <td><a href="player.html?id=${encodeURIComponent(player.playerId || player.id)}">${player.name}</a></td>
             <td class="stat-value">${statValue}</td>
           </tr>
         `;
