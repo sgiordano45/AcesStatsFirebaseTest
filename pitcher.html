@@ -515,13 +515,17 @@ tbody tr:hover {
 
 <script type="module">
   // Import Firebase functions
-  import { 
-    getAllPlayerStatsOptimized,
-    pitchingSeasonsObjectToArray
-  } from './firebase-data.js';
+import { 
+  getAllPlayerStatsOptimized,
+  pitchingSeasonsObjectToArray,
+  resolvePlayerName,
+  getPlayerStatsOptimized
+} from './firebase-data.js';
 
-  // Get pitcher name from URL
-  let pitcherName = new URLSearchParams(window.location.search).get('name');
+// Get pitcher ID or name from URL - support both for backwards compatibility
+const urlParams = new URLSearchParams(window.location.search);
+const pitcherId = urlParams.get('id');
+const pitcherName = urlParams.get('name');
 
   // Helper function to capitalize strings
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
@@ -545,7 +549,7 @@ tbody tr:hover {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
-  if (!pitcherName) {
+if (!pitcherId && !pitcherName) {
     document.body.innerHTML = `
       <div class="page-container">
         <div class="error-message">
@@ -566,97 +570,112 @@ tbody tr:hover {
     loadPitcherData();
   }
 
-  async function loadPitcherData() {
-    console.log('⚡ Loading pitcher data from Firebase...');
+async function loadPitcherData() {
+  console.log('⚡ Loading pitcher data from Firebase...');
+  
+  try {
+    let pitcher = null;
+    let resolvedName = pitcherName;
     
-    try {
-      const players = await getAllPlayerStatsOptimized();
-      console.log(`✅ Loaded ${players?.length || 0} players from aggregated collection`);
+    // NEW: Try to resolve pitcher by ID or name
+    if (pitcherId) {
+      console.log(`🔍 Looking up pitcher by ID: ${pitcherId}`);
+      pitcher = await getPlayerStatsOptimized(pitcherId);
       
-      if (!players || players.length === 0) {
-        showError('No player data available.');
-        return;
+      if (!pitcher || pitcher.migrated) {
+        console.warn('⚠️ Pitcher ID not found or is migrated, trying name fallback');
+        pitcher = await resolvePlayerName(pitcherId);
       }
-
-      // Find the pitcher by name (case-insensitive match)
-      const pitcher = players.find(p => {
-        const playerName = formatPlayerName(p.name || p.displayName || p.userId);
-        return playerName.toLowerCase() === pitcherName.toLowerCase();
-      });
-
-      if (!pitcher) {
-        showError(`Pitcher "${pitcherName}" not found`);
-        return;
-      }
-
-      // Process pitching seasons from OBJECT format
-      const pitcherData = [];
-      
-      if (pitcher.pitchingSeasons && typeof pitcher.pitchingSeasons === 'object') {
-        const pitchingSeasonsArray = pitchingSeasonsObjectToArray(pitcher);
-        
-        pitchingSeasonsArray.forEach(season => {
-          let year = "";
-          let seasonName = "";
-          
-          if (season.seasonId) {
-            const parts = season.seasonId.split('-');
-            if (parts.length >= 2) {
-              year = parts[0];
-              seasonName = parts[1];
-            }
-          }
-          
-          if (!year && season.year) year = season.year;
-          if (!seasonName && season.season) seasonName = season.season;
-          
-          let eraValue = "N/A";
-          if (season.earnedRunAverage !== undefined && season.earnedRunAverage !== null && season.earnedRunAverage !== "N/A") {
-            eraValue = Number(season.earnedRunAverage);
-          }
-          
-          pitcherData.push({
-            year: year,
-            season: capitalize(seasonName),
-            team: capitalize(season.team || pitcher.currentTeam || ""),
-            games: Number(season.games) || 0,
-            IP: typeof season.inningsPitched === 'number' ? season.inningsPitched.toString() :
-                (season.inningsPitched || "0"),
-            runsAllowed: Number(season.runsAllowed) || 0,
-            ERA: eraValue
-          });
-        });
-      }
-
-      if (pitcherData.length === 0) {
-        showError(`No pitching data found for "${pitcherName}"`);
-        return;
-      }
-
-      console.log(`✅ Found ${pitcherData.length} pitching seasons for ${pitcherName}`);
-
-      // Sort by year (most recent first), then by season
-      const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
-      const sortedSeasons = pitcherData.sort((a, b) => {
-        if (a.year !== b.year) return b.year.localeCompare(a.year);
-        const seasonA = seasonOrder[a.season] || 0;
-        const seasonB = seasonOrder[b.season] || 0;
-        return seasonB - seasonA;
-      });
-
-      // Render tables
-      renderSeasonTable(sortedSeasons);
-      renderCareerStats(pitcherData);
-
-      // Hide loading overlay
-      document.getElementById('loadingOverlay').classList.add('hidden');
-
-    } catch (error) {
-      console.error('❌ Error loading pitcher data:', error);
-      showError('Error loading pitcher data. Please try again.');
+    } else if (pitcherName) {
+      console.log(`🔍 Looking up pitcher by name: ${pitcherName}`);
+      pitcher = await resolvePlayerName(pitcherName);
     }
-  }
+    
+    if (!pitcher) {
+      showError(`Pitcher "${pitcherName || pitcherId}" not found`);
+      return;
+    }
+    
+    console.log(`✅ Resolved to: "${pitcher.name}" (ID: ${pitcher.id})`);
+    
+    // Update URL to use ID if we came from name
+    if (pitcherName && !pitcherId) {
+      const newUrl = `${window.location.pathname}?id=${pitcher.id}`;
+      window.history.replaceState({}, '', newUrl);
+      console.log('🔄 Updated URL to ID-based');
+    }
+    
+    // Update page title with resolved name
+    resolvedName = pitcher.name || pitcher.displayName;
+    document.getElementById("pitcherName").textContent = resolvedName;
 
+    // Process pitching seasons from OBJECT format
+    const pitcherData = [];
+    
+    if (pitcher.pitchingSeasons && typeof pitcher.pitchingSeasons === 'object') {
+      const pitchingSeasonsArray = pitchingSeasonsObjectToArray(pitcher);
+      
+      pitchingSeasonsArray.forEach(season => {
+        let year = "";
+        let seasonName = "";
+        
+        if (season.seasonId) {
+          const parts = season.seasonId.split('-');
+          if (parts.length >= 2) {
+            year = parts[0];
+            seasonName = parts[1];
+          }
+        }
+        
+        if (!year && season.year) year = season.year;
+        if (!seasonName && season.season) seasonName = season.season;
+        
+        let eraValue = "N/A";
+        if (season.earnedRunAverage !== undefined && season.earnedRunAverage !== null && season.earnedRunAverage !== "N/A") {
+          eraValue = Number(season.earnedRunAverage);
+        }
+        
+        pitcherData.push({
+          year: year,
+          season: capitalize(seasonName),
+          team: capitalize(season.team || pitcher.currentTeam || ""),
+          games: Number(season.games) || 0,
+          IP: typeof season.inningsPitched === 'number' ? season.inningsPitched.toString() :
+              (season.inningsPitched || "0"),
+          runsAllowed: Number(season.runsAllowed) || 0,
+          ERA: eraValue
+        });
+      });
+    }
+
+    if (pitcherData.length === 0) {
+      showError(`No pitching data found for "${resolvedName}"`);
+      return;
+    }
+
+    console.log(`✅ Found ${pitcherData.length} pitching seasons for ${resolvedName}`);
+
+    // Sort by year (most recent first), then by season
+    const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
+    const sortedSeasons = pitcherData.sort((a, b) => {
+      if (a.year !== b.year) return b.year.localeCompare(a.year);
+      const seasonA = seasonOrder[a.season] || 0;
+      const seasonB = seasonOrder[b.season] || 0;
+      return seasonB - seasonA;
+    });
+
+    // Render tables
+    renderSeasonTable(sortedSeasons);
+    renderCareerStats(pitcherData);
+
+    // Hide loading overlay
+    document.getElementById('loadingOverlay').classList.add('hidden');
+
+  } catch (error) {
+    console.error('❌ Error loading pitcher data:', error);
+    showError('Error loading pitcher data. Please try again.');
+  }
+}
   function showError(message) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.querySelector('.page-container').innerHTML = `

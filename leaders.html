@@ -846,7 +846,7 @@ function generateLeaderTable(players, category) {
     html += `
       <tr class="${rankClass}">
         <td class="rank">${rank}</td>
-        <td><a href="player.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+        <td><a href="player.html?id=${encodeURIComponent(player.playerId || player.id)}">${player.name}</a></td>
         <td class="stat-value">${statValue}</td>
       </tr>
     `;

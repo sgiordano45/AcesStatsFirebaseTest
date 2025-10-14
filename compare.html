@@ -770,7 +770,9 @@ async function loadData() {
         const seasonName = parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : '';
         
         return {
-          name: player.name || player.playerName || player.id,
+          id: player.id,  // ← ADD THIS LINE
+		  playerId: player.id,  // ← ADD THIS LINE (for consistency)
+		  name: player.name || player.playerName || player.id,
           team: season.team || player.currentTeam || '',
           season: seasonName,
           year: year,
@@ -802,21 +804,33 @@ async function loadData() {
 }
 
 function populatePlayerSelects() {
-  // Get unique players
-  const players = [...new Set(allPlayers.map(p => p.name))].filter(name => name).sort();
+  // Get unique players with their IDs
+  const playersMap = new Map();
+  
+  // Build a map of player names to their IDs
+  allPlayers.forEach(p => {
+    if (p.name && p.id) {
+      playersMap.set(p.name, p.id);
+    }
+  });
+  
+  // Sort by name
+  const players = Array.from(playersMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   
   const player1Select = document.getElementById('player1Select');
   const player2Select = document.getElementById('player2Select');
   
-  players.forEach(playerName => {
+  players.forEach(([playerName, playerId]) => {
     const option1 = document.createElement('option');
-    option1.value = playerName;
+    option1.value = playerId;  // ← CHANGED: Use ID instead of name
     option1.textContent = playerName;
+    option1.dataset.playerName = playerName; // Store name for display
     player1Select.appendChild(option1);
     
     const option2 = document.createElement('option');
-    option2.value = playerName;
+    option2.value = playerId;  // ← CHANGED: Use ID instead of name
     option2.textContent = playerName;
+    option2.dataset.playerName = playerName; // Store name for display
     player2Select.appendChild(option2);
   });
   
@@ -825,23 +839,27 @@ function populatePlayerSelects() {
 }
 
 function updateComparison() {
-  const player1Name = document.getElementById('player1Select').value;
-  const player2Name = document.getElementById('player2Select').value;
+  const player1Id = document.getElementById('player1Select').value;  // ← CHANGED: Get ID
+  const player2Id = document.getElementById('player2Select').value;  // ← CHANGED: Get ID
   
-  if (!player1Name || !player2Name) {
+  if (!player1Id || !player2Id) {
     document.getElementById('comparisonResults').innerHTML =
       '<div class="no-comparison">Select two players above to begin comparison</div>';
     return;
   }
   
-  if (player1Name === player2Name) {
+  if (player1Id === player2Id) {
     document.getElementById('comparisonResults').innerHTML =
       '<div class="no-comparison">Please select two different players</div>';
     return;
   }
   
-  player1Data = allPlayers.filter(p => p.name === player1Name);
-  player2Data = allPlayers.filter(p => p.name === player2Name);
+  // Get the player names for filtering
+  const player1Name = document.querySelector(`#player1Select option[value="${player1Id}"]`).textContent;
+  const player2Name = document.querySelector(`#player2Select option[value="${player2Id}"]`).textContent;
+  
+  player1Data = allPlayers.filter(p => p.name === player1Name);  // Filter by name for now
+  player2Data = allPlayers.filter(p => p.name === player2Name);  // Filter by name for now
   
   // Re-populate season selector if in season mode
   if (currentComparison === 'season') {

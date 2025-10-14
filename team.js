@@ -396,7 +396,7 @@ function renderBattingTable(data) {
     row.innerHTML = `
       <td>${p.year}</td>
       <td>${p.season}</td>
-      <td><a href="player.html?name=${encodeURIComponent(p.name)}">${p.name}</a></td>
+      <td><a href="player.html?id=${encodeURIComponent(player.id || player.playerId)}">${p.name}</a></td>
       <td>${p.games}</td>
       <td>${p.atBats}</td>
       <td>${p.hits}</td>

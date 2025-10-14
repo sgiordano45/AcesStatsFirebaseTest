@@ -926,7 +926,7 @@ table a:hover {
         : "N/A";
 
       row.innerHTML = `
-        <td><a href="pitcher.html?name=${encodeURIComponent(p.name)}">${p.name}</a></td>
+        <td><a href="pitcher.html?id=${encodeURIComponent(p.playerId || p.id)}">${p.name}</a></td>
         <td><a href="team.html?team=${encodeURIComponent(p.team)}">${p.team}</a></td>
         <td>${p.year}</td>
         <td>${p.season}</td>

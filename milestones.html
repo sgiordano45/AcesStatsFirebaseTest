@@ -808,7 +808,7 @@ function generateMilestoneCategory(players, category) {
         categoryHTML += `
           <tr class="${rankClass}">
             <td class="rank">${rank}</td>
-            <td><a href="player.html?name=${encodeURIComponent(player.name)}">${player.name}</a></td>
+            <td><a href="player.html?id=${encodeURIComponent(milestone.playerId || milestone.id)}">${player.name}</a></td>
             <td class="stat-value">${statValue}</td>
           </tr>
         `;
