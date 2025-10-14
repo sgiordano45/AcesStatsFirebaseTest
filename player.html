@@ -744,22 +744,67 @@
   }
 
   async function loadPlayerData() {
+    async function loadPlayerData() {
     const loadStartTime = performance.now();
     console.log(`⚡ Loading data for: ${playerId ? `ID=${playerId}` : `name=${playerName}`}`);
     console.time('Total Load Time');
 
     try {
-      // NEW: Resolve player identifier
+      // NEW: Resolve player identifier with proper fallback
       console.time('Resolve Player');
       let resolvedPlayer;
+      let isNewUser = false;
       
       if (playerId) {
         // Direct ID lookup
         resolvedPlayer = await getPlayerStatsOptimized(playerId);
+        
         if (!resolvedPlayer || resolvedPlayer.migrated) {
-          console.warn('⚠️ Player ID not found or is migrated');
-          // Try as name fallback
-          resolvedPlayer = await resolvePlayerName(playerId);
+          console.warn('⚠️ Player ID not found in aggregatedPlayerStats or is migrated');
+          
+          // FALLBACK 1: Check if this ID exists in users collection (new user not yet aggregated)
+          console.log('🔍 Checking users collection for new user...');
+          const { getUserProfile } = await import('./firebase-auth.js');
+          const userResult = await getUserProfile(playerId);
+          
+          if (userResult.success && userResult.data) {
+            console.log('✅ Found user profile:', userResult.data);
+            
+            // If user has a linkedPlayer, try to load stats by that name
+            if (userResult.data.linkedPlayer) {
+              console.log('🔗 User has linkedPlayer:', userResult.data.linkedPlayer);
+              resolvedPlayer = await resolvePlayerName(userResult.data.linkedPlayer);
+              
+              if (resolvedPlayer) {
+                console.log('✅ Found player by linkedPlayer name:', resolvedPlayer.name);
+              }
+            }
+            
+            // If still not found, create placeholder for new user
+            if (!resolvedPlayer) {
+              console.log('🆕 Creating placeholder for new user (not yet aggregated)');
+              isNewUser = true;
+              resolvedPlayer = {
+                id: playerId,
+                name: userResult.data.displayName || userResult.data.preferredDisplayName || userResult.data.linkedPlayer || 'New User',
+                currentTeam: userResult.data.linkedTeam || 'Not assigned',
+                seasons: {},
+                career: {
+                  games: 0,
+                  atBats: 0,
+                  hits: 0,
+                  runs: 0,
+                  walks: 0,
+                  battingAverage: 0,
+                  onBasePercentage: 0
+                }
+              };
+            }
+          } else {
+            // FALLBACK 2: Try using the ID as a player name
+            console.log('⚠️ Not in users collection, trying ID as player name');
+            resolvedPlayer = await resolvePlayerName(playerId);
+          }
         }
       } else {
         // Name-based lookup with resolution
@@ -771,14 +816,15 @@
       if (!resolvedPlayer) {
         console.error('❌ Could not resolve player');
         hideLoadingIndicator();
+        document.getElementById('playerHeader').style.display = 'flex';
         document.getElementById('playerName').textContent = `Player "${playerName || playerId}" not found`;
         return;
       }
       
       console.log(`✅ Resolved to: "${resolvedPlayer.name}" (ID: ${resolvedPlayer.id})`);
       
-      // Update URL to use ID if we came from name
-      if (playerName && !playerId) {
+      // Update URL to use ID if we came from name (only if player has aggregated stats)
+      if (playerName && !playerId && !isNewUser) {
         const newUrl = `${window.location.pathname}?id=${resolvedPlayer.id}`;
         window.history.replaceState({}, '', newUrl);
         console.log('🔄 Updated URL to ID-based');
@@ -788,7 +834,67 @@
       const displayName = resolvedPlayer.name || resolvedPlayer.displayName;
       document.getElementById('pageTitle').textContent = `${displayName} - Player Stats`;
       
-      // Fetch additional data
+      // NEW: Show message for new users with no stats
+      if (isNewUser) {
+        const playerHeader = document.getElementById('playerHeader');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        // Show header with basic info
+        document.getElementById('playerName').textContent = displayName;
+        
+        const detailsContainer = document.getElementById('playerDetails');
+        detailsContainer.innerHTML = `
+          <div class="detail-item">
+            <div class="detail-label">Team</div>
+            <div class="detail-value">${resolvedPlayer.currentTeam}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">New Player</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Career</div>
+            <div class="detail-value">Pending</div>
+          </div>
+        `;
+        
+        document.getElementById('playerDetailsRow2').innerHTML = `
+          <div class="detail-item">
+            <div class="detail-label">Batting</div>
+            <div class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Throwing</div>
+            <div class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Position</div>
+            <div class="detail-value">-</div>
+          </div>
+        `;
+        
+        document.getElementById('playerHeader').style.display = 'flex';
+        
+        // Show friendly message instead of stats
+        statsContainer.innerHTML = `
+          <div class="stats-section">
+            <h2>Welcome to Mountainside Aces!</h2>
+            <div style="padding: 3rem 2rem; text-align: center;">
+              <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">⚾</div>
+              <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2d3748;">No Stats Yet</h3>
+              <p style="color: #718096; font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                Your player statistics will appear here once you've been added to the roster and stats have been recorded. 
+                Check back after your first game, or contact your team captain for more information.
+              </p>
+            </div>
+          </div>
+        `;
+        statsContainer.style.display = 'block';
+        hideLoadingIndicator();
+        return;
+      }
+      
+      // Fetch additional data for existing players
       console.time('Fetch Additional Data');
       const [playerInfo, playerAwards] = await Promise.all([
         getPlayerInfo(displayName).catch(() => null),
@@ -860,7 +966,7 @@
 
       const loadEndTime = performance.now();
       console.timeEnd('Total Load Time');
-      console.log(`🏁 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+      console.log(`🎯 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
 
     } catch (error) {
       console.error('❌ Error loading player data:', error);
