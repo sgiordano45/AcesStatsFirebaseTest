@@ -711,7 +711,8 @@ body {
             if (!seasonName && season.season) seasonName = season.season;
             
             flattenedData.push({
-              name: playerName,
+              id: player.id || player.userId || player.playerId,
+			  name: playerName,
               team: capitalize(season.team || player.currentTeam || ""),
               year: year,
               season: capitalize(seasonName),
