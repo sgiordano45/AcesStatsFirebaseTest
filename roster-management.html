@@ -883,11 +883,9 @@ function RosterManagement({ currentUser }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>Team:</span>
-              <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid var(--border-color)', borderRadius: '12px', fontSize: '14px', minWidth: '200px' }}>
-                <option value="">Select a Team</option>
-                {allTeams.map(team => <option key={team} value={team}>{team}</option>)}
-              </select>
+              <span style={{ color: 'var(--text-dark)', fontWeight: '500' }}>
+                {selectedTeam || 'No team assigned'}
+              </span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

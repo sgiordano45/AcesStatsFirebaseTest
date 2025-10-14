@@ -328,6 +328,13 @@
                     setBattingOrder(players);
                 }
                 
+                // Home team bats in bottom of 1st, away team bats in top of 1st
+                // If we're home and opponent is batting, that means it's TOP of 1st
+                // If we're away and opponent is batting, that means it's BOTTOM of 1st
+                // But away team always bats first (top of 1st), so:
+                // - If we're away: we bat first (top 1), isYourTeamBatting = true
+                // - If we're home: opponent bats first (top 1), isYourTeamBatting = false
+                
                 setGameState({
                     inning: 1,
                     outs: 0,
@@ -336,7 +343,7 @@
                     currentBatter: 0,
                     playHistory: [],
                     gameActive: true,
-                    isYourTeamBatting: !isHome
+                    isYourTeamBatting: !isHome  // Away team (not home) bats first
                 });
                 
                 setSetupMode(false);
