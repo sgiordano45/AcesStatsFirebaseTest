@@ -945,7 +945,8 @@
           console.log(`✅ Found ${teams.size} unique teams:`, Array.from(teams).sort());
           
           playerData = (batting || []).map(p => ({
-            name: p.playerName || p.name || p.id,
+            id: p.id || p.playerId || p.userId,  // ← ADD THIS LINE
+			name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
             year: currentSeasonData.year.toString(),
             season: capitalize(currentSeasonData.season),
@@ -960,7 +961,8 @@
           }));
           
           pitchingData = (pitching || []).map(p => ({
-            name: p.playerName || p.name || p.id,
+            id: p.id || p.playerId || p.userId,  // ← ADD THIS LINE
+			name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
             year: currentSeasonData.year.toString(),
             season: capitalize(currentSeasonData.season),
