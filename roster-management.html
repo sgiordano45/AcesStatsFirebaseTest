@@ -282,7 +282,6 @@ function RosterManagement({ currentUser }) {
     if (games.length > 0 && selectedTeam && players.length > 0) {
       const cleanup = loadGameData();
       return () => {
-        // Cleanup listeners when component unmounts or dependencies change
         if (cleanup && typeof cleanup.then === 'function') {
           cleanup.then(unsubscribe => unsubscribe && unsubscribe());
         }
@@ -294,35 +293,29 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading initial data...');
       
-      // CRITICAL: Ensure currentUser exists before proceeding
       if (!currentUser || !currentUser.uid) {
         console.error('❌ No currentUser available!');
         return;
       }
       
-      // Get current season
       const seasonData = await window.FirebaseRoster.getCurrentSeason();
       setCurrentSeason(seasonData);
       
-      // Determine season type (fall/summer)
       if (seasonData.season.toLowerCase() === 'summer') {
         setSeason('summer');
       } else {
         setSeason('fall');
       }
       
-      // Get all teams
       const teams = await window.FirebaseRoster.getAllTeams();
       const teamNames = teams.map(t => t.name || t.id).sort();
       setAllTeams(teamNames);
       
-      // Get user profile to check team and captain status
-      // Use the globally available function instead of import
       const profileResult = await window.FirebaseRoster.getUserProfile(currentUser.uid);
       
       if (profileResult.success && profileResult.data) {
         setUserProfile(profileResult.data);
-        setCurrentUserId(currentUser.uid); // FIX #1: Set current user ID
+        setCurrentUserId(currentUser.uid);
         
         console.log('👤 User profile loaded:', {
           name: profileResult.data.linkedPlayer,
@@ -330,7 +323,6 @@ function RosterManagement({ currentUser }) {
           team: profileResult.data.linkedTeam
         });
         
-        // Auto-select user's team if they have one
         if (profileResult.data.linkedTeam) {
           setSelectedTeam(profileResult.data.linkedTeam);
         }
@@ -348,11 +340,9 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading team data for:', selectedTeam);
       
-      // Get season players from Firebase
       const seasonPlayers = await window.FirebaseRoster.getSeasonPlayerStatsOptimized(currentSeason.id);
       console.log('📊 All season players:', seasonPlayers.length);
       
-      // Filter by team and exclude migrated users
       const filteredPlayers = seasonPlayers.filter(p => {
         const teamMatch = p.team === selectedTeam;
         const notMigrated = !p.migrated;
@@ -361,10 +351,8 @@ function RosterManagement({ currentUser }) {
       });
       console.log('📊 Filtered to team (excluding migrated):', filteredPlayers.length);
       
-      // Get current user's profile to identify them
       const myProfile = userProfile;
       
-      // For each player, fetch their user profile to get jersey number
       const formattedPlayersPromises = filteredPlayers.map(async (player, index) => {
         const name = player.name || player.playerName;
         const nameParts = name.trim().split(' ');
@@ -372,26 +360,21 @@ function RosterManagement({ currentUser }) {
           (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() :
           name.substring(0, 2).toUpperCase();
         
-        // Get batting average
         const battingAvg = player.battingAverage
           ? player.battingAverage.toFixed(3)
           : '.000';
         
-        // Check if this player IS the current logged-in user by matching names
         const isCurrentUser = myProfile?.linkedPlayer === name;
         
-        // Fetch user profile from Firebase to get jersey number and captain status
-        let jerseyNum = (index + 1); // Default fallback
+        let jerseyNum = (index + 1);
         let isCaptain = false;
         
         try {
           const playerProfile = await window.FirebaseRoster.getUserProfile(player.playerId);
           if (playerProfile.success && playerProfile.data) {
-            // Get number from user profile (stored as string like "54", "13")
             if (playerProfile.data.number) {
               jerseyNum = parseInt(playerProfile.data.number) || (index + 1);
             }
-            // Get captain status
             isCaptain = playerProfile.data.isCaptain || false;
           }
         } catch (error) {
@@ -411,23 +394,19 @@ function RosterManagement({ currentUser }) {
         };
       });
       
-      // Wait for all player profiles to load
       const formattedPlayers = await Promise.all(formattedPlayersPromises);
       
-      // Sort by name
       formattedPlayers.sort((a, b) => a.name.localeCompare(b.name));
       
       setPlayers(formattedPlayers);
       console.log('✅ Formatted players:', formattedPlayers.length);
       console.log('Sample player:', formattedPlayers[0]);
       
-      // Get upcoming games for this team
       const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(
         selectedTeam,
         currentSeason.id
       );
       
-      // Helper function to capitalize team names
       const capitalizeTeamName = (name) => {
         if (!name) return '';
         return name.charAt(0).toUpperCase() + name.slice(1);
@@ -438,7 +417,6 @@ function RosterManagement({ currentUser }) {
           ? new Date(game.date.seconds * 1000).toLocaleDateString()
           : game.date;
         
-        // Determine home/away and opponent
         const teamLower = selectedTeam.toLowerCase();
         const homeTeamLower = (game.homeTeam || game.homeTeamId || '').toLowerCase();
         const awayTeamLower = (game.awayTeam || game.awayTeamId || '').toLowerCase();
@@ -460,7 +438,6 @@ function RosterManagement({ currentUser }) {
       
       setGames(formattedGames);
       
-      // Auto-select first game if available
       if (formattedGames.length > 0 && !selectedGame) {
         setSelectedGame(formattedGames[0].id);
       }
@@ -475,27 +452,24 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading game data for:', selectedGame);
       
-    // Load RSVPs for ALL games upfront, not just selected game
-    const allRsvpsPromises = games.map(game => 
-      window.FirebaseRoster.getGameRSVPs(game.id)
-    );
-	
-	 const allRsvpsResults = await Promise.all(allRsvpsPromises);
-	
-    // Convert all RSVPs to UI format (playerId-gameId keys)
-    const formattedRsvps = {};
-    games.forEach((game, gameIndex) => {
-      const gameRsvps = allRsvpsResults[gameIndex];
-      players.forEach(player => {
-        const key = `${player.id}-${game.id}`;
-        const userRsvp = gameRsvps[player.id];
-        formattedRsvps[key] = userRsvp?.status || 'none';
-      });
-    });
-    
-    setRsvps(prev => ({ ...prev, ...formattedRsvps }));
+      const allRsvpsPromises = games.map(game => 
+        window.FirebaseRoster.getGameRSVPs(game.id)
+      );
       
-      // Load lineup data if user is captain
+      const allRsvpsResults = await Promise.all(allRsvpsPromises);
+      
+      const formattedRsvps = {};
+      games.forEach((game, gameIndex) => {
+        const gameRsvps = allRsvpsResults[gameIndex];
+        players.forEach(player => {
+          const key = `${player.id}-${game.id}`;
+          const userRsvp = gameRsvps[player.id];
+          formattedRsvps[key] = userRsvp?.status || 'none';
+        });
+      });
+      
+      setRsvps(prev => ({ ...prev, ...formattedRsvps }));
+      
       if (isCaptain) {
         const [batting, fielding, bench] = await Promise.all([
           window.FirebaseRoster.getBattingOrder(selectedGame, selectedTeam),
@@ -503,7 +477,6 @@ function RosterManagement({ currentUser }) {
           window.FirebaseRoster.getBenchPlayers(selectedGame, selectedTeam)
         ]);
         
-        // Convert player IDs to player objects
         const battingWithPlayers = batting.map(playerId => 
           players.find(p => p.id === playerId) || null
         );
@@ -513,7 +486,6 @@ function RosterManagement({ currentUser }) {
         setBenchPlayers({ ...benchPlayers, [selectedGame]: bench });
       }
       
-      // Set up real-time listeners for ALL games
       const unsubscribes = games.map(game => 
         window.FirebaseRoster.listenToGameRSVPs(
           game.id,
@@ -529,7 +501,6 @@ function RosterManagement({ currentUser }) {
         )
       );
       
-      // Store unsubscribe functions for cleanup
       return () => {
         unsubscribes.forEach(unsub => unsub());
       };
@@ -540,7 +511,6 @@ function RosterManagement({ currentUser }) {
   }
 
   const handleRSVPClick = async (playerId, gameId) => {
-    // FIX #5: Only allow captain or the player themselves to change RSVP
     const canEdit = isCaptain || userProfile?.linkedPlayer === players.find(p => p.id === playerId)?.name;
     if (!canEdit) {
       console.log('❌ Cannot edit RSVP');
@@ -553,13 +523,10 @@ function RosterManagement({ currentUser }) {
     const currentIndex = statuses.indexOf(status);
     const nextStatus = statuses[(currentIndex + 1) % statuses.length];
     
-    // Optimistically update UI
     setRsvps({ ...rsvps, [key]: nextStatus });
     
-    // Find player info
     const player = players.find(p => p.id === playerId);
     
-    // Save to Firebase
     try {
       await window.FirebaseRoster.updateRSVP(
         gameId,
@@ -570,7 +537,6 @@ function RosterManagement({ currentUser }) {
       );
     } catch (error) {
       console.error('Error updating RSVP:', error);
-      // Revert on error
       setRsvps({ ...rsvps, [key]: status });
       alert('Failed to update RSVP. Please try again.');
     }
@@ -617,7 +583,6 @@ function RosterManagement({ currentUser }) {
       newBattingOrder[selectedGame][target.position] = draggedPlayer;
       setBattingOrder(newBattingOrder);
       
-      // Save to Firebase
       saveLineupData('batting', newBattingOrder[selectedGame]);
       
     } else if (target.type === 'fielding') {
@@ -655,7 +620,6 @@ function RosterManagement({ currentUser }) {
       newFieldingPositions[selectedGame][target.inning][target.position] = draggedPlayer;
       setFieldingPositions(newFieldingPositions);
       
-      // Save to Firebase
       saveLineupData('fielding', newFieldingPositions[selectedGame], target.inning);
       
     } else if (target.type === 'bench') {
@@ -682,7 +646,6 @@ function RosterManagement({ currentUser }) {
       newBenchPlayers[selectedGame][target.inning].splice(target.benchIndex, 0, draggedPlayer);
       setBenchPlayers(newBenchPlayers);
       
-      // Save to Firebase
       saveLineupData('bench', newBenchPlayers[selectedGame], target.inning);
     }
 
@@ -697,7 +660,6 @@ function RosterManagement({ currentUser }) {
     
     try {
       if (type === 'batting') {
-        // Convert player objects to IDs
         const playerIds = data.map(p => p?.id || null);
         await window.FirebaseRoster.saveBattingOrder(
           selectedGame,
@@ -830,7 +792,6 @@ function RosterManagement({ currentUser }) {
     return rsvps[key] === 'yes';
   }) : [];
 
-  // Filter available players for batting (exclude those already in batting order)
   const availableForBatting = availablePlayers.filter(player => {
     return !gameBattingOrder.some(p => p && p.id === player.id);
   });
@@ -843,13 +804,12 @@ function RosterManagement({ currentUser }) {
   const gameBenchPlayers = benchPlayers[selectedGame] || {};
 
   if (loading) {
-    return null; // Loading overlay is shown
+    return null;
   }
 
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', minHeight: '100vh', padding: '2rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Back to Home Button */}
         <div style={{ marginBottom: '1rem' }}>
           <a href="index.html" className="back-btn" style={{ textDecoration: 'none' }}>
             <span>←</span> Back to Home
@@ -864,7 +824,6 @@ function RosterManagement({ currentUser }) {
           </p>
         </div>
 
-        {/* Team Selection and User Info */}
         <div style={{ background: 'var(--card-bg)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -892,7 +851,6 @@ function RosterManagement({ currentUser }) {
           )}
         </div>
 
-        {/* RSVP Table */}
         {selectedTeam && players.length > 0 && games.length > 0 && (
           <>
             <div style={{ background: 'var(--card-bg)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
@@ -911,7 +869,6 @@ function RosterManagement({ currentUser }) {
                   </thead>
                   <tbody>
                     {players.map(player => {
-                      // FIX #3: Check using linkedPlayer name, not player.id
                       const isCurrentUserRow = userProfile?.linkedPlayer === player.name;
                       return (
                         <tr key={player.id} style={{ background: isCurrentUserRow ? '#eff6ff' : 'white', borderLeft: isCurrentUserRow ? '4px solid var(--primary-color)' : 'none' }}>
@@ -933,7 +890,6 @@ function RosterManagement({ currentUser }) {
                             const key = `${player.id}-${game.id}`;
                             const status = rsvps[key] || 'none';
                             const statusInfo = RSVP_STATUS[status];
-                            // FIX #4: Check using linkedPlayer name, not player.id
                             const canEdit = isCaptain || userProfile?.linkedPlayer === player.name;
                             
                             return (
@@ -955,7 +911,6 @@ function RosterManagement({ currentUser }) {
               </div>
             </div>
 
-            {/* Warnings */}
             {selectedGame && (belowMinimum || catcherDisabled) && (
               <div style={{ marginBottom: '2rem' }}>
                 {belowMinimum && (
@@ -981,7 +936,6 @@ function RosterManagement({ currentUser }) {
               </div>
             )}
 
-            {/* Lineup Management (Captain Only) */}
             {isCaptain && (
               <div style={{ background: 'var(--card-bg)', padding: '1.5rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
                 <div style={{ marginBottom: '1.5rem', padding: '0.75rem 1rem', borderRadius: '12px', background: '#eff6ff',
@@ -1008,7 +962,6 @@ function RosterManagement({ currentUser }) {
 
                 {selectedGame && (
                   <>
-                    {/* Batting Order */}
                     <div style={{ marginBottom: '2rem' }}>
                       <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>Batting Order</h2>
                       <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '1rem' }}>
@@ -1060,11 +1013,9 @@ function RosterManagement({ currentUser }) {
                       </div>
                     </div>
 
-                    {/* Defensive Positions */}
                     <div>
                       <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>Defensive Positions by Inning</h2>
                       <div style={{ display: 'flex', gap: '1.5rem' }}>
-                        {/* Available Players for Defense */}
                         <div style={{ minWidth: '250px', maxWidth: '250px' }}>
                           <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
                             Available Players ({availablePlayers.length})
@@ -1077,7 +1028,6 @@ function RosterManagement({ currentUser }) {
                           </div>
                         </div>
                         
-                        {/* Defense Table */}
                         <div style={{ flex: 1, overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                             <thead>
@@ -1186,7 +1136,22 @@ function RosterManagement({ currentUser }) {
                       </div>
                     </div>
                   </>
-				  }
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {!selectedTeam && (
+          <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ marginTop: 0, color: 'var(--text-dark)' }}>Welcome to Roster Management</h3>
+            <p style={{ color: 'var(--text-light)' }}>Select your team to get started with RSVPs and lineup management</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 </script>
 </body>
 </html>
