@@ -438,7 +438,7 @@ function RosterManagement({ currentUser }) {
         const awayTeamLower = (game.awayTeam || game.awayTeamId || '').toLowerCase();
         
         const isHome = homeTeamLower === teamLower;
-        const opponent = isHome ? (game.awayTeam || game.awayTeamId) : (game.homeTeam || game.homeTeamId);
+        const opponentRaw = isHome ? (game.awayTeam || game.awayTeamId) : (game.homeTeam || game.homeTeamId);
         const opponent = capitalizeTeamName(opponentRaw)
 		
         return {
