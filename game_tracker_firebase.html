@@ -775,7 +775,8 @@
                         <div>
                             <div className="text-sm opacity-90">Inning</div>
                             <div className="text-2xl font-bold">
-                                {gameState.isYourTeamBatting ? '▲' : '▼'} {gameState.inning}
+                                {/* Show ▲ for top (away batting) and ▼ for bottom (home batting) */}
+                                {(isHome && !gameState.isYourTeamBatting) || (!isHome && gameState.isYourTeamBatting) ? '▲' : '▼'} {gameState.inning}
                             </div>
                             <div className="text-xs opacity-75 mt-1">
                                 {gameState.isYourTeamBatting ? `${selectedTeam} Batting` : `${opponentName} Batting`}
