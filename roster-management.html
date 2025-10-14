@@ -283,7 +283,7 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading team data for:', selectedTeam);
       
-      // FIX #2: Use getSeasonPlayerStatsOptimized instead of getAllPlayerStatsOptimized
+      // Get season players from Firebase
       const seasonPlayers = await window.FirebaseRoster.getSeasonPlayerStatsOptimized(currentSeason.id);
       console.log('📊 All season players:', seasonPlayers.length);
       
@@ -299,15 +299,15 @@ function RosterManagement({ currentUser }) {
       // Get current user's profile to identify them
       const myProfile = userProfile;
       
-      // Format players
-      const formattedPlayers = filteredPlayers.map((player, index) => {
+      // For each player, fetch their user profile to get jersey number
+      const formattedPlayersPromises = filteredPlayers.map(async (player, index) => {
         const name = player.name || player.playerName;
         const nameParts = name.trim().split(' ');
         const avatar = nameParts.length > 1 ?
           (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() :
           name.substring(0, 2).toUpperCase();
         
-        // FIX #2: Use player.battingAverage directly, not player.career?.battingAverage
+        // Get batting average
         const battingAvg = player.battingAverage
           ? player.battingAverage.toFixed(3)
           : '.000';
@@ -315,14 +315,25 @@ function RosterManagement({ currentUser }) {
         // Check if this player IS the current logged-in user by matching names
         const isCurrentUser = myProfile?.linkedPlayer === name;
         
-        // Jersey number: Try userProfile's number field if it's the current user, otherwise sequential
-        let jerseyNum = (index + 1);
-        if (isCurrentUser && myProfile?.number) {
-          // Parse the number from string to integer
-          jerseyNum = parseInt(myProfile.number) || (index + 1);
+        // Fetch user profile from Firebase to get jersey number and captain status
+        let jerseyNum = (index + 1); // Default fallback
+        let isCaptain = false;
+        
+        try {
+          const playerProfile = await window.FirebaseRoster.getUserProfile(player.playerId);
+          if (playerProfile.success && playerProfile.data) {
+            // Get number from user profile (stored as string like "54", "13")
+            if (playerProfile.data.number) {
+              jerseyNum = parseInt(playerProfile.data.number) || (index + 1);
+            }
+            // Get captain status
+            isCaptain = playerProfile.data.isCaptain || false;
+          }
+        } catch (error) {
+          console.warn(`Could not load profile for ${name}:`, error);
         }
         
-        console.log(`Player ${name}: jersey=${jerseyNum}, isMe=${isCurrentUser}, isCaptain=${isCurrentUser && myProfile?.isCaptain}`);
+        console.log(`Player ${name}: jersey=${jerseyNum}, isMe=${isCurrentUser}, isCaptain=${isCaptain}`);
         
         return {
           id: player.playerId || player.id,
@@ -330,10 +341,16 @@ function RosterManagement({ currentUser }) {
           jersey: jerseyNum,
           avatar,
           battingAvg,
-          isCaptain: isCurrentUser ? (myProfile?.isCaptain || false) : false,
+          isCaptain: isCaptain,
           isMe: isCurrentUser
         };
-      }).sort((a, b) => a.name.localeCompare(b.name));
+      });
+      
+      // Wait for all player profiles to load
+      const formattedPlayers = await Promise.all(formattedPlayersPromises);
+      
+      // Sort by name
+      formattedPlayers.sort((a, b) => a.name.localeCompare(b.name));
       
       setPlayers(formattedPlayers);
       console.log('✅ Formatted players:', formattedPlayers.length);
