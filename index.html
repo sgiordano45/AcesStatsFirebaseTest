@@ -1919,7 +1919,8 @@ if (rsvpCardStats) {
   // News Banner - CONVERTED TO FIREBASE
   import {
     getCurrentSeason,
-    getSeasonGames
+    getSeasonGames,
+    getSeasonPreviews  // ADD THIS IMPORT
   } from './firebase-data.js';
 
   const announcements = [
@@ -1937,12 +1938,12 @@ if (rsvpCardStats) {
       const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
       
       const currentSeasonData = await getCurrentSeason();
-      const seasonGames = await getSeasonGames(currentSeasonData.id);
+      const [seasonGames, previews] = await Promise.all([
+        getSeasonGames(currentSeasonData.id),
+        getSeasonPreviews(currentSeasonData.id)  // USE FIREBASE FUNCTION
+      ]);
       
-      const previewsResponse = await fetch('previews.json').catch(() => ({ ok: false }));
-      const previews = previewsResponse.ok ? await previewsResponse.json() : [];
-      
-      console.log(`✅ Loaded ${seasonGames.length} games for banner`);
+      console.log(`✅ Loaded ${seasonGames.length} games and ${previews.length} previews for banner`);
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -1984,9 +1985,10 @@ if (rsvpCardStats) {
         className: 'news-score'
       }));
       
+      // Filter previews for upcoming games
       const upcomingGames = previews
-        .filter(game => {
-          const gameDate = new Date(game.date);
+        .filter(preview => {
+          const gameDate = new Date(preview.date);
           return gameDate >= today;
         })
         .sort((a, b) => new Date(a.date) - new Date(b.date))
