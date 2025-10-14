@@ -421,6 +421,12 @@ function RosterManagement({ currentUser }) {
         currentSeason.id
       );
       
+	        // Helper function to capitalize team names
+      const capitalizeTeamName = (name) => {
+        if (!name) return '';
+        return name.charAt(0).toUpperCase() + name.slice(1);
+      };
+	  
       const formattedGames = upcomingGames.map(game => {
         const gameDate = game.date.seconds
           ? new Date(game.date.seconds * 1000).toLocaleDateString()
@@ -433,12 +439,13 @@ function RosterManagement({ currentUser }) {
         
         const isHome = homeTeamLower === teamLower;
         const opponent = isHome ? (game.awayTeam || game.awayTeamId) : (game.homeTeam || game.homeTeamId);
-        
+        const opponent = capitalizeTeamName(opponentRaw)
+		
         return {
           id: game.id,
           date: gameDate,
-          homeTeam: game.homeTeam || game.homeTeamId,
-          awayTeam: game.awayTeam || game.awayTeamId,
+          homeTeam: capitalizeTeamName(game.homeTeam || game.homeTeamId),
+          awayTeam: capitalizeTeamName(game.awayTeam || game.awayTeamId),
           opponent: opponent,
           gameType: game.gameType || 'Regular',
           isHome: isHome
