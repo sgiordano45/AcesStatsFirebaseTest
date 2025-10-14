@@ -1236,8 +1236,8 @@
 
                     {gameState.isYourTeamBatting && (
                         <>
-                            <div className="flex gap-6 mb-8">
-                                <div className={`relative w-full max-w-lg bg-green-800 rounded-xl p-8 ${pendingPlay ? 'border-4 border-amber-400' : ''} ${inningOver && !pendingPlay ? 'opacity-50' : 'opacity-100'}`}>
+                            <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                                <div className={`relative w-full lg:max-w-lg bg-green-800 rounded-xl p-8 ${pendingPlay ? 'border-4 border-amber-400' : ''} ${inningOver && !pendingPlay ? 'opacity-50' : 'opacity-100'}`}>
                                 <svg viewBox="0 0 400 400" className="w-full h-auto">
                                     <polygon 
                                         points="200,80 320,200 200,320 80,200" 
