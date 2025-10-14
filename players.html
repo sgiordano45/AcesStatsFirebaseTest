@@ -781,6 +781,7 @@ body {
       
       if (!playerTeams[p.name]) {
         playerTeams[p.name] = {
+		  id: p.id || p.playerId || p.userId,  // ← ADD THIS LINE
           name: p.name,
           team: p.team,
           year: p.year,
