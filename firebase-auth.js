@@ -183,7 +183,17 @@ export async function updateUserProfile(userId, updates) {
 export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = false) {
   try {
     const user = auth.currentUser;
-    
+    // Update auth user's display name to match player profile
+if (playerName && user) {
+  try {
+    await updateProfile(user, { displayName: playerName });
+    console.log('✅ Updated auth displayName to:', playerName);
+  } catch (profileUpdateError) {
+    console.error('⚠️ Could not update auth profile:', profileUpdateError);
+  }
+}
+	
+	
     let existingPlayerData = null;
     let playerUserId = null;
     
@@ -207,7 +217,8 @@ export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = f
     
     const userRef = doc(db, 'users', userId);
     const updateData = {
-      linkedPlayer: playerName,
+      displayName: playerName,  // ADD THIS LINE
+	  linkedPlayer: playerName,
       linkedTeam: teamId,
       isCaptain: isCaptain,
       updatedAt: serverTimestamp()
