@@ -277,13 +277,18 @@ function RosterManagement({ currentUser }) {
     }
   }, [selectedTeam, currentSeason]);
 
-  // Load game-specific data when game changes
+  // Load game-specific data when game OR team changes
   useEffect(() => {
-    if (selectedGame && selectedTeam) {
-      loadGameData();
+    if (games.length > 0 && selectedTeam && players.length > 0) {
+      const cleanup = loadGameData();
+      return () => {
+        // Cleanup listeners when component unmounts or dependencies change
+        if (cleanup && typeof cleanup.then === 'function') {
+          cleanup.then(unsubscribe => unsubscribe && unsubscribe());
+        }
+      };
     }
-  }, [selectedGame, selectedTeam]);
-
+  }, [games, selectedTeam, players]);
   async function loadInitialData() {
     try {
       console.log('📄 Loading initial data...');
@@ -469,18 +474,22 @@ function RosterManagement({ currentUser }) {
     try {
       console.log('📄 Loading game data for:', selectedGame);
       
-      // Get RSVPs for this game
-      const gameRsvps = await window.FirebaseRoster.getGameRSVPs(selectedGame);
-      
-      // Convert to UI format (playerId-gameId keys)
-      const formattedRsvps = {};
+    // Load RSVPs for ALL games upfront, not just selected game
+    const allRsvpsPromises = games.map(game => 
+      window.FirebaseRoster.getGameRSVPs(game.id)
+    );
+    // Convert all RSVPs to UI format (playerId-gameId keys)
+    const formattedRsvps = {};
+    games.forEach((game, gameIndex) => {
+      const gameRsvps = allRsvpsResults[gameIndex];
       players.forEach(player => {
-        const key = `${player.id}-${selectedGame}`;
+        const key = `${player.id}-${game.id}`;
         const userRsvp = gameRsvps[player.id];
         formattedRsvps[key] = userRsvp?.status || 'none';
       });
-      
-      setRsvps(prev => ({ ...prev, ...formattedRsvps }));
+    });
+    
+    setRsvps(prev => ({ ...prev, ...formattedRsvps }));
       
       // Load lineup data if user is captain
       if (isCaptain) {
@@ -500,22 +509,26 @@ function RosterManagement({ currentUser }) {
         setBenchPlayers({ ...benchPlayers, [selectedGame]: bench });
       }
       
-      // Set up real-time listener for RSVPs
-      const unsubscribe = window.FirebaseRoster.listenToGameRSVPs(
-        selectedGame,
-        (updatedRsvps) => {
-          const formattedRsvps = {};
-          players.forEach(player => {
-            const key = `${player.id}-${selectedGame}`;
-            const userRsvp = updatedRsvps[player.id];
-            formattedRsvps[key] = userRsvp?.status || 'none';
-          });
-          setRsvps(prev => ({ ...prev, ...formattedRsvps }));
-        }
+      // Set up real-time listeners for ALL games
+      const unsubscribes = games.map(game => 
+        window.FirebaseRoster.listenToGameRSVPs(
+          game.id,
+          (updatedRsvps) => {
+            const formattedRsvps = {};
+            players.forEach(player => {
+              const key = `${player.id}-${game.id}`;
+              const userRsvp = updatedRsvps[player.id];
+              formattedRsvps[key] = userRsvp?.status || 'none';
+            });
+            setRsvps(prev => ({ ...prev, ...formattedRsvps }));
+          }
+        )
       );
       
-      // Store unsubscribe function
-      return () => unsubscribe();
+      // Store unsubscribe functions for cleanup
+      return () => {
+        unsubscribes.forEach(unsub => unsub());
+      };
       
     } catch (error) {
       console.error('❌ Error loading game data:', error);
