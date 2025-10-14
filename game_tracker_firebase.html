@@ -35,6 +35,171 @@
         import { getCurrentUser, onAuthChange, getUserProfile } from './firebase-auth.js';
         import { getCurrentSeason, getAllTeams, getSeasonPlayerStatsOptimized } from './firebase-data.js';
         import { getUpcomingTeamGames, getBattingOrder } from './firebase-roster.js';
+        import { doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { db } from './firebase-data.js';
+
+        // Save game state to Firebase
+        async function saveGameState(gameId, teamId, gameState, battingOrder) {
+            try {
+                const stateRef = doc(db, 'gameStates', `${gameId}_${teamId}`);
+                await setDoc(stateRef, {
+                    gameState,
+                    battingOrder: battingOrder.map(p => p.id),
+                    savedAt: serverTimestamp()
+                });
+                console.log('💾 Game state saved');
+            } catch (error) {
+                console.error('Error saving game state:', error);
+            }
+        }
+
+        // Load game state from Firebase
+        async function loadGameState(gameId, teamId) {
+            try {
+                const stateRef = doc(db, 'gameStates', `${gameId}_${teamId}`);
+                const stateDoc = await getDoc(stateRef);
+                
+                if (stateDoc.exists()) {
+                    console.log('✅ Found saved game state');
+                    return stateDoc.data();
+                }
+                return null;
+            } catch (error) {
+                console.error('Error loading game state:', error);
+                return null;
+            }
+        }
+
+        // Delete game state from Firebase
+        async function clearGameState(gameId, teamId) {
+            try {
+                const stateRef = doc(db, 'gameStates', `${gameId}_${teamId}`);
+                await setDoc(stateRef, {
+                    cleared: true,
+                    clearedAt: serverTimestamp()
+                });
+                console.log('🗑️ Game state cleared');
+            } catch (error) {
+                console.error('Error clearing game state:', error);
+            }
+        }
+
+        // Calculate batting stats from play history
+        function calculateBattingStats(playHistory, battingOrder) {
+            const playerStats = {};
+            
+            // Initialize stats for all players in the batting order
+            battingOrder.forEach(player => {
+                playerStats[player.id] = {
+                    playerId: player.id,
+                    playerName: player.name,
+                    atBats: 0,
+                    hits: 0,
+                    singles: 0,
+                    doubles: 0,
+                    triples: 0,
+                    homeRuns: 0,
+                    walks: 0,
+                    strikeouts: 0,
+                    rbi: 0,
+                    runs: 0,
+                    battingAverage: 0,
+                    onBasePercentage: 0,
+                    sluggingPercentage: 0
+                };
+            });
+            
+            // Process each play
+            playHistory.forEach(play => {
+                const playerId = battingOrder.find(p => p.name === play.batter)?.id;
+                if (!playerId || !playerStats[playerId]) return;
+                
+                const stats = playerStats[playerId];
+                
+                // Count at-bats (everything except walks and sac flies)
+                if (play.playType !== 'walk' && play.playType !== 'sacfly') {
+                    stats.atBats++;
+                }
+                
+                // Count hits
+                if (play.playType === 'single') {
+                    stats.hits++;
+                    stats.singles++;
+                } else if (play.playType === 'double') {
+                    stats.hits++;
+                    stats.doubles++;
+                } else if (play.playType === 'triple') {
+                    stats.hits++;
+                    stats.triples++;
+                } else if (play.playType === 'homerun') {
+                    stats.hits++;
+                    stats.homeRuns++;
+                } else if (play.playType === 'walk') {
+                    stats.walks++;
+                } else if (play.playType === 'strikeout') {
+                    stats.strikeouts++;
+                }
+                
+                // Count RBIs (runs scored on this play)
+                if (play.runsScored > 0) {
+                    stats.rbi += play.runsScored;
+                }
+            });
+            
+            // Calculate derived stats
+            Object.values(playerStats).forEach(stats => {
+                // Batting Average
+                if (stats.atBats > 0) {
+                    stats.battingAverage = stats.hits / stats.atBats;
+                }
+                
+                // On-Base Percentage
+                const plateAppearances = stats.atBats + stats.walks;
+                if (plateAppearances > 0) {
+                    stats.onBasePercentage = (stats.hits + stats.walks) / plateAppearances;
+                }
+                
+                // Slugging Percentage
+                if (stats.atBats > 0) {
+                    const totalBases = stats.singles + (stats.doubles * 2) + (stats.triples * 3) + (stats.homeRuns * 4);
+                    stats.sluggingPercentage = totalBases / stats.atBats;
+                }
+            });
+            
+            return Object.values(playerStats);
+        }
+
+        // Save game results to Firebase
+        async function saveGameResults(gameId, teamId, seasonId, gameState, battingOrder, isHome, opponentName) {
+            try {
+                // Calculate batting stats
+                const battingStats = calculateBattingStats(gameState.playHistory, battingOrder);
+                
+                // Save to gameResults collection
+                const resultsRef = doc(db, 'gameResults', `${gameId}_${teamId}`);
+                await setDoc(resultsRef, {
+                    gameId,
+                    teamId,
+                    seasonId,
+                    opponentName,
+                    isHome,
+                    finalScore: {
+                        yourTeam: gameState.score.yourTeam,
+                        opponent: gameState.score.opponent
+                    },
+                    innings: gameState.inning,
+                    battingStats,
+                    playByPlay: gameState.playHistory,
+                    completedAt: serverTimestamp()
+                });
+                
+                console.log('✅ Game results saved with batting stats');
+                return { success: true, battingStats };
+            } catch (error) {
+                console.error('Error saving game results:', error);
+                return { success: false, error };
+            }
+        }
 
         // Make functions available globally for React component
         window.FirebaseGameTracker = {
@@ -45,7 +210,11 @@
             getAllTeams,
             getSeasonPlayerStatsOptimized,
             getUpcomingTeamGames,
-            getBattingOrder
+            getBattingOrder,
+            saveGameState,
+            loadGameState,
+            clearGameState,
+            saveGameResults
         };
 
         // Wait for auth state to be determined before signaling ready
@@ -168,6 +337,22 @@
                 }
             }, [selectedTeam, currentSeason]);
 
+            // Auto-save game state whenever it changes
+            useEffect(() => {
+                if (!setupMode && selectedGame && selectedTeam && gameState.gameActive) {
+                    const saveTimer = setTimeout(() => {
+                        window.FirebaseGameTracker.saveGameState(
+                            selectedGame.id,
+                            selectedTeam,
+                            gameState,
+                            battingOrder
+                        );
+                    }, 1000); // Debounce saves by 1 second
+                    
+                    return () => clearTimeout(saveTimer);
+                }
+            }, [gameState, setupMode, selectedGame, selectedTeam, battingOrder]);
+
             const loadInitialData = async () => {
                 try {
                     console.log('🔄 Loading initial data from Firebase...');
@@ -253,6 +438,12 @@
                         currentSeason.id
                     );
                     
+                    // Helper function to capitalize team names
+                    const capitalizeTeamName = (name) => {
+                        if (!name) return '';
+                        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                    };
+                    
                     const formattedGames = upcomingGames.map(game => {
                         const gameDate = game.date?.seconds
                             ? new Date(game.date.seconds * 1000).toLocaleDateString()
@@ -261,15 +452,16 @@
                         const teamLower = selectedTeam.toLowerCase();
                         const homeTeamLower = (game.homeTeam || game.homeTeamId || '').toLowerCase();
                         const isHome = homeTeamLower === teamLower;
-                        const opponent = isHome 
-                            ? (game.awayTeam || game.awayTeamId)
-                            : (game.homeTeam || game.homeTeamId);
+                        
+                        const homeTeamCapitalized = capitalizeTeamName(game.homeTeam || game.homeTeamId);
+                        const awayTeamCapitalized = capitalizeTeamName(game.awayTeam || game.awayTeamId);
+                        const opponent = isHome ? awayTeamCapitalized : homeTeamCapitalized;
                         
                         return {
                             id: game.id,
                             date: gameDate,
-                            homeTeam: game.homeTeam || game.homeTeamId,
-                            awayTeam: game.awayTeam || game.awayTeamId,
+                            homeTeam: homeTeamCapitalized,
+                            awayTeam: awayTeamCapitalized,
                             opponent,
                             isHome
                         };
@@ -301,6 +493,17 @@
                         selectedTeam
                     );
                     setLineupExists(battingOrderIds && battingOrderIds.length > 0);
+                    
+                    // Check if there's a saved game in progress
+                    const savedState = await window.FirebaseGameTracker.loadGameState(
+                        game.id,
+                        selectedTeam
+                    );
+                    
+                    if (savedState && !savedState.cleared && savedState.gameState) {
+                        console.log('📂 Found game in progress');
+                        // We'll use this in startGame
+                    }
                 } catch (error) {
                     console.error('Error checking lineup:', error);
                     setLineupExists(false);
@@ -310,6 +513,51 @@
             const startGame = async () => {
                 if (!selectedTeam || !selectedGame) return;
                 
+                // Check if there's a saved game state to resume
+                const savedState = await window.FirebaseGameTracker.loadGameState(
+                    selectedGame.id,
+                    selectedTeam
+                );
+                
+                if (savedState && !savedState.cleared && savedState.gameState) {
+                    // Ask user if they want to resume
+                    const resume = window.confirm(
+                        'A game in progress was found. Do you want to resume where you left off?\n\n' +
+                        `Inning: ${savedState.gameState.inning}\n` +
+                        `Outs: ${savedState.gameState.outs}\n` +
+                        `Score: ${savedState.gameState.score.yourTeam}\n` +
+                        `Plays recorded: ${savedState.gameState.playHistory?.length || 0}\n\n` +
+                        'Click OK to resume, or Cancel to start a new game.'
+                    );
+                    
+                    if (resume) {
+                        // Load the saved batting order
+                        const savedBattingOrderIds = savedState.battingOrder || [];
+                        const orderedPlayers = savedBattingOrderIds
+                            .map(playerId => players.find(p => p.id === playerId))
+                            .filter(p => p !== null && p !== undefined);
+                        
+                        if (orderedPlayers.length > 0) {
+                            setBattingOrder(orderedPlayers);
+                        } else {
+                            setBattingOrder(players);
+                        }
+                        
+                        // Restore the game state
+                        setGameState(savedState.gameState);
+                        setSetupMode(false);
+                        console.log('✅ Resumed game from saved state');
+                        return;
+                    } else {
+                        // User wants to start fresh - clear the saved state
+                        await window.FirebaseGameTracker.clearGameState(
+                            selectedGame.id,
+                            selectedTeam
+                        );
+                    }
+                }
+                
+                // Starting a new game
                 try {
                     // Try to load the pre-set batting order
                     const battingOrderIds = await window.FirebaseGameTracker.getBattingOrder(
@@ -634,8 +882,48 @@
                 setGameState(newState);
             };
 
-            const endGame = () => {
-                setGameState({ ...gameState, gameActive: false });
+            const endGame = async () => {
+                const confirmed = window.confirm(
+                    'Are you sure you want to end the game?\n\n' +
+                    `Final Score: ${selectedTeam} ${gameState.score.yourTeam} - ${opponentName} ${gameState.score.opponent}\n` +
+                    `Plays Recorded: ${gameState.playHistory.length}\n\n` +
+                    'This will save batting stats and clear the game tracker.'
+                );
+                
+                if (confirmed) {
+                    // Save game results with batting stats
+                    if (selectedGame && selectedTeam && currentSeason) {
+                        const result = await window.FirebaseGameTracker.saveGameResults(
+                            selectedGame.id,
+                            selectedTeam,
+                            currentSeason.id,
+                            gameState,
+                            battingOrder,
+                            isHome,
+                            opponentName
+                        );
+                        
+                        if (result.success) {
+                            alert(
+                                '✅ Game Complete!\n\n' +
+                                'Batting stats have been saved:\n' +
+                                `- ${result.battingStats.length} players tracked\n` +
+                                `- ${gameState.playHistory.length} plays recorded\n` +
+                                `- Final Score: ${gameState.score.yourTeam}-${gameState.score.opponent}`
+                            );
+                        }
+                    }
+                    
+                    setGameState({ ...gameState, gameActive: false });
+                    
+                    // Clear the saved game state
+                    if (selectedGame && selectedTeam) {
+                        await window.FirebaseGameTracker.clearGameState(
+                            selectedGame.id,
+                            selectedTeam
+                        );
+                    }
+                }
             };
 
             const displayBases = pendingPlay ? tempBases : gameState.bases;
@@ -672,7 +960,7 @@
                                 Game Tracker Setup
                             </h1>
                             <p className="text-lg text-gray-600">
-                                {currentSeason ? `${currentSeason.year} ${currentSeason.season} Season` : 'Loading...'}
+                                {currentSeason ? `${currentSeason.year} ${currentSeason.season.charAt(0).toUpperCase() + currentSeason.season.slice(1)} Season` : 'Loading...'}
                             </p>
                             {!currentUser && (
                                 <p className="text-sm text-amber-600 mt-2">
