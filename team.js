@@ -61,7 +61,8 @@ async function loadTeamData() {
               const season = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
               
               teamData.push({
-                name: playerData.name,
+                id: playerData.id || playerData.userId || playerData.playerId,  // ← ADD THIS LINE
+				name: playerData.name,
                 team: seasonStats.team,
                 year: year,
                 season: season,
@@ -102,7 +103,8 @@ async function loadTeamData() {
               const season = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
               
               teamPitchingData.push({
-                name: playerData.name,
+                id: playerData.id || playerData.userId || playerData.playerId,
+				name: playerData.name,
                 team: seasonStats.team,
                 year: year,
                 season: season,
@@ -396,7 +398,7 @@ function renderBattingTable(data) {
     row.innerHTML = `
       <td>${p.year}</td>
       <td>${p.season}</td>
-      <td><a href="player.html?id=${encodeURIComponent(player.id || player.playerId)}">${p.name}</a></td>
+      <td><a href="player.html?id=${encodeURIComponent(p.id || p.playerId)}">${p.name}</a></td>
       <td>${p.games}</td>
       <td>${p.atBats}</td>
       <td>${p.hits}</td>
