@@ -843,7 +843,7 @@ td a:hover {
       // Name (with link to player page)
       const nameCell = row.insertCell();
       const nameLink = document.createElement('a');
-      nameLink.href = `player.html?id=${encodeURIComponent(stat.playerId || stat.id)}`;
+      nameLink.href = `player.html?id=${encodeURIComponent(player.playerId || player.id)}`;
       nameLink.textContent = player.name;
       nameCell.appendChild(nameLink);
       
