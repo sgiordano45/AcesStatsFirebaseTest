@@ -236,19 +236,19 @@ export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = f
     
     await updateDoc(userRef, updateData);
     
-    if (existingPlayerData && playerUserId) {
-      try {
-        const oldPlayerRef = doc(db, 'users', playerUserId);
-        await updateDoc(oldPlayerRef, {
-          migrated: true,
-          migratedTo: userId,
-          migratedAt: serverTimestamp()
-        });
-        console.log('✅ Marked legacy profile as migrated:', playerUserId);
-      } catch (migrationError) {
-        console.warn('Could not mark legacy profile as migrated:', migrationError);
+      if (existingPlayerData && playerUserId) {
+        try {
+          const oldPlayerRef = doc(db, 'users', playerUserId);
+          await setDoc(oldPlayerRef, {
+            migrated: true,
+            migratedTo: userId,
+            migratedAt: serverTimestamp()
+          }, { merge: true });
+          console.log('✅ Marked legacy profile as migrated:', playerUserId);
+        } catch (migrationError) {
+          console.error('❌ Could not mark legacy profile as migrated:', migrationError);
+        }
       }
-    }
     
     console.log('✅ Player linked to user:', playerName, 'Team:', teamId);
     return { success: true };
