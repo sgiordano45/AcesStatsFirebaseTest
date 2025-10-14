@@ -862,7 +862,7 @@ body {
     <div class="tab-content active" id="tab-overview">
       <div class="section-card">
         <div class="section-header">
-          <h2><span class="section-icon">📈</span> Season Statistics</h2>
+          <h2><span class="section-icon">📈</span> <span id="statsHeaderTitle">Season Statistics</span></h2>
         </div>
         <div class="stats-grid">
           <div class="stat-box">
@@ -1117,6 +1117,7 @@ body {
               <label class="form-label" for="defaultSeason">Default Season</label>
               <select id="defaultSeason" class="form-select">
                 <option value="current">Current Season</option>
+                <option value="2025-summer">2025 Summer</option>
                 <option value="2024-fall">2024 Fall</option>
                 <option value="2024-summer">2024 Summer</option>
               </select>
@@ -1400,6 +1401,7 @@ body {
           document.getElementById('favoritePlayerAlerts').checked = userProfile.preferences?.favoritePlayerAlerts ?? true;
           document.getElementById('publicFavorites').checked = userProfile.preferences?.publicFavorites ?? false;
           document.getElementById('defaultStatsView').value = userProfile.preferences?.defaultStatsView || 'season';
+          document.getElementById('defaultSeason').value = userProfile.preferences?.defaultSeason || 'current';
           
           // Update these lines in loadUserProfile():
           if (userProfile.linkedPlayer) {
@@ -1436,15 +1438,15 @@ body {
         
         // Get the stats view preference
         const statsView = userProfile?.preferences?.defaultStatsView || 'season';
+        const selectedSeason = userProfile?.preferences?.defaultSeason || 'current';
         console.log('📈 Stats view preference:', statsView);
+        console.log('📅 Selected season:', selectedSeason);
+        
+        // Update the header title based on selection
+        updateStatsHeaderTitle(statsView, selectedSeason);
         
         const currentSeason = await getCurrentSeason();
         console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
-        
-        if (!currentSeason && statsView === 'season') {
-          console.log('⚠️ No current season found');
-          return;
-        }
         
         let playerStats = null;
         
@@ -1463,8 +1465,22 @@ body {
             console.warn('⚠️ Could not load career stats:', error);
           }
         } else {
-          // Load season stats (default behavior)
-          const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+          // Determine which season to load
+          let seasonToLoad = currentSeason?.id;
+          
+          if (selectedSeason !== 'current') {
+            seasonToLoad = selectedSeason;
+          }
+          
+          if (!seasonToLoad) {
+            console.log('⚠️ No season to load');
+            return;
+          }
+          
+          console.log('📊 Loading stats for season:', seasonToLoad);
+          
+          // Load season stats
+          const stats = await getSeasonPlayerStatsOptimized(seasonToLoad);
           console.log('📈 Stats loaded:', stats.length, 'players');
           console.log('🔍 Searching for player:', userProfile.linkedPlayer);
           console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
@@ -1501,7 +1517,7 @@ body {
                   console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
                   
                   const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
-                    key.startsWith(currentSeason.id)
+                    key.startsWith(seasonToLoad)
                   );
                   
                   console.log('🔍 Matching season keys:', matchingKeys);
@@ -1545,6 +1561,31 @@ body {
         document.getElementById('statAvg').textContent = '.000';
         document.getElementById('statHits').textContent = '0';
         document.getElementById('statRuns').textContent = '0';
+      }
+    }
+
+    function updateStatsHeaderTitle(statsView, selectedSeason) {
+      const headerElement = document.getElementById('statsHeaderTitle');
+      
+      if (statsView === 'career') {
+        headerElement.textContent = 'Career Statistics';
+      } else if (statsView === 'recent') {
+        headerElement.textContent = 'Recent Games';
+      } else {
+        // Season view
+        if (selectedSeason === 'current') {
+          headerElement.textContent = 'Current Season Statistics';
+        } else {
+          // Format the season name nicely
+          const seasonParts = selectedSeason.split('-');
+          if (seasonParts.length === 2) {
+            const year = seasonParts[0];
+            const season = seasonParts[1].charAt(0).toUpperCase() + seasonParts[1].slice(1);
+            headerElement.textContent = `${year} ${season} Statistics`;
+          } else {
+            headerElement.textContent = 'Season Statistics';
+          }
+        }
       }
     }
 
@@ -1783,6 +1824,32 @@ body {
         }
       } catch (error) {
         console.error('Error updating stats view:', error);
+      }
+    });
+
+    // Handle default season preference changes
+    document.getElementById('defaultSeason').addEventListener('change', async (e) => {
+      const selectedSeason = e.target.value;
+      
+      try {
+        // Save preference
+        const result = await updateUserProfileAuth(currentUser.uid, { 
+          preferences: { 
+            ...userProfile.preferences,
+            defaultSeason: selectedSeason 
+          }
+        });
+        
+        if (result.success) {
+          userProfile.preferences = userProfile.preferences || {};
+          userProfile.preferences.defaultSeason = selectedSeason;
+          
+          // Reload stats with new season
+          await loadUserStats(currentUser);
+          showSuccessMessage('successMessagePreferences');
+        }
+      } catch (error) {
+        console.error('Error updating default season:', error);
       }
     });
 
