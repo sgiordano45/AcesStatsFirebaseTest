@@ -1239,17 +1239,21 @@
         personalizationSection.style.display = 'block';
         
         // Update the RSVP card stats based on captain status
-        const rsvpCardStats = document.querySelector('.harvest-card .card-stats');
-        if (rsvpCardStats) {
-          let statsHTML = '<div>📅 Update all games at once</div>';
-          
-          if (isCaptain) {
-            statsHTML += '<div>📌 Set Batting Line-Ups</div>';
-            statsHTML += '<div>🔔 Preset your Defense Rotation</div>';
-          }
-          
-          rsvpCardStats.innerHTML = statsHTML;
-        }
+// Update the RSVP card stats based on captain status
+const rsvpCardStats = document.querySelector('#personalizationSection .harvest-card .card-stats');
+if (rsvpCardStats) {
+  let statsHTML = '<div>📅 Update all games at once</div>';
+  
+  if (isCaptain) {
+    statsHTML += '<div>📌 Set Batting Line-Ups</div>';
+    statsHTML += '<div>🔔 Preset your Defense Rotation</div>';
+  }
+  
+  rsvpCardStats.innerHTML = statsHTML;
+  console.log('✅ RSVP card updated. Captain features:', isCaptain ? 'shown' : 'hidden');
+} else {
+  console.warn('⚠️ Could not find RSVP card stats element');
+}
       }
       
       // Update desktop auth section with preferred name
