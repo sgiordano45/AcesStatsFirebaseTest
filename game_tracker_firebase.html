@@ -347,7 +347,7 @@
                             gameState,
                             battingOrder
                         );
-                    }, 1000); // Debounce saves by 1 second
+                    }, 1000);
                     
                     return () => clearTimeout(saveTimer);
                 }
@@ -355,16 +355,14 @@
 
             const loadInitialData = async () => {
                 try {
-                    console.log('🔄 Loading initial data from Firebase...');
+                    console.log('📄 Loading initial data from Firebase...');
                     
-                    // Check auth state using the stored user
                     const user = window.getCurrentFirebaseUser ? window.getCurrentFirebaseUser() : null;
                     setCurrentUser(user);
                     
                     if (user) {
                         console.log('✅ Signed in as:', user.displayName || user.email);
                         
-                        // Get user profile to find their linked team
                         try {
                             const profileResult = await window.FirebaseGameTracker.getUserProfile(user.uid);
                             if (profileResult.success && profileResult.data?.linkedTeam) {
@@ -378,12 +376,10 @@
                         console.log('ℹ️ Not signed in');
                     }
                     
-                    // Get current season
                     const seasonData = await window.FirebaseGameTracker.getCurrentSeason();
                     setCurrentSeason(seasonData);
                     console.log('✅ Current season:', seasonData);
                     
-                    // Get all teams
                     const teams = await window.FirebaseGameTracker.getAllTeams();
                     const teamNames = teams.map(t => t.name || t.id).sort();
                     setAllTeams(teamNames);
@@ -399,9 +395,8 @@
 
             const loadTeamData = async () => {
                 try {
-                    console.log('🔄 Loading team data for:', selectedTeam);
+                    console.log('📄 Loading team data for:', selectedTeam);
                     
-                    // Get all players for this team in current season
                     const seasonPlayers = await window.FirebaseGameTracker.getSeasonPlayerStatsOptimized(
                         currentSeason.id
                     );
@@ -412,7 +407,6 @@
                     
                     console.log('📊 Team players:', teamPlayers.length);
                     
-                    // Format players for the game tracker
                     const formattedPlayers = teamPlayers.map((player, index) => {
                         const name = player.name || player.playerName;
                         const nameParts = name.trim().split(' ');
@@ -432,13 +426,11 @@
                     
                     setPlayers(formattedPlayers);
                     
-                    // Get upcoming games for this team
                     const upcomingGames = await window.FirebaseGameTracker.getUpcomingTeamGames(
                         selectedTeam,
                         currentSeason.id
                     );
                     
-                    // Helper function to capitalize team names
                     const capitalizeTeamName = (name) => {
                         if (!name) return '';
                         return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -486,7 +478,6 @@
                 const teamIsHome = game.homeTeam?.toLowerCase() === selectedTeam.toLowerCase();
                 setIsHome(teamIsHome);
                 
-                // Check if a lineup exists for this game
                 try {
                     const battingOrderIds = await window.FirebaseGameTracker.getBattingOrder(
                         game.id,
@@ -494,7 +485,6 @@
                     );
                     setLineupExists(battingOrderIds && battingOrderIds.length > 0);
                     
-                    // Check if there's a saved game in progress
                     const savedState = await window.FirebaseGameTracker.loadGameState(
                         game.id,
                         selectedTeam
@@ -502,7 +492,6 @@
                     
                     if (savedState && !savedState.cleared && savedState.gameState) {
                         console.log('📂 Found game in progress');
-                        // We'll use this in startGame
                     }
                 } catch (error) {
                     console.error('Error checking lineup:', error);
@@ -513,14 +502,12 @@
             const startGame = async () => {
                 if (!selectedTeam || !selectedGame) return;
                 
-                // Check if there's a saved game state to resume
                 const savedState = await window.FirebaseGameTracker.loadGameState(
                     selectedGame.id,
                     selectedTeam
                 );
                 
                 if (savedState && !savedState.cleared && savedState.gameState) {
-                    // Ask user if they want to resume
                     const resume = window.confirm(
                         'A game in progress was found. Do you want to resume where you left off?\n\n' +
                         `Inning: ${savedState.gameState.inning}\n` +
@@ -531,7 +518,6 @@
                     );
                     
                     if (resume) {
-                        // Load the saved batting order
                         const savedBattingOrderIds = savedState.battingOrder || [];
                         const orderedPlayers = savedBattingOrderIds
                             .map(playerId => players.find(p => p.id === playerId))
@@ -543,13 +529,11 @@
                             setBattingOrder(players);
                         }
                         
-                        // Restore the game state
                         setGameState(savedState.gameState);
                         setSetupMode(false);
                         console.log('✅ Resumed game from saved state');
                         return;
                     } else {
-                        // User wants to start fresh - clear the saved state
                         await window.FirebaseGameTracker.clearGameState(
                             selectedGame.id,
                             selectedTeam
@@ -557,16 +541,13 @@
                     }
                 }
                 
-                // Starting a new game
                 try {
-                    // Try to load the pre-set batting order
                     const battingOrderIds = await window.FirebaseGameTracker.getBattingOrder(
                         selectedGame.id,
                         selectedTeam
                     );
                     
                     if (battingOrderIds && battingOrderIds.length > 0) {
-                        // Map player IDs to full player objects
                         const orderedPlayers = battingOrderIds
                             .map(playerId => players.find(p => p.id === playerId))
                             .filter(p => p !== null && p !== undefined);
@@ -588,13 +569,6 @@
                     setBattingOrder(players);
                 }
                 
-                // Home team bats in bottom of 1st, away team bats in top of 1st
-                // If we're home and opponent is batting, that means it's TOP of 1st
-                // If we're away and opponent is batting, that means it's BOTTOM of 1st
-                // But away team always bats first (top of 1st), so:
-                // - If we're away: we bat first (top 1), isYourTeamBatting = true
-                // - If we're home: opponent bats first (top 1), isYourTeamBatting = false
-                
                 setGameState({
                     inning: 1,
                     outs: 0,
@@ -603,7 +577,7 @@
                     currentBatter: 0,
                     playHistory: [],
                     gameActive: true,
-                    isYourTeamBatting: !isHome  // Away team (not home) bats first
+                    isYourTeamBatting: !isHome
                 });
                 
                 setSetupMode(false);
@@ -696,7 +670,7 @@
                         if (newBases.second) runnersToMove.push({ runner: newBases.second, from: 'second' });
                         if (newBases.first) runnersToMove.push({ runner: newBases.first, from: 'first' });
 
-                        newBases.first = currentBatter.name;
+                        newBases.first = currentBatcher.name;
                         newBases.second = null;
                         newBases.third = null;
 
@@ -830,18 +804,13 @@
                 newState.outs = 0;
                 newState.bases = { first: null, second: null, third: null };
                 
-                // If your team was batting (and they're done), opponent bats next
                 if (newState.isYourTeamBatting) {
                     newState.isYourTeamBatting = false;
-                    // Inning number stays the same - just switching from top to bottom (or bottom to next top)
-                    // If home team just finished batting, move to next inning
                     if (isHome) {
                         newState.inning += 1;
                     }
                 } else {
-                    // Opponent was batting, now your team bats
                     newState.isYourTeamBatting = true;
-                    // If away team just finished batting, move to next inning
                     if (!isHome) {
                         newState.inning += 1;
                     }
@@ -882,6 +851,48 @@
                 setGameState(newState);
             };
 
+            const clearProgress = async () => {
+                const confirmed = window.confirm(
+                    '⚠️ Clear Game Progress?\n\n' +
+                    'This will:\n' +
+                    '- Delete all saved progress for this game\n' +
+                    '- Reset to game setup screen\n' +
+                    '- NOT save any batting stats\n\n' +
+                    `Current Progress:\n` +
+                    `- Inning: ${gameState.inning}\n` +
+                    `- Score: ${gameState.score.yourTeam}-${gameState.score.opponent}\n` +
+                    `- Plays: ${gameState.playHistory.length}\n\n` +
+                    'Are you sure you want to clear all progress?'
+                );
+                
+                if (confirmed) {
+                    if (selectedGame && selectedTeam) {
+                        await window.FirebaseGameTracker.clearGameState(
+                            selectedGame.id,
+                            selectedTeam
+                        );
+                    }
+                    
+                    setSetupMode(true);
+                    setGameState({
+                        inning: 1,
+                        outs: 0,
+                        bases: { first: null, second: null, third: null },
+                        score: { yourTeam: 0, opponent: 0 },
+                        currentBatter: 0,
+                        playHistory: [],
+                        gameActive: true,
+                        isYourTeamBatting: true
+                    });
+                    setPendingPlay(null);
+                    setTempBases(null);
+                    setTempScore(0);
+                    setTempOuts(0);
+                    
+                    alert('✅ Game progress cleared. You can start fresh or choose a different game.');
+                }
+            };
+
             const endGame = async () => {
                 const confirmed = window.confirm(
                     'Are you sure you want to end the game?\n\n' +
@@ -891,7 +902,6 @@
                 );
                 
                 if (confirmed) {
-                    // Save game results with batting stats
                     if (selectedGame && selectedTeam && currentSeason) {
                         const result = await window.FirebaseGameTracker.saveGameResults(
                             selectedGame.id,
@@ -916,7 +926,6 @@
                     
                     setGameState({ ...gameState, gameActive: false });
                     
-                    // Clear the saved game state
                     if (selectedGame && selectedTeam) {
                         await window.FirebaseGameTracker.clearGameState(
                             selectedGame.id,
@@ -930,7 +939,6 @@
             const displayScore = pendingPlay ? tempScore : 0;
             const inningOver = gameState.outs >= 3;
 
-            // Loading state
             if (loading) {
                 return (
                     <div className="max-w-4xl mx-auto p-8 text-center">
@@ -940,7 +948,6 @@
                 );
             }
 
-            // Error state
             if (error) {
                 return (
                     <div className="max-w-4xl mx-auto p-8 text-center">
@@ -951,7 +958,6 @@
                 );
             }
 
-            // Setup screen
             if (setupMode) {
                 return (
                     <div className="max-w-4xl mx-auto p-8 font-sans">
@@ -1056,7 +1062,6 @@
                 );
             }
 
-            // Game tracking screen
             return (
                 <div className="max-w-6xl mx-auto p-5 font-sans">
                     <div className="text-center mb-6">
@@ -1075,7 +1080,6 @@
                         <div>
                             <div className="text-sm opacity-90">Inning</div>
                             <div className="text-2xl font-bold">
-                                {/* Show ▲ for top (away batting) and ▼ for bottom (home batting) */}
                                 {(isHome && !gameState.isYourTeamBatting) || (!isHome && gameState.isYourTeamBatting) ? '▲' : '▼'} {gameState.inning}
                             </div>
                             <div className="text-xs opacity-75 mt-1">
@@ -1111,7 +1115,6 @@
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {/* After your team bats, opponent bats next */}
                                         {isHome ? `Top ${gameState.inning + 1} - ${opponentName} Batting` : `Bottom ${gameState.inning} - ${opponentName} Batting`}
                                     </button>
                                 </>
@@ -1127,7 +1130,6 @@
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {/* After opponent bats, your team bats next */}
                                         {isHome ? `Bottom ${gameState.inning} - ${selectedTeam} Batting` : `Top ${gameState.inning + 1} - ${selectedTeam} Batting`}
                                     </button>
                                 </>
@@ -1356,12 +1358,21 @@
                             </button>
                             
                             {gameState.gameActive && (
-                                <button
-                                    onClick={endGame}
-                                    className="px-6 py-3 border-none rounded-lg cursor-pointer bg-red-600 text-white hover:bg-red-700 transition-colors inline-flex items-center gap-2"
-                                >
-                                    <Save size={18} /> End Game
-                                </button>
+                                <>
+                                    <button
+                                        onClick={endGame}
+                                        className="px-6 py-3 border-none rounded-lg cursor-pointer bg-red-600 text-white hover:bg-red-700 transition-colors inline-flex items-center gap-2"
+                                    >
+                                        <Save size={18} /> End Game
+                                    </button>
+                                    
+                                    <button
+                                        onClick={clearProgress}
+                                        className="px-6 py-3 border-none rounded-lg cursor-pointer bg-orange-600 text-white hover:bg-orange-700 transition-colors inline-flex items-center gap-2"
+                                    >
+                                        <AlertCircle size={18} /> Clear Progress
+                                    </button>
+                                </>
                             )}
                         </div>
                     )}
@@ -1408,7 +1419,6 @@
             );
         }
 
-        // Render the app
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<GameTracker />);
     </script>
