@@ -478,6 +478,9 @@ function RosterManagement({ currentUser }) {
     const allRsvpsPromises = games.map(game => 
       window.FirebaseRoster.getGameRSVPs(game.id)
     );
+	
+	 const allRsvpsResults = await Promise.all(allRsvpsPromises);
+	
     // Convert all RSVPs to UI format (playerId-gameId keys)
     const formattedRsvps = {};
     games.forEach((game, gameIndex) => {
