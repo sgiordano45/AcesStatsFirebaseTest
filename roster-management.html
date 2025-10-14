@@ -36,6 +36,9 @@
   .table-scroll-container::-webkit-scrollbar-thumb:hover { background: #555; }
   .player-card-hover:hover .remove-btn { opacity: 1 !important; }
   .player-card-hover:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
+  .player-card-draggable { cursor: grab !important; user-select: none; }
+  .player-card-draggable:active { cursor: grabbing !important; }
+  .player-card-draggable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important; }
   .loading-overlay {
     position: fixed;
     top: 0;
@@ -109,7 +112,6 @@
 <div id="root"></div>
 
 <script type="module">
-// Import Firebase functions
 import { onAuthChange, getCurrentUser, getUserProfile } from './firebase-auth.js';
 import {
   getCurrentSeason,
@@ -129,18 +131,15 @@ import {
   getUpcomingTeamGames
 } from './firebase-roster.js';
 
-// Store unsubscribe functions
 let rsvpListeners = [];
 let appInitialized = false;
 
-// Initialize and render the app
 async function initializeApp(user) {
   if (!user) {
     window.location.href = 'signin.html';
     return;
   }
   
-  // Prevent duplicate initialization
   if (appInitialized) {
     console.log('⚠️ App already initialized, skipping');
     return;
@@ -148,10 +147,8 @@ async function initializeApp(user) {
   
   console.log('🚀 Initializing app for user:', user.displayName);
   
-  // Hide loading overlay
   document.getElementById('loadingOverlay').classList.add('hidden');
   
-  // Render the React app - MUST pass currentUser
   const container = document.getElementById('root');
   const root = ReactDOM.createRoot(container);
   root.render(React.createElement(RosterManagement, { currentUser: user }));
@@ -159,9 +156,8 @@ async function initializeApp(user) {
   appInitialized = true;
 }
 
-// Wait for auth state to be determined
 onAuthChange((user) => {
-  console.log('🔍 Auth state changed:', user ? user.displayName : 'No user');
+  console.log('🔐 Auth state changed:', user ? user.displayName : 'No user');
   if (user) {
     initializeApp(user);
   } else {
@@ -169,7 +165,6 @@ onAuthChange((user) => {
   }
 });
 
-// Make functions available globally for the React component
 window.FirebaseRoster = {
   getGameRSVPs,
   updateRSVP,
@@ -191,7 +186,6 @@ window.FirebaseRoster = {
 <script type="text/babel">
 const { useState, useEffect, useCallback } = React;
 
-// SVG Icon Components
 const AlertCircle = ({ style }) => (
   <svg style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -204,12 +198,6 @@ const Lock = ({ style }) => (
   </svg>
 );
 
-const Eye = ({ style }) => (
-  <svg style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-  </svg>
-);
-
 const Edit3 = ({ style }) => (
   <svg style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -219,12 +207,6 @@ const Edit3 = ({ style }) => (
 const X = ({ style }) => (
   <svg style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-const LogIn = ({ style }) => (
-  <svg style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
   </svg>
 );
 
@@ -262,22 +244,18 @@ function RosterManagement({ currentUser }) {
   const [currentSeason, setCurrentSeason] = useState(null);
 
   const isCaptain = userProfile?.isCaptain || false;
-  const isLoggedIn = currentUserId !== null;
   const seasonConfig = SEASONS[season];
 
-  // Load initial data
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // Load team-specific data when team changes
   useEffect(() => {
     if (selectedTeam && currentSeason) {
       loadTeamData();
     }
   }, [selectedTeam, currentSeason]);
 
-  // Load game-specific data when game OR team changes
   useEffect(() => {
     if (games.length > 0 && selectedTeam && players.length > 0) {
       const cleanup = loadGameData();
@@ -291,8 +269,6 @@ function RosterManagement({ currentUser }) {
   
   async function loadInitialData() {
     try {
-      console.log('📄 Loading initial data...');
-      
       if (!currentUser || !currentUser.uid) {
         console.error('❌ No currentUser available!');
         return;
@@ -317,18 +293,11 @@ function RosterManagement({ currentUser }) {
         setUserProfile(profileResult.data);
         setCurrentUserId(currentUser.uid);
         
-        console.log('👤 User profile loaded:', {
-          name: profileResult.data.linkedPlayer,
-          isCaptain: profileResult.data.isCaptain,
-          team: profileResult.data.linkedTeam
-        });
-        
         if (profileResult.data.linkedTeam) {
           setSelectedTeam(profileResult.data.linkedTeam);
         }
       }
       
-      console.log('✅ Initial data loaded');
       setLoading(false);
     } catch (error) {
       console.error('❌ Error loading initial data:', error);
@@ -338,18 +307,11 @@ function RosterManagement({ currentUser }) {
 
   async function loadTeamData() {
     try {
-      console.log('📄 Loading team data for:', selectedTeam);
-      
       const seasonPlayers = await window.FirebaseRoster.getSeasonPlayerStatsOptimized(currentSeason.id);
-      console.log('📊 All season players:', seasonPlayers.length);
       
       const filteredPlayers = seasonPlayers.filter(p => {
-        const teamMatch = p.team === selectedTeam;
-        const notMigrated = !p.migrated;
-        console.log(`Player: ${p.name}, team: ${p.team}, migrated: ${p.migrated}, include: ${teamMatch && notMigrated}`);
-        return teamMatch && notMigrated;
+        return p.team === selectedTeam && !p.migrated;
       });
-      console.log('📊 Filtered to team (excluding migrated):', filteredPlayers.length);
       
       const myProfile = userProfile;
       
@@ -360,10 +322,7 @@ function RosterManagement({ currentUser }) {
           (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() :
           name.substring(0, 2).toUpperCase();
         
-        const battingAvg = player.battingAverage
-          ? player.battingAverage.toFixed(3)
-          : '.000';
-        
+        const battingAvg = player.battingAverage ? player.battingAverage.toFixed(3) : '.000';
         const isCurrentUser = myProfile?.linkedPlayer === name;
         
         let jerseyNum = (index + 1);
@@ -381,8 +340,6 @@ function RosterManagement({ currentUser }) {
           console.warn(`Could not load profile for ${name}:`, error);
         }
         
-        console.log(`Player ${name}: jersey=${jerseyNum}, isMe=${isCurrentUser}, isCaptain=${isCaptain}`);
-        
         return {
           id: player.playerId || player.id,
           name,
@@ -395,17 +352,10 @@ function RosterManagement({ currentUser }) {
       });
       
       const formattedPlayers = await Promise.all(formattedPlayersPromises);
-      
       formattedPlayers.sort((a, b) => a.name.localeCompare(b.name));
-      
       setPlayers(formattedPlayers);
-      console.log('✅ Formatted players:', formattedPlayers.length);
-      console.log('Sample player:', formattedPlayers[0]);
       
-      const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(
-        selectedTeam,
-        currentSeason.id
-      );
+      const upcomingGames = await window.FirebaseRoster.getUpcomingTeamGames(selectedTeam, currentSeason.id);
       
       const capitalizeTeamName = (name) => {
         if (!name) return '';
@@ -441,8 +391,6 @@ function RosterManagement({ currentUser }) {
       if (formattedGames.length > 0 && !selectedGame) {
         setSelectedGame(formattedGames[0].id);
       }
-      
-      console.log('✅ Team data loaded:', formattedPlayers.length, 'players,', formattedGames.length, 'games');
     } catch (error) {
       console.error('❌ Error loading team data:', error);
     }
@@ -450,8 +398,6 @@ function RosterManagement({ currentUser }) {
 
   async function loadGameData() {
     try {
-      console.log('📄 Loading game data for:', selectedGame);
-      
       const allRsvpsPromises = games.map(game => 
         window.FirebaseRoster.getGameRSVPs(game.id)
       );
@@ -487,24 +433,20 @@ function RosterManagement({ currentUser }) {
       }
       
       const unsubscribes = games.map(game => 
-        window.FirebaseRoster.listenToGameRSVPs(
-          game.id,
-          (updatedRsvps) => {
-            const formattedRsvps = {};
-            players.forEach(player => {
-              const key = `${player.id}-${game.id}`;
-              const userRsvp = updatedRsvps[player.id];
-              formattedRsvps[key] = userRsvp?.status || 'none';
-            });
-            setRsvps(prev => ({ ...prev, ...formattedRsvps }));
-          }
-        )
+        window.FirebaseRoster.listenToGameRSVPs(game.id, (updatedRsvps) => {
+          const formattedRsvps = {};
+          players.forEach(player => {
+            const key = `${player.id}-${game.id}`;
+            const userRsvp = updatedRsvps[player.id];
+            formattedRsvps[key] = userRsvp?.status || 'none';
+          });
+          setRsvps(prev => ({ ...prev, ...formattedRsvps }));
+        })
       );
       
       return () => {
         unsubscribes.forEach(unsub => unsub());
       };
-      
     } catch (error) {
       console.error('❌ Error loading game data:', error);
     }
@@ -512,10 +454,7 @@ function RosterManagement({ currentUser }) {
 
   const handleRSVPClick = async (playerId, gameId) => {
     const canEdit = isCaptain || userProfile?.linkedPlayer === players.find(p => p.id === playerId)?.name;
-    if (!canEdit) {
-      console.log('❌ Cannot edit RSVP');
-      return;
-    }
+    if (!canEdit) return;
     
     const key = `${playerId}-${gameId}`;
     const status = rsvps[key] || 'none';
@@ -528,13 +467,7 @@ function RosterManagement({ currentUser }) {
     const player = players.find(p => p.id === playerId);
     
     try {
-      await window.FirebaseRoster.updateRSVP(
-        gameId,
-        playerId,
-        nextStatus,
-        player?.name || 'Unknown',
-        selectedTeam
-      );
+      await window.FirebaseRoster.updateRSVP(gameId, playerId, nextStatus, player?.name || 'Unknown', selectedTeam);
     } catch (error) {
       console.error('Error updating RSVP:', error);
       setRsvps({ ...rsvps, [key]: status });
@@ -575,14 +508,12 @@ function RosterManagement({ currentUser }) {
       }
       
       const currentIndex = newBattingOrder[selectedGame].findIndex(p => p && p.id === draggedPlayer.id);
-      
       if (currentIndex !== -1) {
         newBattingOrder[selectedGame][currentIndex] = null;
       }
       
       newBattingOrder[selectedGame][target.position] = draggedPlayer;
       setBattingOrder(newBattingOrder);
-      
       saveLineupData('batting', newBattingOrder[selectedGame]);
       
     } else if (target.type === 'fielding') {
@@ -619,7 +550,6 @@ function RosterManagement({ currentUser }) {
       
       newFieldingPositions[selectedGame][target.inning][target.position] = draggedPlayer;
       setFieldingPositions(newFieldingPositions);
-      
       saveLineupData('fielding', newFieldingPositions[selectedGame], target.inning);
       
     } else if (target.type === 'bench') {
@@ -645,7 +575,6 @@ function RosterManagement({ currentUser }) {
       
       newBenchPlayers[selectedGame][target.inning].splice(target.benchIndex, 0, draggedPlayer);
       setBenchPlayers(newBenchPlayers);
-      
       saveLineupData('bench', newBenchPlayers[selectedGame], target.inning);
     }
 
@@ -655,35 +584,17 @@ function RosterManagement({ currentUser }) {
 
   const saveLineupData = async (type, data, inning = null) => {
     if (!isCaptain) return;
-    
     setSavingLineup(true);
     
     try {
       if (type === 'batting') {
         const playerIds = data.map(p => p?.id || null);
-        await window.FirebaseRoster.saveBattingOrder(
-          selectedGame,
-          selectedTeam,
-          playerIds,
-          currentUser.uid
-        );
+        await window.FirebaseRoster.saveBattingOrder(selectedGame, selectedTeam, playerIds, currentUser.uid);
       } else if (type === 'fielding') {
-        await window.FirebaseRoster.saveFieldingPositions(
-          selectedGame,
-          selectedTeam,
-          inning,
-          data[inning],
-          currentUser.uid
-        );
+        await window.FirebaseRoster.saveFieldingPositions(selectedGame, selectedTeam, inning, data[inning], currentUser.uid);
       } else if (type === 'bench') {
         const playerIds = data[inning].map(p => p.id);
-        await window.FirebaseRoster.saveBenchPlayers(
-          selectedGame,
-          selectedTeam,
-          inning,
-          playerIds,
-          currentUser.uid
-        );
+        await window.FirebaseRoster.saveBenchPlayers(selectedGame, selectedTeam, inning, playerIds, currentUser.uid);
       }
     } catch (error) {
       console.error('Error saving lineup:', error);
@@ -728,17 +639,14 @@ function RosterManagement({ currentUser }) {
     
     const previousInning = targetInning - 1;
     
-    // Copy fielding positions - deep clone the player objects
     const newFieldingPositions = { ...fieldingPositions };
     if (!newFieldingPositions[selectedGame]) newFieldingPositions[selectedGame] = {};
     
     const previousPositions = newFieldingPositions[selectedGame][previousInning] || {};
-    // Deep clone each player object in the positions
     const clonedPositions = {};
     Object.keys(previousPositions).forEach(pos => {
       const player = previousPositions[pos];
       if (player && player.id) {
-        // Find the full player object from our players array to ensure we have all properties
         const fullPlayer = players.find(p => p.id === player.id);
         if (fullPlayer) {
           clonedPositions[pos] = { ...fullPlayer };
@@ -748,12 +656,10 @@ function RosterManagement({ currentUser }) {
     newFieldingPositions[selectedGame][targetInning] = clonedPositions;
     setFieldingPositions(newFieldingPositions);
     
-    // Copy bench players - deep clone the player objects
     const newBenchPlayers = { ...benchPlayers };
     if (!newBenchPlayers[selectedGame]) newBenchPlayers[selectedGame] = {};
     
     const previousBench = newBenchPlayers[selectedGame][previousInning] || [];
-    // Deep clone and validate each bench player
     const clonedBench = previousBench.map(player => {
       if (player && player.id) {
         const fullPlayer = players.find(p => p.id === player.id);
@@ -764,13 +670,11 @@ function RosterManagement({ currentUser }) {
     newBenchPlayers[selectedGame][targetInning] = clonedBench;
     setBenchPlayers(newBenchPlayers);
     
-    // Save both to Firebase
     saveLineupData('fielding', newFieldingPositions[selectedGame], targetInning);
     saveLineupData('bench', newBenchPlayers[selectedGame], targetInning);
   };
 
   const PlayerCard = ({ player, draggable = false, showStats = false, onRemove, size = 'normal' }) => {
-    // Guard against invalid player objects
     if (!player || !player.name) {
       console.warn('Invalid player object:', player);
       return null;
@@ -778,33 +682,45 @@ function RosterManagement({ currentUser }) {
     
     const isSmall = size === 'small';
     const isCurrentUser = player.id === currentUserId;
-    
-    // Safely get display name
     const displayName = isSmall ? (player.name.split(' ').pop() || player.name) : player.name;
+    const cardClasses = `player-card-hover ${draggable && isCaptain ? 'player-card-draggable' : ''}`;
     
     return (
       <div
         draggable={draggable && isCaptain}
         onDragStart={(e) => handleDragStart(e, player)}
         style={{
-          padding: isSmall ? '6px' : '8px', background: isCurrentUser ? '#eff6ff' : 'var(--card-bg)',
-          borderRadius: '12px', boxShadow: 'var(--shadow-sm)',
+          padding: isSmall ? '8px' : '10px', 
+          background: isCurrentUser ? '#eff6ff' : 'var(--card-bg)',
+          borderRadius: '12px', 
+          boxShadow: 'var(--shadow-sm)',
           border: isCurrentUser ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
-          display: 'flex', alignItems: 'center', gap: '8px',
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '10px',
           cursor: draggable && isCaptain ? 'grab' : 'default',
-          transition: 'all 0.3s ease', position: 'relative'
+          transition: 'all 0.2s ease', 
+          position: 'relative',
+          minHeight: isSmall ? '40px' : '48px'
         }}
-        className="player-card-hover"
+        className={cardClasses}
       >
         <div style={{
-          width: isSmall ? '24px' : '32px', height: isSmall ? '24px' : '32px',
-          borderRadius: '50%', background: 'var(--primary-color)', color: 'white',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: isSmall ? '10px' : '12px', fontWeight: '600', flexShrink: 0
+          width: isSmall ? '28px' : '36px', 
+          height: isSmall ? '28px' : '36px',
+          borderRadius: '50%', 
+          background: 'var(--primary-color)', 
+          color: 'white',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontSize: isSmall ? '11px' : '13px', 
+          fontWeight: '600', 
+          flexShrink: 0
         }}>
           {player.avatar || '?'}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none' }}>
           <div style={{ 
             fontWeight: '500', fontSize: isSmall ? '11px' : '14px',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -822,7 +738,7 @@ function RosterManagement({ currentUser }) {
           {!isSmall && <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>#{player.jersey || 'N/A'}</div>}
         </div>
         {showStats && !isSmall && (
-          <div style={{ fontSize: '11px', color: 'var(--text-dark)' }}>{player.battingAvg || '.000'}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-dark)', pointerEvents: 'none' }}>{player.battingAvg || '.000'}</div>
         )}
         {onRemove && isCaptain && (
           <button onClick={onRemove} className="remove-btn"
