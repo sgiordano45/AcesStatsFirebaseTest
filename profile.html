@@ -1436,14 +1436,32 @@ body {
           if (!playerStats) {
             console.log('🔍 Trying to load stats directly using user ID:', user.uid);
             try {
-              const { getPlayerStatsOptimized, getSeasonFromPlayer } = await import('./firebase-data.js');
+              const { getPlayerStatsOptimized } = await import('./firebase-data.js');
               const directPlayerData = await getPlayerStatsOptimized(user.uid);
               if (directPlayerData) {
                 console.log('✅ Found player data directly:', directPlayerData);
-                const seasonStats = getSeasonFromPlayer(directPlayerData, currentSeason.id);
-                if (seasonStats && seasonStats.length > 0) {
-                  playerStats = seasonStats[0]; // Use the first matching season
-                  console.log('✅ Extracted season stats:', playerStats);
+                
+                // Check if seasons object exists
+                if (directPlayerData.seasons && typeof directPlayerData.seasons === 'object') {
+                  console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
+                  
+                  // Find season keys that start with currentSeason.id (e.g., "2025-fall")
+                  const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
+                    key.startsWith(currentSeason.id)
+                  );
+                  
+                  console.log('🔍 Matching season keys:', matchingKeys);
+                  
+                  if (matchingKeys.length > 0) {
+                    // Use the first matching key
+                    const seasonKey = matchingKeys[0];
+                    const seasonStats = directPlayerData.seasons[seasonKey];
+                    
+                    if (seasonStats) {
+                      playerStats = seasonStats;
+                      console.log('✅ Extracted season stats from key:', seasonKey, playerStats);
+                    }
+                  }
                 }
               }
             } catch (directLoadError) {
