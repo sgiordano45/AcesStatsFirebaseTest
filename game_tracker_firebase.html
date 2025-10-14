@@ -47,9 +47,22 @@
             getBattingOrder
         };
 
-        // Signal that Firebase is ready
-        window.firebaseReady = true;
-        window.dispatchEvent(new Event('firebaseready'));
+        // Wait for auth state to be determined before signaling ready
+        let authResolved = false;
+        let currentAuthUser = null;
+        
+        onAuthChange((user) => {
+            currentAuthUser = user;
+            if (!authResolved) {
+                authResolved = true;
+                console.log('🔐 Auth state resolved:', user ? user.displayName : 'Not signed in');
+                window.firebaseReady = true;
+                window.dispatchEvent(new Event('firebaseready'));
+            }
+        });
+        
+        // Store the current user for immediate access
+        window.getCurrentFirebaseUser = () => currentAuthUser;
     </script>
 
     <script type="text/babel">
@@ -158,9 +171,15 @@
                 try {
                     console.log('🔄 Loading initial data from Firebase...');
                     
-                    // Check auth state
-                    const user = window.FirebaseGameTracker.getCurrentUser();
+                    // Check auth state using the stored user
+                    const user = window.getCurrentFirebaseUser ? window.getCurrentFirebaseUser() : null;
                     setCurrentUser(user);
+                    
+                    if (user) {
+                        console.log('✅ Signed in as:', user.displayName || user.email);
+                    } else {
+                        console.log('ℹ️ Not signed in');
+                    }
                     
                     // Get current season
                     const seasonData = await window.FirebaseGameTracker.getCurrentSeason();
@@ -544,11 +563,21 @@
                 newState.outs = 0;
                 newState.bases = { first: null, second: null, third: null };
                 
+                // If your team was batting (and they're done), opponent bats next
                 if (newState.isYourTeamBatting) {
                     newState.isYourTeamBatting = false;
+                    // Inning number stays the same - just switching from top to bottom (or bottom to next top)
+                    // If home team just finished batting, move to next inning
+                    if (isHome) {
+                        newState.inning += 1;
+                    }
                 } else {
-                    newState.inning += 1;
+                    // Opponent was batting, now your team bats
                     newState.isYourTeamBatting = true;
+                    // If away team just finished batting, move to next inning
+                    if (!isHome) {
+                        newState.inning += 1;
+                    }
                 }
                 
                 setGameState(newState);
@@ -768,13 +797,13 @@
                                         {selectedTeam}'s half inning is complete
                                     </div>
                                     <div className="text-sm mb-5 opacity-90 italic">
-                                        Click below when {selectedTeam} is back at bat
+                                        Opponent batting - click when {selectedTeam} is back at bat
                                     </div>
                                     <button
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {opponentName} Now Batting ({isHome ? 'Bottom' : 'Top'} {gameState.inning})
+                                        {isHome ? `Top ${gameState.inning + 1}` : `Bottom ${gameState.inning}`} - {selectedTeam} Batting
                                     </button>
                                 </>
                             ) : (
@@ -789,7 +818,7 @@
                                         onClick={advanceToNextHalfInning}
                                         className="px-10 py-4 text-lg font-bold border-none rounded-lg cursor-pointer bg-white text-amber-600 shadow-lg hover:shadow-xl transition-all"
                                     >
-                                        {selectedTeam} Now Batting ({isHome ? 'Top' : 'Bottom'} {gameState.inning + 1})
+                                        {isHome ? `Bottom ${gameState.inning}` : `Top ${gameState.inning + 1}`} - {selectedTeam} Batting
                                     </button>
                                 </>
                             )}
