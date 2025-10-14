@@ -54,6 +54,115 @@ function userIdToName(userId) {
   ).join(' ');
 }
 
+/**
+ * Resolve player name to the correct player ID and data
+ * Handles legacy profiles, merged profiles, and name variations
+ * @param {string} searchName - The name being searched
+ * @returns {Promise<Object|null>} Resolved player data with correct ID and name
+ */
+export async function resolvePlayerName(searchName) {
+  try {
+    console.log(`🔍 Resolving player name: "${searchName}"`);
+    
+    const statsRef = collection(db, 'aggregatedPlayerStats');
+    const snapshot = await getDocs(statsRef);
+    
+    const searchLower = searchName.toLowerCase();
+    const searchNormalized = searchName.toLowerCase().replace(/\s+/g, '_');
+    
+    let foundPlayer = null;
+    let bestMatch = null;
+    let bestMatchScore = 0;
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      
+      // Skip migrated legacy profiles
+      if (data.migrated === true) {
+        return;
+      }
+      
+      const dataName = (data.name || data.displayName || '').toLowerCase();
+      const dataNameNormalized = dataName.replace(/\s+/g, '_');
+      
+      // Exact match - highest priority
+      if (dataName === searchLower) {
+        foundPlayer = { id: doc.id, ...data };
+        return;
+      }
+      
+      // Normalized match (steve_giordano = Steve Giordano)
+      if (dataNameNormalized === searchNormalized) {
+        if (bestMatchScore < 90) {
+          bestMatch = { id: doc.id, ...data };
+          bestMatchScore = 90;
+        }
+      }
+      
+      // Partial match with scoring
+      const searchParts = searchLower.split(/\s+/);
+      const dataParts = dataName.split(/\s+/);
+      
+      if (searchParts.length >= 2 && dataParts.length >= 2) {
+        const lastNameMatch = searchParts[searchParts.length - 1] === dataParts[dataParts.length - 1];
+        const firstNameMatch = searchParts[0] === dataParts[0];
+        const firstNamePartial = searchParts[0].startsWith(dataParts[0]) || dataParts[0].startsWith(searchParts[0]);
+        
+        let score = 0;
+        if (lastNameMatch) score += 50;
+        if (firstNameMatch) score += 40;
+        else if (firstNamePartial) score += 30;
+        
+        if (score > bestMatchScore) {
+          bestMatch = { id: doc.id, ...data };
+          bestMatchScore = score;
+        }
+      }
+    });
+    
+    const result = foundPlayer || bestMatch;
+    
+    if (result) {
+      console.log(`✅ Resolved "${searchName}" to "${result.name}" (ID: ${result.id}, Score: ${foundPlayer ? 100 : bestMatchScore})`);
+      return {
+        id: result.id,
+        name: result.name || result.displayName,
+        displayName: result.displayName || result.name,
+        ...result
+      };
+    }
+    
+    console.warn(`⚠️ Could not resolve player name: "${searchName}"`);
+    return null;
+    
+  } catch (error) {
+    console.error('❌ Error resolving player name:', error);
+    return null;
+  }
+}
+
+/**
+ * Get player by ID or name (with resolution)
+ * @param {string} identifier - Player ID or name
+ * @returns {Promise<Object|null>} Player data
+ */
+export async function getPlayerByIdentifier(identifier) {
+  try {
+    // First, try as ID
+    const playerData = await getPlayerStatsOptimized(identifier);
+    if (playerData && !playerData.migrated) {
+      return playerData;
+    }
+    
+    // If not found or migrated, try resolving as name
+    return await resolvePlayerName(identifier);
+    
+  } catch (error) {
+    console.error('❌ Error getting player by identifier:', error);
+    return null;
+  }
+}
+
 // ============================================
 // NEW: SEASON OBJECT HELPERS
 // ============================================

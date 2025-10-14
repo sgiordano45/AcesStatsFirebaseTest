@@ -696,13 +696,13 @@
 </div>
 
 <script type="module">
-  // Keep ALL existing JavaScript code exactly the same
-  // Only the CSS styling has been updated
   import {
     getPlayerStatsOptimized,
     getPlayerInfo,
     getPlayerAwards,
-    seasonsObjectToArray
+    seasonsObjectToArray,
+    resolvePlayerName,
+    getPlayerByIdentifier
   } from './firebase-data.js';
 
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
@@ -722,57 +722,89 @@
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
-  function normalizePlayerNameForQuery(name) {
-    if (!name) return "";
-    return name.toLowerCase().replace(/\s+/g, '_');
-  }
-
+  // NEW: Support both ID and name-based URLs
   const urlParams = new URLSearchParams(window.location.search);
+  const playerId = urlParams.get('id');
   const playerName = urlParams.get('name');
 
-  if (!playerName) {
+  if (!playerId && !playerName) {
     document.getElementById('loadingOverlay').classList.remove('hidden');
-    throw new Error('No player name in URL');
+    document.getElementById('playerName').textContent = 'No player specified';
+    throw new Error('No player identifier in URL');
   }
 
-  document.getElementById('pageTitle').textContent = `${playerName} - Player Stats`;
-
   function hideLoadingIndicator() {
-    // Hide the loading overlay with smooth transition
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
       overlay.classList.add('hidden');
     }
     
-    // Show content
     document.getElementById('playerHeader').style.display = 'flex';
     document.getElementById('statsContainer').style.display = 'block';
   }
 
   async function loadPlayerData() {
     const loadStartTime = performance.now();
-    console.log(`âš¡ Loading data for player: ${playerName} (OPTIMIZED)`);
+    console.log(`⚡ Loading data for: ${playerId ? `ID=${playerId}` : `name=${playerName}`}`);
     console.time('Total Load Time');
 
     try {
-      console.time('Fetch Player Data');
-      const normalizedName = normalizePlayerNameForQuery(playerName);
-      const [playerData, playerInfo, playerAwards] = await Promise.all([
-        getPlayerStatsOptimized(normalizedName),
-        getPlayerInfo(playerName).catch(() => null),
-        getPlayerAwards(playerName).catch(() => [])
+      // NEW: Resolve player identifier
+      console.time('Resolve Player');
+      let resolvedPlayer;
+      
+      if (playerId) {
+        // Direct ID lookup
+        resolvedPlayer = await getPlayerStatsOptimized(playerId);
+        if (!resolvedPlayer || resolvedPlayer.migrated) {
+          console.warn('⚠️ Player ID not found or is migrated');
+          // Try as name fallback
+          resolvedPlayer = await resolvePlayerName(playerId);
+        }
+      } else {
+        // Name-based lookup with resolution
+        resolvedPlayer = await resolvePlayerName(playerName);
+      }
+      
+      console.timeEnd('Resolve Player');
+      
+      if (!resolvedPlayer) {
+        console.error('❌ Could not resolve player');
+        hideLoadingIndicator();
+        document.getElementById('playerName').textContent = `Player "${playerName || playerId}" not found`;
+        return;
+      }
+      
+      console.log(`✅ Resolved to: "${resolvedPlayer.name}" (ID: ${resolvedPlayer.id})`);
+      
+      // Update URL to use ID if we came from name
+      if (playerName && !playerId) {
+        const newUrl = `${window.location.pathname}?id=${resolvedPlayer.id}`;
+        window.history.replaceState({}, '', newUrl);
+        console.log('🔄 Updated URL to ID-based');
+      }
+      
+      // Update page title
+      const displayName = resolvedPlayer.name || resolvedPlayer.displayName;
+      document.getElementById('pageTitle').textContent = `${displayName} - Player Stats`;
+      
+      // Fetch additional data
+      console.time('Fetch Additional Data');
+      const [playerInfo, playerAwards] = await Promise.all([
+        getPlayerInfo(displayName).catch(() => null),
+        getPlayerAwards(displayName).catch(() => [])
       ]);
-      console.timeEnd('Fetch Player Data');
-      console.log(`âœ… Loaded player data from aggregated collection`);
+      console.timeEnd('Fetch Additional Data');
 
-      if (!playerData || !playerData.seasons || typeof playerData.seasons !== 'object') {
-        console.warn('âš ï¸ No player data found or seasons not in object format');
+      if (!resolvedPlayer.seasons || typeof resolvedPlayer.seasons !== 'object') {
+        console.warn('⚠️ No seasons data found');
+        hideLoadingIndicator();
         return;
       }
 
       console.time('Process Player Data');
       const allStats = [];
-      const seasonsArray = seasonsObjectToArray(playerData);
+      const seasonsArray = seasonsObjectToArray(resolvedPlayer);
       
       seasonsArray.forEach(season => {
         let year = "";
@@ -788,8 +820,8 @@
         if (!seasonName && season.season) seasonName = season.season;
         
         allStats.push({
-          name: formatPlayerName(playerData.name || playerData.displayName || playerData.userId),
-          team: capitalize(season.team || playerData.currentTeam || ""),
+          name: formatPlayerName(resolvedPlayer.name || resolvedPlayer.displayName || resolvedPlayer.userId),
+          team: capitalize(season.team || resolvedPlayer.currentTeam || ""),
           year: year,
           season: capitalize(seasonName),
           games: Number(season.games) || 0,
@@ -805,7 +837,7 @@
         });
       });
 
-      console.log(`âœ… Processed ${allStats.length} batting season records`);
+      console.log(`✅ Processed ${allStats.length} batting season records`);
       console.timeEnd('Process Player Data');
 
       const seasonOrder = { 'Fall': 3, 'Summer': 2, 'Spring': 1 };
@@ -816,30 +848,37 @@
         return seasonB - seasonA;
       });
 
-      const combinedData = { stats: allStats, info: playerInfo, awards: playerAwards };
+      const combinedData = {
+        stats: allStats,
+        info: playerInfo,
+        awards: playerAwards,
+        playerId: resolvedPlayer.id,
+        playerName: displayName
+      };
       renderPlayerData(combinedData);
       hideLoadingIndicator();
 
       const loadEndTime = performance.now();
       console.timeEnd('Total Load Time');
-      console.log(`ðŸŽ‰ Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
+      console.log(`🏁 Page loaded in ${(loadEndTime - loadStartTime).toFixed(0)}ms`);
 
     } catch (error) {
-      console.error('âŒ Error loading player data:', error);
+      console.error('❌ Error loading player data:', error);
+      hideLoadingIndicator();
     }
   }
 
   function renderPlayerData(playerData) {
-    const { stats, info, awards } = playerData;
+    const { stats, info, awards, playerId, playerName } = playerData;
     if (stats.length === 0) return;
-    populatePlayerHeader(stats, info);
-    populateStatsTables(stats);
-    handleMasterChefSection();
+    populatePlayerHeader(stats, info, playerName);
+    populateStatsTables(stats, playerId);
+    handleMasterChefSection(playerName);
     if (awards && awards.length > 0) populateAwards(awards);
   }
 
-  function populatePlayerHeader(stats, info) {
-    document.getElementById('playerName').textContent = playerName;
+  function populatePlayerHeader(stats, info, displayName) {
+    document.getElementById('playerName').textContent = displayName;
     const regularStats = stats.filter(s => s.sub === 'No');
     const years = [...new Set(regularStats.map(s => s.year))].sort();
     const totalSeasons = regularStats.length;
@@ -909,7 +948,7 @@
     }
   }
 
-  function populateStatsTables(stats) {
+  function populateStatsTables(stats, playerId) {
     const regularStats = stats.filter(s => s.sub === 'No');
     const regularTbody = document.querySelector('#regularStatsTable tbody');
     regularTbody.innerHTML = regularStats.map(s => `
@@ -1014,7 +1053,6 @@
     const awardsSection = document.getElementById('awardsSection');
     const awardsGrid = document.getElementById('awardsGrid');
     
-    // Award icons mapping
     const awardIcons = {
       'Team MVP': 'team_mvp.png',
       'All Aces': 'all_aces.png',
@@ -1034,7 +1072,6 @@
       'Mr. Streaman Award for Excellence': 'mr_streaman_award_for_excellence.png'
     };
     
-    // Fallback emojis
     const fallbackEmojis = {
       'Team MVP': '👑',
       'All Aces': '⭐',
@@ -1048,7 +1085,7 @@
       'Captain of the Year': '🎖️',
       'Al Pineda Good Guy Award': '🤝',
       'Iron Man Award': '💯',
-      'Sub of the Year': '🏅',
+      'Sub of the Year': '🅿️',
       'Andrew Streaman Boner Award': '🎪',
       'Erik Lund Perservenance Award': '⚡',
       'Mr. Streaman Award for Excellence': '🌟'
@@ -1076,9 +1113,9 @@
     awardsSection.style.display = 'block';
   }
 
-  function handleMasterChefSection() {
+  function handleMasterChefSection(displayName) {
     const chefSection = document.getElementById('masterChefSection');
-    if (playerName === 'Mike Streaman') {
+    if (displayName === 'Mike Streaman') {
       chefSection.style.display = 'block';
       setTimeout(() => {
         chefSection.style.transition = 'transform 0.3s ease';

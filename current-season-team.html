@@ -809,6 +809,9 @@
     getCurrentSeason
   } from './firebase-data.js';
 
+    // Add this import at the top
+    import { createPlayerLink } from './link-helpers.js';
+    
   console.log('✅ Imports successful!');
 
   // Mobile menu toggle
@@ -1187,7 +1190,7 @@
       return `
         <div class="player-card">
           <div class="player-name">
-            <a href="player.html?name=${encodeURIComponent(player.name)}" class="player-link">${player.name}</a>
+      <a href="player.html?id=${encodeURIComponent(player.id || player.playerId)}">${player.name}</a>
           </div>
           <div class="player-stats">
             ${player.games}G • ${ba} BA • ${player.runs}R

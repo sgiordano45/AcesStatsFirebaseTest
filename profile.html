@@ -1400,9 +1400,11 @@ body {
           document.getElementById('favoritePlayerAlerts').checked = userProfile.preferences?.favoritePlayerAlerts ?? true;
           document.getElementById('publicFavorites').checked = userProfile.preferences?.publicFavorites ?? false;
           
-          // Update quick links
+          // Update these lines in loadUserProfile():
           if (userProfile.linkedPlayer) {
-            document.getElementById('linkMyStats').href = `player.html?name=${encodeURIComponent(userProfile.linkedPlayer)}`;
+            // NEW: Use ID-based link
+            const playerId = user.uid; // The authenticated user's ID
+            document.getElementById('linkMyStats').href = `player.html?id=${encodeURIComponent(playerId)}`;
           }
           if (userProfile.linkedTeam) {
             document.getElementById('linkMyTeam').href = `team.html?team=${encodeURIComponent(userProfile.linkedTeam)}`;
