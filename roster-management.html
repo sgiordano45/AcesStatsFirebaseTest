@@ -728,20 +728,40 @@ function RosterManagement({ currentUser }) {
     
     const previousInning = targetInning - 1;
     
-    // Copy fielding positions
+    // Copy fielding positions - deep clone the player objects
     const newFieldingPositions = { ...fieldingPositions };
     if (!newFieldingPositions[selectedGame]) newFieldingPositions[selectedGame] = {};
     
     const previousPositions = newFieldingPositions[selectedGame][previousInning] || {};
-    newFieldingPositions[selectedGame][targetInning] = { ...previousPositions };
+    // Deep clone each player object in the positions
+    const clonedPositions = {};
+    Object.keys(previousPositions).forEach(pos => {
+      const player = previousPositions[pos];
+      if (player && player.id) {
+        // Find the full player object from our players array to ensure we have all properties
+        const fullPlayer = players.find(p => p.id === player.id);
+        if (fullPlayer) {
+          clonedPositions[pos] = { ...fullPlayer };
+        }
+      }
+    });
+    newFieldingPositions[selectedGame][targetInning] = clonedPositions;
     setFieldingPositions(newFieldingPositions);
     
-    // Copy bench players
+    // Copy bench players - deep clone the player objects
     const newBenchPlayers = { ...benchPlayers };
     if (!newBenchPlayers[selectedGame]) newBenchPlayers[selectedGame] = {};
     
     const previousBench = newBenchPlayers[selectedGame][previousInning] || [];
-    newBenchPlayers[selectedGame][targetInning] = [...previousBench];
+    // Deep clone and validate each bench player
+    const clonedBench = previousBench.map(player => {
+      if (player && player.id) {
+        const fullPlayer = players.find(p => p.id === player.id);
+        return fullPlayer ? { ...fullPlayer } : null;
+      }
+      return null;
+    }).filter(p => p !== null);
+    newBenchPlayers[selectedGame][targetInning] = clonedBench;
     setBenchPlayers(newBenchPlayers);
     
     // Save both to Firebase
