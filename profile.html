@@ -1384,65 +1384,101 @@ body {
       }
     }
 
-    async function loadUserStats(user) {
-      console.log('📊 Loading user stats...');
-      
-      try {
-        if (!userProfile?.linkedPlayer) {
-          console.log('⚠️ No linked player, skipping stats load');
-          return;
-        }
+      async function loadUserStats(user) {
+        console.log('📊 Loading user stats...');
         
-        const currentSeason = await getCurrentSeason();
-        console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
-        
-        if (!currentSeason) {
-          console.log('⚠️ No current season found');
-          return;
-        }
-        
-        const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
-        console.log('📈 Stats loaded:', stats.length, 'players');
-        console.log('🔍 Searching for player:', userProfile.linkedPlayer);
-        
-        // Try multiple ways to find the player
-        let playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
-        
-        if (!playerStats) {
-          // Try matching by name field
-          playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
-        }
-        
-        if (!playerStats) {
-          // Try case-insensitive match
-          const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
-          playerStats = stats.find(s => 
-            s.playerName?.toLowerCase() === linkedPlayerLower || 
-            s.name?.toLowerCase() === linkedPlayerLower
-          );
-        }
-        
-        if (playerStats) {
-          console.log('✅ Player stats found:', playerStats);
-          document.getElementById('statGames').textContent = playerStats.games || 0;
-          document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
-          document.getElementById('statHits').textContent = playerStats.hits || 0;
-          document.getElementById('statRuns').textContent = playerStats.runs || 0;
-        } else {
-          console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
-          console.log('Available player names:', stats.slice(0, 5).map(s => s.playerName || s.name));
+        try {
+          if (!userProfile?.linkedPlayer) {
+            console.log('⚠️ No linked player, skipping stats load');
+            return;
+          }
           
-          // Set defaults to show 0s instead of leaving blank
+          const currentSeason = await getCurrentSeason();
+          console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
+          
+          if (!currentSeason) {
+            console.log('⚠️ No current season found');
+            return;
+          }
+          
+          const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+          console.log('📈 Stats loaded:', stats.length, 'players');
+          console.log('🔍 Searching for player:', userProfile.linkedPlayer);
+          console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
+          
+          // Try multiple ways to find the player
+          let playerStats = null;
+          
+          // First, try exact match on linkedPlayer name
+          playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+          
+          if (!playerStats) {
+            // Try matching by name field
+            playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
+          }
+          
+          if (!playerStats) {
+            // Try case-insensitive match
+            const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
+            playerStats = stats.find(s =>
+              s.playerName?.toLowerCase() === linkedPlayerLower ||
+              s.name?.toLowerCase() === linkedPlayerLower
+            );
+          }
+          
+          // NEW: If still not found and we have a mergedFromProfile, try matching by ID
+          if (!playerStats && userProfile.mergedFromProfile) {
+            console.log('🔍 Trying to find stats by merged profile ID:', userProfile.mergedFromProfile);
+            playerStats = stats.find(s => s.id === userProfile.mergedFromProfile || s.playerId === userProfile.mergedFromProfile);
+          }
+          
+          // NEW: If still not found, try to load directly from aggregatedPlayerStats using the user's current ID
+          if (!playerStats) {
+            console.log('🔍 Trying to load stats directly using user ID:', user.uid);
+            try {
+              const { getPlayerStatsOptimized, getSeasonFromPlayer } = await import('./firebase-data.js');
+              const directPlayerData = await getPlayerStatsOptimized(user.uid);
+              if (directPlayerData) {
+                console.log('✅ Found player data directly:', directPlayerData);
+                const seasonStats = getSeasonFromPlayer(directPlayerData, currentSeason.id);
+                if (seasonStats && seasonStats.length > 0) {
+                  playerStats = seasonStats[0]; // Use the first matching season
+                  console.log('✅ Extracted season stats:', playerStats);
+                }
+              }
+            } catch (directLoadError) {
+              console.warn('⚠️ Could not load stats directly:', directLoadError);
+            }
+          }
+          
+          if (playerStats) {
+            console.log('✅ Player stats found:', playerStats);
+            document.getElementById('statGames').textContent = playerStats.games || 0;
+            document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
+            document.getElementById('statHits').textContent = playerStats.hits || 0;
+            document.getElementById('statRuns').textContent = playerStats.runs || 0;
+          } else {
+            console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
+            console.log('Available player names:', stats.slice(0, 10).map(s => ({
+              name: s.playerName || s.name,
+              id: s.id || s.playerId
+            })));
+            
+            // Set defaults to show 0s instead of leaving blank
+            document.getElementById('statGames').textContent = '0';
+            document.getElementById('statAvg').textContent = '.000';
+            document.getElementById('statHits').textContent = '0';
+            document.getElementById('statRuns').textContent = '0';
+          }
+        } catch (error) {
+          console.error('❌ Error loading user stats:', error);
+          // Don't block page load for stats errors
           document.getElementById('statGames').textContent = '0';
           document.getElementById('statAvg').textContent = '.000';
           document.getElementById('statHits').textContent = '0';
           document.getElementById('statRuns').textContent = '0';
         }
-      } catch (error) {
-        console.error('❌ Error loading user stats:', error);
-        // Don't block page load for stats errors
       }
-    }
 
     function loadFavorites() {
       // Load favorite teams
