@@ -911,7 +911,7 @@ body {
             </div>
           </a>
           <a href="roster-management.html" class="quick-link-card" id="linkRSVP">
-            <div class="quick-link-icon">✓</div>
+            <div class="quick-link-icon">✔</div>
             <div class="quick-link-content">
               <h3>Game RSVPs</h3>
               <p>Manage availability</p>
@@ -923,6 +923,37 @@ body {
 
     <!-- Player Info Tab -->
     <div class="tab-content" id="tab-player-info">
+      <!-- NEW: Display Name Section -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2><span class="section-icon">👤</span> Display Name</h2>
+        </div>
+        <div id="successMessageDisplayName" class="success-message">
+          Display name updated successfully!
+        </div>
+        <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+          This is how your name will appear throughout the site. Leave blank to use your Google account name.
+        </p>
+        <form id="displayNameForm">
+          <div class="form-group">
+            <label class="form-label" for="preferredDisplayName">Preferred Display Name</label>
+            <input type="text" id="preferredDisplayName" class="form-input" placeholder="e.g., Steve instead of Stephen">
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">
+              Current Google account name: <strong id="googleAccountName"></strong>
+            </small>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+              💾 Save Display Name
+            </button>
+            <button type="button" class="btn btn-secondary" id="clearDisplayName">
+              ✖️ Use Google Name
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- EXISTING: Player Information Section -->
       <div class="section-card">
         <div class="section-header">
           <h2><span class="section-icon">⚾</span> Player Information</h2>
@@ -1126,7 +1157,7 @@ body {
     <div class="tab-content" id="tab-security">
       <div class="section-card">
         <div class="section-header">
-          <h2><span class="section-icon">🔐</span> Account Security</h2>
+          <h2><span class="section-icon">🔓</span> Account Security</h2>
         </div>
         <div id="successMessageSecurity" class="success-message">
           Password changed successfully!
@@ -1289,12 +1320,19 @@ body {
           }
         }
         
+        // NEW: Determine the display name to use (preferred or Google name)
+        const displayName = userProfile?.preferredDisplayName || user.displayName || 'User';
+        
         // Update header
         document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
-        document.getElementById('displayName').textContent = user.displayName || 'User';
+        document.getElementById('displayName').textContent = displayName;
         document.getElementById('playerName').textContent = userProfile?.linkedPlayer || 'Not linked';
         document.getElementById('teamBadge').textContent = userProfile?.linkedTeam || 'No team';
         document.getElementById('accountEmail').value = user.email;
+        
+        // NEW: Load the display name form
+        document.getElementById('preferredDisplayName').value = userProfile?.preferredDisplayName || '';
+        document.getElementById('googleAccountName').textContent = user.displayName || user.email;
         
         // Calculate member since
         const createdDate = new Date(user.metadata.creationTime);
@@ -1384,119 +1422,119 @@ body {
       }
     }
 
-      async function loadUserStats(user) {
-        console.log('📊 Loading user stats...');
+    async function loadUserStats(user) {
+      console.log('📊 Loading user stats...');
+      
+      try {
+        if (!userProfile?.linkedPlayer) {
+          console.log('⚠️ No linked player, skipping stats load');
+          return;
+        }
         
-        try {
-          if (!userProfile?.linkedPlayer) {
-            console.log('⚠️ No linked player, skipping stats load');
-            return;
-          }
-          
-          const currentSeason = await getCurrentSeason();
-          console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
-          
-          if (!currentSeason) {
-            console.log('⚠️ No current season found');
-            return;
-          }
-          
-          const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
-          console.log('📈 Stats loaded:', stats.length, 'players');
-          console.log('🔍 Searching for player:', userProfile.linkedPlayer);
-          console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
-          
-          // Try multiple ways to find the player
-          let playerStats = null;
-          
-          // First, try exact match on linkedPlayer name
-          playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
-          
-          if (!playerStats) {
-            // Try matching by name field
-            playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
-          }
-          
-          if (!playerStats) {
-            // Try case-insensitive match
-            const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
-            playerStats = stats.find(s =>
-              s.playerName?.toLowerCase() === linkedPlayerLower ||
-              s.name?.toLowerCase() === linkedPlayerLower
-            );
-          }
-          
-          // NEW: If still not found and we have a mergedFromProfile, try matching by ID
-          if (!playerStats && userProfile.mergedFromProfile) {
-            console.log('🔍 Trying to find stats by merged profile ID:', userProfile.mergedFromProfile);
-            playerStats = stats.find(s => s.id === userProfile.mergedFromProfile || s.playerId === userProfile.mergedFromProfile);
-          }
-          
-          // NEW: If still not found, try to load directly from aggregatedPlayerStats using the user's current ID
-          if (!playerStats) {
-            console.log('🔍 Trying to load stats directly using user ID:', user.uid);
-            try {
-              const { getPlayerStatsOptimized } = await import('./firebase-data.js');
-              const directPlayerData = await getPlayerStatsOptimized(user.uid);
-              if (directPlayerData) {
-                console.log('✅ Found player data directly:', directPlayerData);
+        const currentSeason = await getCurrentSeason();
+        console.log('📅 Current season:', currentSeason ? currentSeason.id : 'No current season');
+        
+        if (!currentSeason) {
+          console.log('⚠️ No current season found');
+          return;
+        }
+        
+        const stats = await getSeasonPlayerStatsOptimized(currentSeason.id);
+        console.log('📈 Stats loaded:', stats.length, 'players');
+        console.log('🔍 Searching for player:', userProfile.linkedPlayer);
+        console.log('🔗 MergedFromProfile:', userProfile.mergedFromProfile);
+        
+        // Try multiple ways to find the player
+        let playerStats = null;
+        
+        // First, try exact match on linkedPlayer name
+        playerStats = stats.find(s => s.playerName === userProfile.linkedPlayer);
+        
+        if (!playerStats) {
+          // Try matching by name field
+          playerStats = stats.find(s => s.name === userProfile.linkedPlayer);
+        }
+        
+        if (!playerStats) {
+          // Try case-insensitive match
+          const linkedPlayerLower = userProfile.linkedPlayer.toLowerCase();
+          playerStats = stats.find(s =>
+            s.playerName?.toLowerCase() === linkedPlayerLower ||
+            s.name?.toLowerCase() === linkedPlayerLower
+          );
+        }
+        
+        // NEW: If still not found and we have a mergedFromProfile, try matching by ID
+        if (!playerStats && userProfile.mergedFromProfile) {
+          console.log('🔍 Trying to find stats by merged profile ID:', userProfile.mergedFromProfile);
+          playerStats = stats.find(s => s.id === userProfile.mergedFromProfile || s.playerId === userProfile.mergedFromProfile);
+        }
+        
+        // NEW: If still not found, try to load directly from aggregatedPlayerStats using the user's current ID
+        if (!playerStats) {
+          console.log('🔍 Trying to load stats directly using user ID:', user.uid);
+          try {
+            const { getPlayerStatsOptimized } = await import('./firebase-data.js');
+            const directPlayerData = await getPlayerStatsOptimized(user.uid);
+            if (directPlayerData) {
+              console.log('✅ Found player data directly:', directPlayerData);
+              
+              // Check if seasons object exists
+              if (directPlayerData.seasons && typeof directPlayerData.seasons === 'object') {
+                console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
                 
-                // Check if seasons object exists
-                if (directPlayerData.seasons && typeof directPlayerData.seasons === 'object') {
-                  console.log('📦 Seasons object keys:', Object.keys(directPlayerData.seasons));
+                // Find season keys that start with currentSeason.id (e.g., "2025-fall")
+                const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
+                  key.startsWith(currentSeason.id)
+                );
+                
+                console.log('🔍 Matching season keys:', matchingKeys);
+                
+                if (matchingKeys.length > 0) {
+                  // Use the first matching key
+                  const seasonKey = matchingKeys[0];
+                  const seasonStats = directPlayerData.seasons[seasonKey];
                   
-                  // Find season keys that start with currentSeason.id (e.g., "2025-fall")
-                  const matchingKeys = Object.keys(directPlayerData.seasons).filter(key =>
-                    key.startsWith(currentSeason.id)
-                  );
-                  
-                  console.log('🔍 Matching season keys:', matchingKeys);
-                  
-                  if (matchingKeys.length > 0) {
-                    // Use the first matching key
-                    const seasonKey = matchingKeys[0];
-                    const seasonStats = directPlayerData.seasons[seasonKey];
-                    
-                    if (seasonStats) {
-                      playerStats = seasonStats;
-                      console.log('✅ Extracted season stats from key:', seasonKey, playerStats);
-                    }
+                  if (seasonStats) {
+                    playerStats = seasonStats;
+                    console.log('✅ Extracted season stats from key:', seasonKey, playerStats);
                   }
                 }
               }
-            } catch (directLoadError) {
-              console.warn('⚠️ Could not load stats directly:', directLoadError);
             }
+          } catch (directLoadError) {
+            console.warn('⚠️ Could not load stats directly:', directLoadError);
           }
+        }
+        
+        if (playerStats) {
+          console.log('✅ Player stats found:', playerStats);
+          document.getElementById('statGames').textContent = playerStats.games || 0;
+          document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
+          document.getElementById('statHits').textContent = playerStats.hits || 0;
+          document.getElementById('statRuns').textContent = playerStats.runs || 0;
+        } else {
+          console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
+          console.log('Available player names:', stats.slice(0, 10).map(s => ({
+            name: s.playerName || s.name,
+            id: s.id || s.playerId
+          })));
           
-          if (playerStats) {
-            console.log('✅ Player stats found:', playerStats);
-            document.getElementById('statGames').textContent = playerStats.games || 0;
-            document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
-            document.getElementById('statHits').textContent = playerStats.hits || 0;
-            document.getElementById('statRuns').textContent = playerStats.runs || 0;
-          } else {
-            console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
-            console.log('Available player names:', stats.slice(0, 10).map(s => ({
-              name: s.playerName || s.name,
-              id: s.id || s.playerId
-            })));
-            
-            // Set defaults to show 0s instead of leaving blank
-            document.getElementById('statGames').textContent = '0';
-            document.getElementById('statAvg').textContent = '.000';
-            document.getElementById('statHits').textContent = '0';
-            document.getElementById('statRuns').textContent = '0';
-          }
-        } catch (error) {
-          console.error('❌ Error loading user stats:', error);
-          // Don't block page load for stats errors
+          // Set defaults to show 0s instead of leaving blank
           document.getElementById('statGames').textContent = '0';
           document.getElementById('statAvg').textContent = '.000';
           document.getElementById('statHits').textContent = '0';
           document.getElementById('statRuns').textContent = '0';
         }
+      } catch (error) {
+        console.error('❌ Error loading user stats:', error);
+        // Don't block page load for stats errors
+        document.getElementById('statGames').textContent = '0';
+        document.getElementById('statAvg').textContent = '.000';
+        document.getElementById('statHits').textContent = '0';
+        document.getElementById('statRuns').textContent = '0';
       }
+    }
 
     function loadFavorites() {
       // Load favorite teams
@@ -1563,10 +1601,68 @@ body {
       });
     }
 
+    // NEW: Handle display name form submission
+    document.getElementById('displayNameForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const preferredDisplayName = document.getElementById('preferredDisplayName').value.trim();
+      
+      try {
+        const updates = {
+          preferredDisplayName: preferredDisplayName || null
+        };
+        
+        const result = await updateUserProfileAuth(currentUser.uid, updates);
+        if (!result.success) {
+          throw new Error('Update failed');
+        }
+        
+        // Update the local userProfile object
+        userProfile.preferredDisplayName = preferredDisplayName || null;
+        
+        // Update the header display name immediately
+        const displayName = preferredDisplayName || currentUser.displayName || 'User';
+        document.getElementById('displayName').textContent = displayName;
+        
+        showSuccessMessage('successMessageDisplayName');
+      } catch (error) {
+        console.error('Error updating display name:', error);
+        alert('Error saving display name. Please try again.');
+      }
+    });
+
+    // NEW: Handle clear display name button
+    document.getElementById('clearDisplayName').addEventListener('click', async () => {
+      document.getElementById('preferredDisplayName').value = '';
+      
+      try {
+        const updates = {
+          preferredDisplayName: null
+        };
+        
+        const result = await updateUserProfileAuth(currentUser.uid, updates);
+        if (!result.success) {
+          throw new Error('Update failed');
+        }
+        
+        // Update the local userProfile object
+        userProfile.preferredDisplayName = null;
+        
+        // Update the header display name immediately to Google name
+        const displayName = currentUser.displayName || 'User';
+        document.getElementById('displayName').textContent = displayName;
+        
+        showSuccessMessage('successMessageDisplayName');
+      } catch (error) {
+        console.error('Error clearing display name:', error);
+        alert('Error clearing display name. Please try again.');
+      }
+    });
+
     // Form submissions
     document.getElementById('playerInfoForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      // Fixed code:
+      
       const mapToCode = (fullWord, type) => {
         if (!fullWord) return '';
         if (type === 'bats') {
@@ -1597,7 +1693,6 @@ body {
         position: mapToCode(document.getElementById('primaryPosition').value, 'position'),
         secondaryPositions: document.getElementById('secondaryPositions').value
       };
-
       
       try {
         // Update the auth user profile
@@ -1608,7 +1703,7 @@ body {
         
         // ALSO update the merged player profile if it exists
         if (userProfile?.mergedFromProfile) {
-          console.log('📝 Also updating merged profile:', userProfile.mergedFromProfile);
+          console.log('🔄 Also updating merged profile:', userProfile.mergedFromProfile);
           
           try {
             const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
