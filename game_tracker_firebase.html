@@ -1261,9 +1261,12 @@
 
                                     {['first', 'second', 'third'].map((base, idx) => {
                                         const positions = {
-                                            first: { cx: 320, cy: 200, labelY: 165, arrowY: 240, arrow1X: 295, arrow2X: 345, removeY: 225 },
-                                            second: { cx: 200, cy: 80, labelY: 45, arrowY: 120, arrow1X: 175, arrow2X: 225, removeY: 105 },
-                                            third: { cx: 80, cy: 200, labelY: 165, arrowY: 240, arrow1X: 55, arrow2X: 105, removeY: 225 }
+                                            first: { cx: 320, cy: 200, labelY: 165, arrowY: 240, arrow1X: 295, arrow2X: 345, removeY: 225, 
+                                                    advanceArrow: '▲', backArrow: '▼' },
+                                            second: { cx: 200, cy: 80, labelY: 45, arrowY: 120, arrow1X: 175, arrow2X: 225, removeY: 105,
+                                                     advanceArrow: '◀', backArrow: '▶' },
+                                            third: { cx: 80, cy: 200, labelY: 165, arrowY: 240, arrow1X: 55, arrow2X: 105, removeY: 225,
+                                                    advanceArrow: '▼', backArrow: '▲' }
                                         };
                                         const pos = positions[base];
                                         const baseLabel = base === 'first' ? '1B' : base === 'second' ? '2B' : '3B';
@@ -1310,7 +1313,7 @@
                                                                     style={{ cursor: 'pointer' }}
                                                                     onClick={() => adjustRunner(base, 'back')}
                                                                 >
-                                                                    ◀
+                                                                    {pos.backArrow}
                                                                 </text>
                                                                 <text 
                                                                     x={pos.arrow2X} y={pos.arrowY} 
@@ -1321,7 +1324,7 @@
                                                                     style={{ cursor: 'pointer' }}
                                                                     onClick={() => adjustRunner(base, 'advance')}
                                                                 >
-                                                                    ▶
+                                                                    {pos.advanceArrow}
                                                                 </text>
                                                                 <circle
                                                                     cx={pos.cx}
@@ -1348,7 +1351,7 @@
                                                 )}
                                             </g>
                                         );
-                                    }                                    )}
+                                    })}
                                 </svg>
 
                                 {pendingPlay && (displayScore > 0 || tempOuts > 0) && (
