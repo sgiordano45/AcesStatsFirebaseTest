@@ -407,22 +407,36 @@
                     
                     console.log('📊 Team players:', teamPlayers.length);
                     
-                    const formattedPlayers = teamPlayers.map((player, index) => {
+                    const formattedPlayersPromises = teamPlayers.map(async (player, index) => {
                         const name = player.name || player.playerName;
                         const nameParts = name.trim().split(' ');
                         const avatar = nameParts.length > 1
                             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
                             : name.substring(0, 2).toUpperCase();
                         
+                        let jerseyNum = player.number || (index + 1);
+                        
+                        // Try to get the player's profile for accurate jersey number
+                        try {
+                            const playerProfile = await window.FirebaseGameTracker.getUserProfile(player.playerId || player.id);
+                            if (playerProfile.success && playerProfile.data?.number) {
+                                jerseyNum = parseInt(playerProfile.data.number) || jerseyNum;
+                            }
+                        } catch (error) {
+                            console.warn(`Could not load profile for ${name}:`, error);
+                        }
+                        
                         return {
                             id: player.playerId || player.id,
                             name,
-                            number: player.number || (index + 1).toString(),
+                            number: jerseyNum.toString(),
                             position: player.position || 'IF/OF',
                             avatar,
                             battingAvg: player.battingAverage ? player.battingAverage.toFixed(3) : '.000'
                         };
                     });
+                    
+                    const formattedPlayers = await Promise.all(formattedPlayersPromises);
                     
                     setPlayers(formattedPlayers);
                     
@@ -1062,8 +1076,63 @@
                 );
             }
 
+            // Calculate live batting stats from current game
+            const liveBattingStats = battingOrder.map(player => {
+                const playerPlays = gameState.playHistory.filter(play => play.batter === player.name);
+                
+                let atBats = 0;
+                let hits = 0;
+                let runs = 0;
+                let walks = 0;
+                
+                playerPlays.forEach(play => {
+                    if (play.playType !== 'walk' && play.playType !== 'sacfly') {
+                        atBats++;
+                    }
+                    if (['single', 'double', 'triple', 'homerun'].includes(play.playType)) {
+                        hits++;
+                    }
+                    if (play.playType === 'walk') {
+                        walks++;
+                    }
+                });
+                
+                // Count runs scored by this player
+                gameState.playHistory.forEach(play => {
+                    if (play.basesAfter.first !== play.basesBefore.first && play.basesBefore.first === player.name) {
+                        // Player was on first and moved/scored
+                    }
+                    if (play.basesAfter.second !== play.basesBefore.second && play.basesBefore.second === player.name) {
+                        // Player was on second and moved/scored
+                    }
+                    if (play.basesAfter.third !== play.basesBefore.third && play.basesBefore.third === player.name) {
+                        // Player was on third and moved/scored
+                    }
+                    // Check if player scored (was on base before, not after, and runs were scored)
+                    if (play.runsScored > 0) {
+                        if (play.basesBefore.third === player.name && !play.basesAfter.third) runs++;
+                        if (play.basesBefore.second === player.name && !play.basesAfter.second && !play.basesAfter.third) runs++;
+                        if (play.basesBefore.first === player.name && !play.basesAfter.first && !play.basesAfter.second && !play.basesAfter.third) runs++;
+                    }
+                    // Home runs count as a run for the batter
+                    if (play.batter === player.name && play.playType === 'homerun') {
+                        runs++;
+                    }
+                });
+                
+                return {
+                    name: player.name,
+                    number: player.number,
+                    atBats,
+                    hits,
+                    runs,
+                    walks,
+                    avg: atBats > 0 ? (hits / atBats).toFixed(3) : '.000'
+                };
+            });
+
             return (
-                <div className="max-w-6xl mx-auto p-5 font-sans">
+                <div className="max-w-7xl mx-auto p-5 font-sans">
                     <div className="text-center mb-6">
                         <h1 className="text-3xl font-bold text-gray-900 mb-2">
                             Live Game Tracker
@@ -1167,7 +1236,8 @@
 
                     {gameState.isYourTeamBatting && (
                         <>
-                            <div className={`relative w-full max-w-lg mx-auto mb-8 bg-green-800 rounded-xl p-8 ${pendingPlay ? 'border-4 border-amber-400' : ''} ${inningOver && !pendingPlay ? 'opacity-50' : 'opacity-100'}`}>
+                            <div className="flex gap-6 mb-8">
+                                <div className={`relative w-full max-w-lg bg-green-800 rounded-xl p-8 ${pendingPlay ? 'border-4 border-amber-400' : ''} ${inningOver && !pendingPlay ? 'opacity-50' : 'opacity-100'}`}>
                                 <svg viewBox="0 0 400 400" className="w-full h-auto">
                                     <polygon 
                                         points="200,80 320,200 200,320 80,200" 
@@ -1278,7 +1348,7 @@
                                                 )}
                                             </g>
                                         );
-                                    })}
+                                    }                                    )}
                                 </svg>
 
                                 {pendingPlay && (displayScore > 0 || tempOuts > 0) && (
@@ -1296,6 +1366,45 @@
                                     </div>
                                 )}
                             </div>
+                            
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 flex-shrink-0" style={{ width: '280px' }}>
+                                <h3 className="text-lg font-bold mb-3 text-gray-800">Live Batting Stats</h3>
+                                <div className="space-y-1 max-h-96 overflow-y-auto">
+                                    {liveBattingStats.map((stat, idx) => {
+                                        const isCurrentBatter = idx === gameState.currentBatter;
+                                        return (
+                                            <div 
+                                                key={stat.name}
+                                                className={`text-xs p-2 rounded ${isCurrentBatter ? 'bg-purple-100 border-2 border-purple-500 font-bold' : 'bg-gray-50'}`}
+                                            >
+                                                <div className="flex items-center gap-1 mb-1">
+                                                    <span className="text-gray-500">#{stat.number}</span>
+                                                    <span className="font-semibold text-gray-900 truncate">{stat.name.split(' ').pop()}</span>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-1 text-center">
+                                                    <div>
+                                                        <div className="text-gray-500">AB</div>
+                                                        <div className="font-bold">{stat.atBats}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-gray-500">H</div>
+                                                        <div className="font-bold">{stat.hits}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-gray-500">R</div>
+                                                        <div className="font-bold">{stat.runs}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-gray-500">BB</div>
+                                                        <div className="font-bold">{stat.walks}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
 
                             {pendingPlay && (
                                 <div className="flex gap-3 mb-5 justify-center">
