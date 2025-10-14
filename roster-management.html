@@ -782,6 +782,10 @@ function RosterManagement({ currentUser }) {
     );
   };
 
+  const gameBattingOrder = battingOrder[selectedGame] || [];
+  const gameFieldingPositions = fieldingPositions[selectedGame] || {};
+  const gameBenchPlayers = benchPlayers[selectedGame] || {};
+
   const yesRsvpCount = selectedGame ? players.filter(player => {
     const key = `${player.id}-${selectedGame}`;
     return rsvps[key] === 'yes';
@@ -798,10 +802,6 @@ function RosterManagement({ currentUser }) {
 
   const belowMinimum = yesRsvpCount < seasonConfig.minPlayers;
   const catcherDisabled = yesRsvpCount < seasonConfig.catcherMinPlayers;
-
-  const gameBattingOrder = battingOrder[selectedGame] || [];
-  const gameFieldingPositions = fieldingPositions[selectedGame] || {};
-  const gameBenchPlayers = benchPlayers[selectedGame] || {};
 
   if (loading) {
     return null;
