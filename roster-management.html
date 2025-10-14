@@ -289,6 +289,7 @@ function RosterManagement({ currentUser }) {
       };
     }
   }, [games, selectedTeam, players]);
+  
   async function loadInitialData() {
     try {
       console.log('📄 Loading initial data...');
@@ -829,6 +830,11 @@ function RosterManagement({ currentUser }) {
     return rsvps[key] === 'yes';
   }) : [];
 
+  // Filter available players for batting (exclude those already in batting order)
+  const availableForBatting = availablePlayers.filter(player => {
+    return !gameBattingOrder.some(p => p && p.id === player.id);
+  });
+
   const belowMinimum = yesRsvpCount < seasonConfig.minPlayers;
   const catcherDisabled = yesRsvpCount < seasonConfig.catcherMinPlayers;
 
@@ -1043,10 +1049,10 @@ function RosterManagement({ currentUser }) {
 
                         <div>
                           <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
-                            Available Players ({availablePlayers.length})
+                            Available Players ({availableForBatting.length})
                           </h3>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '600px', overflowY: 'auto' }}>
-                            {availablePlayers.map(player => (
+                            {availableForBatting.map(player => (
                               <PlayerCard key={player.id} player={player} draggable={true} showStats={true} />
                             ))}
                           </div>
@@ -1057,131 +1063,130 @@ function RosterManagement({ currentUser }) {
                     {/* Defensive Positions */}
                     <div>
                       <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>Defensive Positions by Inning</h2>
-                      <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                          <thead>
-                            <tr>
-                              <th style={{ position: 'sticky', left: 0, background: '#f2f2f2', zIndex: 10, borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', width: '64px', color: 'var(--text-dark)' }}>Pos</th>
-                              {[1, 2, 3, 4, 5, 6, 7].map(inning => (
-                                <th key={inning} style={{ borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', background: '#f2f2f2', color: 'var(--text-dark)' }}>{inning}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {seasonConfig.positions.map(position => {
-                              const isCatcher = position === 'C';
-                              const disabled = isCatcher && catcherDisabled;
+                      <div style={{ display: 'flex', gap: '1.5rem' }}>
+                        {/* Available Players for Defense */}
+                        <div style={{ minWidth: '250px', maxWidth: '250px' }}>
+                          <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
+                            Available Players ({availablePlayers.length})
+                          </h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '700px', overflowY: 'auto', 
+                                        padding: '0.5rem', background: '#f9fafb', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            {availablePlayers.map(player => (
+                              <PlayerCard key={player.id} player={player} draggable={true} showStats={false} />
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Defense Table */}
+                        <div style={{ flex: 1, overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                            <thead>
+                              <tr>
+                                <th style={{ position: 'sticky', left: 0, background: '#f2f2f2', zIndex: 10, borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', width: '64px', color: 'var(--text-dark)' }}>Pos</th>
+                                {[1, 2, 3, 4, 5, 6, 7].map(inning => (
+                                  <th key={inning} style={{ borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', background: '#f2f2f2', color: 'var(--text-dark)' }}>{inning}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {seasonConfig.positions.map(position => {
+                                const isCatcher = position === 'C';
+                                const disabled = isCatcher && catcherDisabled;
+                                
+                                return (
+                                  <tr key={position} style={{ background: disabled ? '#f3f4f6' : 'white' }}>
+                                    <td style={{ position: 'sticky', left: 0, background: disabled ? '#f3f4f6' : 'white', zIndex: 10,
+                                                borderBottom: '1px solid var(--border-color)', padding: '8px', fontWeight: '600', textAlign: 'center' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {disabled && <Lock style={{ width: '14px', height: '14px', color: '#9ca3af' }} />}
+                                        <span style={{ textDecoration: disabled ? 'line-through' : 'none', color: disabled ? '#9ca3af' : 'var(--text-dark)' }}>
+                                          {position}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    {[1, 2, 3, 4, 5, 6, 7].map(inning => {
+                                      const player = gameFieldingPositions[inning]?.[position];
+                                      const isDropTarget = dropTarget?.type === 'fielding' && dropTarget?.position === position && dropTarget?.inning === inning;
+                                      
+                                      return (
+                                        <td key={inning}
+                                          onDragOver={disabled ? undefined : handleDragOver}
+                                          onDragEnter={disabled ? undefined : (e) => handleDragEnter(e, { type: 'fielding', position, inning })}
+                                          onDragLeave={handleDragLeave}
+                                          onDrop={disabled ? undefined : (e) => handleDrop(e, { type: 'fielding', position, inning })}
+                                          style={{ borderBottom: '1px solid var(--border-color)', padding: '4px', transition: 'all 0.3s ease',
+                                                  background: isDropTarget && !disabled ? '#eff6ff' : 'transparent',
+                                                  border: isDropTarget && !disabled ? '2px dashed var(--primary-color)' : '1px solid var(--border-color)',
+                                                  cursor: disabled ? 'not-allowed' : 'default' }}>
+                                          {disabled ? (
+                                            <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>—</div>
+                                          ) : player ? (
+                                            <PlayerCard player={player} draggable={true} size="small"
+                                              onRemove={() => removeFromFielding(inning, position)} />
+                                          ) : (
+                                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                          color: '#d1d5db', fontSize: '12px' }}>
+                                              Drop
+                                            </div>
+                                          )}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                );
+                              })}
                               
-                              return (
-                                <tr key={position} style={{ background: disabled ? '#f3f4f6' : 'white' }}>
-                                  <td style={{ position: 'sticky', left: 0, background: disabled ? '#f3f4f6' : 'white', zIndex: 10,
-                                              borderBottom: '1px solid var(--border-color)', padding: '8px', fontWeight: '600', textAlign: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                      {disabled && <Lock style={{ width: '14px', height: '14px', color: '#9ca3af' }} />}
-                                      <span style={{ textDecoration: disabled ? 'line-through' : 'none', color: disabled ? '#9ca3af' : 'var(--text-dark)' }}>
-                                        {position}
-                                      </span>
-                                    </div>
-                                  </td>
-                                  {[1, 2, 3, 4, 5, 6, 7].map(inning => {
-                                    const player = gameFieldingPositions[inning]?.[position];
-                                    const isDropTarget = dropTarget?.type === 'fielding' && dropTarget?.position === position && dropTarget?.inning === inning;
-                                    
-                                    return (
-                                      <td key={inning}
-                                        onDragOver={disabled ? undefined : handleDragOver}
-                                        onDragEnter={disabled ? undefined : (e) => handleDragEnter(e, { type: 'fielding', position, inning })}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={disabled ? undefined : (e) => handleDrop(e, { type: 'fielding', position, inning })}
-                                        style={{ borderBottom: '1px solid var(--border-color)', padding: '4px', transition: 'all 0.3s ease',
-                                                background: isDropTarget && !disabled ? '#eff6ff' : 'transparent',
-                                                border: isDropTarget && !disabled ? '2px dashed var(--primary-color)' : '1px solid var(--border-color)',
-                                                cursor: disabled ? 'not-allowed' : 'default' }}>
-                                        {disabled ? (
-                                          <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>—</div>
-                                        ) : player ? (
-                                          <PlayerCard player={player} draggable={true} size="small"
-                                            onRemove={() => removeFromFielding(inning, position)} />
-                                        ) : (
-                                          <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        color: '#d1d5db', fontSize: '12px' }}>
-                                            Drop
-                                          </div>
-                                        )}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                            
-                            <tr style={{ background: '#f9fafb' }}>
-                              <td colSpan={8} style={{ padding: '8px', textAlign: 'center', fontWeight: '600', fontSize: '12px',
-                                                        color: 'var(--text-light)', borderTop: '2px solid #9ca3af', borderBottom: '2px solid #9ca3af' }}>
-                                BENCH
-                              </td>
-                            </tr>
-                            
-                            {(() => {
-                              const maxBenchSpots = seasonConfig.battingOrderSize - seasonConfig.positions.length;
-                              return [...Array(maxBenchSpots)].map((_, benchIdx) => (
-                                <tr key={`bench-${benchIdx}`} style={{ background: '#fefce8' }}>
-                                  <td style={{ position: 'sticky', left: 0, background: '#fefce8', zIndex: 10, borderBottom: '1px solid var(--border-color)',
-                                              padding: '8px', fontWeight: '600', textAlign: 'center', color: '#854d0e' }}>
-                                    B{benchIdx + 1}
-                                  </td>
-                                  {[1, 2, 3, 4, 5, 6, 7].map(inning => {
-                                    const inningBench = gameBenchPlayers[inning] || [];
-                                    const benchPlayer = inningBench[benchIdx];
-                                    const isDropTarget = dropTarget?.type === 'bench' && dropTarget?.inning === inning && dropTarget?.benchIndex === benchIdx;
-                                    
-                                    return (
-                                      <td key={inning}
-                                        onDragOver={handleDragOver}
-                                        onDragEnter={(e) => handleDragEnter(e, { type: 'bench', inning, benchIndex: benchIdx })}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={(e) => handleDrop(e, { type: 'bench', inning, benchIndex: benchIdx })}
-                                        style={{ borderBottom: '1px solid var(--border-color)', padding: '4px', background: isDropTarget ? '#fef3c7' : '#fefce8',
-                                                border: isDropTarget ? '2px dashed #ca8a04' : '1px solid var(--border-color)',
-                                                transition: 'all 0.3s ease' }}>
-                                        {benchPlayer ? (
-                                          <PlayerCard player={benchPlayer} draggable={true} size="small"
-                                            onRemove={() => removeFromBench(inning, benchIdx)} />
-                                        ) : (
-                                          <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        color: '#d1d5db', fontSize: '12px' }}>
-                                            Drop
-                                          </div>
-                                        )}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ));
-                            })()}
-                          </tbody>
-                        </table>
+                              <tr style={{ background: '#f9fafb' }}>
+                                <td colSpan={8} style={{ padding: '8px', textAlign: 'center', fontWeight: '600', fontSize: '12px',
+                                                          color: 'var(--text-light)', borderTop: '2px solid #9ca3af', borderBottom: '2px solid #9ca3af' }}>
+                                  BENCH
+                                </td>
+                              </tr>
+                              
+                              {(() => {
+                                const maxBenchSpots = seasonConfig.battingOrderSize - seasonConfig.positions.length;
+                                return [...Array(maxBenchSpots)].map((_, benchIdx) => (
+                                  <tr key={`bench-${benchIdx}`} style={{ background: '#fefce8' }}>
+                                    <td style={{ position: 'sticky', left: 0, background: '#fefce8', zIndex: 10, borderBottom: '1px solid var(--border-color)',
+                                                padding: '8px', fontWeight: '600', textAlign: 'center', color: '#854d0e' }}>
+                                      B{benchIdx + 1}
+                                    </td>
+                                    {[1, 2, 3, 4, 5, 6, 7].map(inning => {
+                                      const inningBench = gameBenchPlayers[inning] || [];
+                                      const benchPlayer = inningBench[benchIdx];
+                                      const isDropTarget = dropTarget?.type === 'bench' && dropTarget?.inning === inning && dropTarget?.benchIndex === benchIdx;
+                                      
+                                      return (
+                                        <td key={inning}
+                                          onDragOver={handleDragOver}
+                                          onDragEnter={(e) => handleDragEnter(e, { type: 'bench', inning, benchIndex: benchIdx })}
+                                          onDragLeave={handleDragLeave}
+                                          onDrop={(e) => handleDrop(e, { type: 'bench', inning, benchIndex: benchIdx })}
+                                          style={{ borderBottom: '1px solid var(--border-color)', padding: '4px', background: isDropTarget ? '#fef3c7' : '#fefce8',
+                                                  border: isDropTarget ? '2px dashed #ca8a04' : '1px solid var(--border-color)',
+                                                  transition: 'all 0.3s ease' }}>
+                                          {benchPlayer ? (
+                                            <PlayerCard player={benchPlayer} draggable={true} size="small"
+                                              onRemove={() => removeFromBench(inning, benchIdx)} />
+                                          ) : (
+                                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                          color: '#d1d5db', fontSize: '12px' }}>
+                                              Drop
+                                            </div>
+                                          )}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {!selectedTeam && (
-          <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ marginTop: 0, color: 'var(--text-dark)' }}>Welcome to Roster Management</h3>
-            <p style={{ color: 'var(--text-light)' }}>Select your team to get started with RSVPs and lineup management</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.render(<RosterManagement />, document.getElementById('root'));
+				  }
 </script>
 </body>
 </html>
