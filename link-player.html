@@ -90,7 +90,14 @@
       font-size: 14px;
     }
     
-    .logout-btn {
+    .header-buttons {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .home-btn, .logout-btn {
       padding: 1rem 1.75rem;
       background: white;
       color: var(--primary-color);
@@ -101,11 +108,14 @@
       font-weight: 600;
       transition: all 0.3s ease;
       position: relative;
-      z-index: 1;
       overflow: hidden;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     
-    .logout-btn::before {
+    .home-btn::before, .logout-btn::before {
       content: '';
       position: absolute;
       top: 0;
@@ -118,11 +128,11 @@
       z-index: -1;
     }
     
-    .logout-btn:hover::before {
+    .home-btn:hover::before, .logout-btn:hover::before {
       transform: translateX(0);
     }
     
-    .logout-btn:hover {
+    .home-btn:hover, .logout-btn:hover {
       color: var(--primary-color);
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
@@ -420,6 +430,49 @@
       box-shadow: var(--shadow-md);
     }
     
+    .linked-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .linked-buttons .btn {
+      flex: 1;
+    }
+    
+    .btn-profile {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-profile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .btn-profile:hover::before {
+      opacity: 1;
+    }
+    
+    .btn-profile:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .btn-profile span {
+      position: relative;
+      z-index: 1;
+    }
+    
     .alert {
       padding: 1rem 1.25rem;
       border-radius: 12px;
@@ -543,6 +596,16 @@
         padding: 1.5rem;
       }
       
+      .header-buttons {
+        width: 100%;
+        flex-direction: column;
+      }
+      
+      .home-btn, .logout-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
       .user-info {
         flex-direction: column;
         text-align: center;
@@ -556,9 +619,8 @@
         display: none;
       }
       
-      .logout-btn {
-        width: 100%;
-        justify-content: center;
+      .linked-buttons {
+        flex-direction: column;
       }
     }
   </style>
@@ -570,7 +632,10 @@
         <h1>🔗 Link Player Account</h1>
         <p>Connect your Google account to your player profile</p>
       </div>
-      <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+      <div class="header-buttons">
+        <a href="index.html" class="home-btn">← Home</a>
+        <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+      </div>
     </div>
     
     <div id="loadingState" class="card">
@@ -609,9 +674,14 @@
             <p><strong>Player:</strong> <span id="linkedPlayerName"></span></p>
             <p><strong>Team:</strong> <span id="linkedTeamName"></span></p>
           </div>
-          <button class="btn btn-secondary" onclick="unlinkPlayer()">
-            Change Player Link
-          </button>
+          <div class="linked-buttons">
+            <button class="btn btn-profile" onclick="window.location.href='profile.html'">
+              <span>Go to Profile Page →</span>
+            </button>
+            <button class="btn btn-secondary" onclick="unlinkPlayer()">
+              Change Player Link
+            </button>
+          </div>
         </div>
       </div>
       
