@@ -1022,7 +1022,8 @@
 
         if (playerData.length > 0) {
           const cleanBattingData = playerData.map(p => ({
-            name: p.name ? p.name.trim() : "",
+            id: p.id,  // ← ADD THIS LINE
+			name: p.name ? p.name.trim() : "",
             team: p.team ? p.team.trim() : "",
             games: Number(p.games) || 0,
             atBats: Number(p.atBats) || 0,
@@ -1115,7 +1116,8 @@
 
         if (pitchingData.length > 0) {
           const cleanPitchingData = pitchingData.map(p => ({
-            name: p.name ? p.name.trim() : "",
+            id: p.id,  // ← ADD THIS LINE
+			name: p.name ? p.name.trim() : "",
             team: p.team ? p.team.trim() : "",
             games: Number(p.games) || 0,
             IP: parseFloat(p.IP) || 0,
