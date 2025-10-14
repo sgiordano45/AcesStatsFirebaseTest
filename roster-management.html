@@ -723,6 +723,32 @@ function RosterManagement({ currentUser }) {
     }
   };
 
+  const copyFromPreviousInning = (targetInning) => {
+    if (!isCaptain || targetInning === 1) return;
+    
+    const previousInning = targetInning - 1;
+    
+    // Copy fielding positions
+    const newFieldingPositions = { ...fieldingPositions };
+    if (!newFieldingPositions[selectedGame]) newFieldingPositions[selectedGame] = {};
+    
+    const previousPositions = newFieldingPositions[selectedGame][previousInning] || {};
+    newFieldingPositions[selectedGame][targetInning] = { ...previousPositions };
+    setFieldingPositions(newFieldingPositions);
+    
+    // Copy bench players
+    const newBenchPlayers = { ...benchPlayers };
+    if (!newBenchPlayers[selectedGame]) newBenchPlayers[selectedGame] = {};
+    
+    const previousBench = newBenchPlayers[selectedGame][previousInning] || [];
+    newBenchPlayers[selectedGame][targetInning] = [...previousBench];
+    setBenchPlayers(newBenchPlayers);
+    
+    // Save both to Firebase
+    saveLineupData('fielding', newFieldingPositions[selectedGame], targetInning);
+    saveLineupData('bench', newBenchPlayers[selectedGame], targetInning);
+  };
+
   const PlayerCard = ({ player, draggable = false, showStats = false, onRemove, size = 'normal' }) => {
     const isSmall = size === 'small';
     const isCurrentUser = player.id === currentUserId;
@@ -1034,7 +1060,30 @@ function RosterManagement({ currentUser }) {
                               <tr>
                                 <th style={{ position: 'sticky', left: 0, background: '#f2f2f2', zIndex: 10, borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', width: '64px', color: 'var(--text-dark)' }}>Pos</th>
                                 {[1, 2, 3, 4, 5, 6, 7].map(inning => (
-                                  <th key={inning} style={{ borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', background: '#f2f2f2', color: 'var(--text-dark)' }}>{inning}</th>
+                                  <th key={inning} style={{ borderBottom: '2px solid var(--border-color)', padding: '8px', textAlign: 'center', background: '#f2f2f2', color: 'var(--text-dark)', position: 'relative' }}>
+                                    <div style={{ marginBottom: inning > 1 ? '4px' : '0' }}>{inning}</div>
+                                    {inning > 1 && (
+                                      <button
+                                        onClick={() => copyFromPreviousInning(inning)}
+                                        style={{
+                                          fontSize: '10px',
+                                          padding: '2px 6px',
+                                          background: 'var(--primary-color)',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          cursor: 'pointer',
+                                          whiteSpace: 'nowrap',
+                                          transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.background = 'var(--secondary-color)'}
+                                        onMouseLeave={(e) => e.target.style.background = 'var(--primary-color)'}
+                                        title={`Copy all players from inning ${inning - 1}`}
+                                      >
+                                        ← Copy
+                                      </button>
+                                    )}
+                                  </th>
                                 ))}
                               </tr>
                             </thead>
