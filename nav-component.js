@@ -111,11 +111,7 @@ export class NavigationComponent {
           `).join('')}
           ${this.isAuthenticated ? `
             <div class="mobile-nav-section-divider">Account</div>
-          ` : `
-            <div id="mobileAuthSection" class="mobile-nav-item" style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;">
-              <!-- Auth buttons will be inserted here by auth.js if available -->
-            </div>
-          `}
+          ` : ''}
         </nav>
       </div>
     `;
