@@ -58,7 +58,7 @@ export const ALL_PAGES = {};
 // Page-specific configurations: which links to show on desktop
 export const PAGE_CONFIGS = {
   'index.html': {
-    desktop: ['home', 'current-season', 'league-rules', 'batting', 'pitching', 'teams', 'players', 'seasons']
+    desktop: [] // No desktop nav on home page
   },
   
   'current-season.html': {
