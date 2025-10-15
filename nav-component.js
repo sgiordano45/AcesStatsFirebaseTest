@@ -137,7 +137,7 @@ export class NavigationComponent {
     // Insert mobile nav at the beginning of page-container
     const pageContainer = document.querySelector('.page-container');
     if (pageContainer) {
-      pageContainer.insertAdjacentHTML('afterbegin', mobile);
+      pageContainer.insertAdjacentHTML('beforebegin', mobile);
     }
     
     // Insert desktop nav into filters-nav
