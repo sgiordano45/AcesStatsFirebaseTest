@@ -10,7 +10,7 @@ export const NAV_STRUCTURE = {
     { id: 'batting', href: 'batting.html', label: 'Batting Stats', icon: '⚾', priority: 1, class: 'batting' },
     { id: 'pitching', href: 'pitching.html', label: 'Pitching Stats', icon: '🥎', priority: 1, class: 'pitching' },
     { id: 'teams', href: 'teams.html', label: 'All Teams', icon: '🏆', priority: 1 },
-    { id: 'players', href: 'players.html', label: 'All Players', icon: '👤', priority: 1 },
+    { id: 'players', href: 'players.html', label: 'All Players', icon: '👥', priority: 1 },
   ],
   
   // Tier 2: SECONDARY - Important pages (shown contextually on desktop)
