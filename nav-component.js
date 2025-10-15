@@ -15,16 +15,37 @@ export class NavigationComponent {
     return filename;
   }
   
-  // Check if user is authenticated (integrate with your auth system)
+// Check if user is authenticated (integrate with your auth system)
   checkAuth() {
-    // This checks if your auth.js has set the user
-    // Adjust this based on your actual authentication implementation
+    // Check Firebase Auth
     if (typeof window.auth !== 'undefined' && window.auth.currentUser) {
+      console.log('✅ User authenticated via Firebase:', window.auth.currentUser.email);
       return true;
     }
-    // Fallback: check localStorage or sessionStorage
-    return localStorage.getItem('userId') !== null || 
-           sessionStorage.getItem('userId') !== null;
+    
+    // Fallback: check localStorage for Firebase persistence
+    // Firebase stores auth state in IndexedDB/localStorage with keys starting with 'firebase:authUser:'
+    const localStorageKeys = Object.keys(localStorage);
+    const hasFirebaseAuth = localStorageKeys.some(key => 
+      key.startsWith('firebase:authUser:') && localStorage.getItem(key) !== null
+    );
+    
+    if (hasFirebaseAuth) {
+      console.log('✅ Firebase auth token found in localStorage');
+      return true;
+    }
+    
+    // Additional fallback: check for userId
+    const hasUserId = localStorage.getItem('userId') !== null || 
+                      sessionStorage.getItem('userId') !== null;
+    
+    if (hasUserId) {
+      console.log('✅ UserId found in storage');
+    } else {
+      console.log('ℹ️ No authentication found');
+    }
+    
+    return hasUserId;
   }
 
   // Get all links for mobile (everything user has access to)
@@ -198,6 +219,14 @@ export class NavigationComponent {
 
 // Auto-initialize when loaded as module
 if (typeof window !== 'undefined') {
+  // Store a reference to reinitialize nav when auth is ready
+  window.reinitializeNav = function() {
+    console.log('🔄 Reinitializing navigation with updated auth state...');
+    document.querySelector('.mobile-nav-container')?.remove();
+    document.querySelector('.nav-container')?.remove();
+    NavigationComponent.init();
+  };
+  
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -205,6 +234,38 @@ if (typeof window !== 'undefined') {
     });
   } else {
     NavigationComponent.init();
+  }
+  
+  // Listen for Firebase auth state changes
+  // This will trigger after Firebase initializes
+  if (typeof window.auth !== 'undefined') {
+    console.log('👂 Setting up auth state listener for navigation...');
+    window.auth.onAuthStateChanged((user) => {
+      console.log('🔐 Auth state changed, user:', user ? user.email : 'none');
+      // Small delay to ensure auth state is fully processed
+      setTimeout(() => {
+        window.reinitializeNav();
+      }, 100);
+    });
+  } else {
+    // Firebase not loaded yet, set up a check
+    console.log('⏳ Firebase auth not loaded, will check again...');
+    let authCheckAttempts = 0;
+    const authCheckInterval = setInterval(() => {
+      if (typeof window.auth !== 'undefined') {
+        console.log('✅ Firebase auth now available, setting up listener...');
+        clearInterval(authCheckInterval);
+        window.auth.onAuthStateChanged((user) => {
+          console.log('🔐 Auth state changed (delayed), user:', user ? user.email : 'none');
+          setTimeout(() => {
+            window.reinitializeNav();
+          }, 100);
+        });
+      } else if (++authCheckAttempts > 20) {
+        console.warn('⚠️ Firebase auth not found after 20 attempts');
+        clearInterval(authCheckInterval);
+      }
+    }, 250);
   }
 }
 
