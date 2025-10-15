@@ -134,10 +134,14 @@ export class NavigationComponent {
     const nav = new NavigationComponent(options);
     const { mobile, desktop } = nav.render();
     
-    // Insert mobile nav at the beginning of page-container
+    // Insert mobile nav BEFORE page-container (not inside it)
     const pageContainer = document.querySelector('.page-container');
     if (pageContainer) {
+      // Insert before the page-container, not inside it
       pageContainer.insertAdjacentHTML('beforebegin', mobile);
+    } else {
+      // Fallback: insert at start of body if page-container not found
+      document.body.insertAdjacentHTML('afterbegin', mobile);
     }
     
     // Insert desktop nav into filters-nav
