@@ -335,3 +335,8 @@ function getErrorMessage(errorCode) {
 }
 
 export { auth };
+
+// Make auth available globally for navigation component
+if (typeof window !== 'undefined') {
+  window.auth = auth;
+}	
