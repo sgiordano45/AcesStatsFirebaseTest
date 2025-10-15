@@ -7,9 +7,8 @@
 <meta name="theme-color" content="#2d5016">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="mobile-enhancements.css">
-<style>
+<link rel="stylesheet" href="nav-styles.css"><style>
 :root {
   --primary-color: #2d5016;
   --secondary-color: #1a6b4a;
@@ -101,7 +100,7 @@ body {
 }
 
 .page-header::after {
-  content: '⚾';
+  content: '📅';
   position: absolute;
   bottom: -40px;
   left: -40px;
@@ -255,7 +254,7 @@ body {
 }
 
 .season-card::after {
-  content: '⚾';
+  content: '📅';
   position: absolute;
   bottom: -20px;
   right: -20px;
@@ -509,40 +508,16 @@ body {
   <div class="softball-spinner"></div>
 </div>
 
-<div class="mobile-nav-container">
-  <div class="mobile-nav-header">
-    <div class="mobile-nav-title">📅 All Seasons</div>
-    <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
-  </div>
-  <nav class="mobile-nav-menu" id="mobileNavMenu">
-    <a href="index.html" class="mobile-nav-item">🏠 Home</a>
-    <a href="current-season.html" class="mobile-nav-item">🍂 Current Season</a>
-    <a href="batting.html" class="mobile-nav-item">⚾ Batting Stats</a>
-    <a href="pitching.html" class="mobile-nav-item">🥎 Pitching Stats</a>
-    <a href="teams.html" class="mobile-nav-item">🏆 All Teams</a>
-    <a href="players.html" class="mobile-nav-item">👤 All Players</a>
-    <a href="seasons.html" class="mobile-nav-item active">📅 All Seasons</a>
-    <a href="awards.html" class="mobile-nav-item">🏅 Awards</a>
-    <a href="compare.html" class="mobile-nav-item">📈 Player Comparison</a>
-  </nav>
-</div>
+
 
 <div class="page-container">
   <div class="page-header">
-    <h1>📅 All Seasons</h1>
+    <h1>All Seasons</h1>
     <p>Browse season overviews with statistics, leaders, and awards</p>
   </div>
 
   <div class="filters-nav">
-    <nav class="nav-container">
-      <a href="index.html" class="nav-link">🏠 Home</a>
-      <a href="current-season.html" class="nav-link">🍂 Current Season</a>
-      <a href="batting.html" class="nav-link">⚾ Batting Stats</a>
-      <a href="pitching.html" class="nav-link">🥎 Pitching Stats</a>
-      <a href="teams.html" class="nav-link">🏆 All Teams</a>
-      <a href="players.html" class="nav-link">👤 All Players</a>
-      <a href="seasons.html" class="nav-link active">📅 All Seasons</a>
-    </nav>
+
   </div>
 
   <div id="summary" class="summary">
@@ -835,6 +810,10 @@ async function generateSeasonCards() {
 
 // Load data on page load
 loadData();
+</script>
+<script type="module">
+  import { NavigationComponent } from './nav-component.js';
+  // Navigation auto-initializes on load!
 </script>
 <script src="team-colors.js"></script>
 <script src="mobile-enhancements.js"></script>

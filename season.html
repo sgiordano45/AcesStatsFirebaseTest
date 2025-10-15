@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Season Overview - Aces Stats</title>
+<meta name="theme-color" content="#2d5016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="mobile-enhancements.css">
+<link rel="stylesheet" href="nav-styles.css">
 <style>
   :root {
     --primary-color: #2d5016;
@@ -1524,6 +1529,10 @@ function renderStatsTable() {
     });
   }
 }
+</script>
+<script type="module">
+  import { NavigationComponent } from './nav-component.js';
+  // Navigation auto-initializes on load!
 </script>
 <script src="team-colors.js"></script>
 <script src="mobile-enhancements.js"></script>
