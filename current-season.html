@@ -907,8 +907,8 @@
           console.log(`✅ Found ${teams.size} unique teams:`, Array.from(teams).sort());
           
           playerData = (batting || []).map(p => ({
-            id: p.id || p.playerId || p.userId,  // ← ADD THIS LINE
-			name: p.playerName || p.name || p.id,
+            id: p.id || p.playerId || p.userId,
+            name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
             year: currentSeasonData.year.toString(),
             season: capitalize(currentSeasonData.season),
@@ -923,8 +923,8 @@
           }));
           
           pitchingData = (pitching || []).map(p => ({
-            id: p.id || p.playerId || p.userId,  // ← ADD THIS LINE
-			name: p.playerName || p.name || p.id,
+            id: p.id || p.playerId || p.userId,
+            name: p.playerName || p.name || p.id,
             team: p.team || p.teamId || p.currentTeam || "",
             year: currentSeasonData.year.toString(),
             season: capitalize(currentSeasonData.season),
@@ -984,8 +984,8 @@
 
         if (playerData.length > 0) {
           const cleanBattingData = playerData.map(p => ({
-            id: p.id,  // ← ADD THIS LINE
-			name: p.name ? p.name.trim() : "",
+            id: p.id,
+            name: p.name ? p.name.trim() : "",
             team: p.team ? p.team.trim() : "",
             games: Number(p.games) || 0,
             atBats: Number(p.atBats) || 0,
@@ -1019,10 +1019,10 @@
           leadersHtml += '<div class="leaders-grid">';
 
           battingCategories.forEach(category => {
-            let leaders;
+            let allLeaders;
             
             if (category.qualified) {
-              leaders = cleanBattingData.map(p => {
+              allLeaders = cleanBattingData.map(p => {
                 const teamGames = teamGamesPlayed[p.team] || 0;
                 const minAtBats = teamGames * 2;
                 
@@ -1043,13 +1043,31 @@
                 return p;
               })
               .filter(p => p.qualified && p[category.field] > 0)
-              .sort((a, b) => b[category.field] - a[category.field])
-              .slice(0, 10);
+              .sort((a, b) => b[category.field] - a[category.field]);
             } else {
-              leaders = cleanBattingData
+              allLeaders = cleanBattingData
                 .filter(p => p[category.field] > 0)
-                .sort((a, b) => b[category.field] - a[category.field])
-                .slice(0, 10);
+                .sort((a, b) => b[category.field] - a[category.field]);
+            }
+
+            let leaders = [];
+            let currentRank = 1;
+            const maxDisplay = 15;
+            
+            for (let i = 0; i < allLeaders.length && leaders.length < maxDisplay; i++) {
+              const player = allLeaders[i];
+              
+              if (i > 0 && allLeaders[i][category.field] !== allLeaders[i-1][category.field]) {
+                currentRank = i + 1;
+              }
+              
+              if (currentRank <= 10) {
+                leaders.push({ ...player, rank: currentRank });
+              } else if (i > 0 && allLeaders[i][category.field] === allLeaders[i-1][category.field]) {
+                leaders.push({ ...player, rank: currentRank });
+              } else {
+                break;
+              }
             }
 
             leadersHtml += `<div class="leader-category"><h4>${category.title}</h4><ul class="leader-list">`;
@@ -1057,11 +1075,12 @@
             if (leaders.length === 0) {
               leadersHtml += '<li style="text-align: center; padding: 1rem; color: #666;">No qualified players yet</li>';
             } else {
-              leaders.forEach((player, index) => {
-                const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+              leaders.forEach((player) => {
+                const rank = player.rank;
+                const rankClass = rank === 1 ? 'first' : rank === 2 ? 'second' : rank === 3 ? 'third' : '';
                 leadersHtml += `
                   <li>
-                    <span class="leader-rank ${rankClass}">${index + 1}</span>
+                    <span class="leader-rank ${rankClass}">${rank}</span>
                     <span class="leader-name"><a href="player.html?id=${encodeURIComponent(player.id || player.playerId)}">${player.name}</a></span>
                     <span class="leader-team">(${player.team})</span>
                     <span class="leader-value">${category.formatter(player[category.field])}</span>
@@ -1078,8 +1097,8 @@
 
         if (pitchingData.length > 0) {
           const cleanPitchingData = pitchingData.map(p => ({
-            id: p.id,  // ← ADD THIS LINE
-			name: p.name ? p.name.trim() : "",
+            id: p.id,
+            name: p.name ? p.name.trim() : "",
             team: p.team ? p.team.trim() : "",
             games: Number(p.games) || 0,
             IP: parseFloat(p.IP) || 0,
@@ -1097,7 +1116,7 @@
           leadersHtml += '<div class="leaders-grid">';
 
           pitchingCategories.forEach(category => {
-            let leaders = cleanPitchingData.filter(p => {
+            let allLeaders = cleanPitchingData.filter(p => {
               if (category.field === 'ERA') {
                 return p.IP >= category.minQualifier && p.ERA !== "N/A" && !isNaN(p.ERA);
               }
@@ -1105,20 +1124,39 @@
             });
 
             if (category.sortOrder === 'asc') {
-              leaders = leaders.sort((a, b) => a[category.field] - b[category.field]);
+              allLeaders = allLeaders.sort((a, b) => a[category.field] - b[category.field]);
             } else {
-              leaders = leaders.sort((a, b) => b[category.field] - a[category.field]);
+              allLeaders = allLeaders.sort((a, b) => b[category.field] - a[category.field]);
             }
 
-            leaders = leaders.slice(0, 10);
+            let leaders = [];
+            let currentRank = 1;
+            const maxDisplay = 15;
+            
+            for (let i = 0; i < allLeaders.length && leaders.length < maxDisplay; i++) {
+              const player = allLeaders[i];
+              
+              if (i > 0 && allLeaders[i][category.field] !== allLeaders[i-1][category.field]) {
+                currentRank = i + 1;
+              }
+              
+              if (currentRank <= 10) {
+                leaders.push({ ...player, rank: currentRank });
+              } else if (i > 0 && allLeaders[i][category.field] === allLeaders[i-1][category.field]) {
+                leaders.push({ ...player, rank: currentRank });
+              } else {
+                break;
+              }
+            }
 
             leadersHtml += `<div class="leader-category pitching"><h4>${category.title}</h4><ul class="leader-list">`;
 
-            leaders.forEach((player, index) => {
-              const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+            leaders.forEach((player) => {
+              const rank = player.rank;
+              const rankClass = rank === 1 ? 'first' : rank === 2 ? 'second' : rank === 3 ? 'third' : '';
               leadersHtml += `
                 <li>
-                  <span class="leader-rank ${rankClass}">${index + 1}</span>
+                  <span class="leader-rank ${rankClass}">${rank}</span>
                   <span class="leader-name"><a href="pitcher.html?name=${encodeURIComponent(player.name)}">${player.name}</a></span>
                   <span class="leader-team">(${player.team})</span>
                   <span class="leader-value">${category.formatter(player[category.field])}</span>
@@ -1603,4 +1641,3 @@
   <script src="mobile-enhancements.js"></script>
 </body>
 </html>
-          
