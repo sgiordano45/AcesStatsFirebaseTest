@@ -789,16 +789,14 @@ function RosterManagement({ currentUser }) {
   }
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', minHeight: '100vh', padding: '2rem' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', minHeight: '100vh', padding: '2rem' }}>	
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <a href="index.html" class="back-home-btn hide-mobile">
-            <span>←</span> Back to Home
-          </a>
-        </div>
         
         <div style={{ background: 'linear-gradient(135deg, #2d5016 0%, #1a6b4a 100%)', color: 'white', textAlign: 'center', padding: '3rem 2rem', borderRadius: '12px', marginBottom: '2rem', position: 'relative', boxShadow: '0 12px 32px rgba(0,0,0,0.16)' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #ffd700 0%, #ffed4e 100%)' }}></div>
+                    <a href="index.html" class="back-home-btn hide-mobile">
+            <span>←</span> Back to Home
+          </a>
+		  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #ffd700 0%, #ffed4e 100%)' }}></div>
           <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>⚾ Roster Management</h1>
           <p style={{ margin: '1rem 0 0 0', fontSize: '1.1rem', opacity: 0.9 }}>
             {currentSeason ? `${currentSeason.year} ${seasonConfig.name} Season` : 'Loading...'}
