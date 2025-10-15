@@ -10,7 +10,7 @@ export const NAV_STRUCTURE = {
     { id: 'batting', href: 'batting.html', label: 'Batting Stats', icon: '⚾', priority: 1, class: 'batting' },
     { id: 'pitching', href: 'pitching.html', label: 'Pitching Stats', icon: '🥎', priority: 1, class: 'pitching' },
     { id: 'teams', href: 'teams.html', label: 'All Teams', icon: '🏆', priority: 1 },
-    { id: 'players', href: 'players.html', label: 'All Players', icon: '👥', priority: 1 },
+    { id: 'players', href: 'players.html', label: 'All Players', icon: '👤', priority: 1 },
   ],
   
   // Tier 2: SECONDARY - Important pages (shown contextually on desktop)
@@ -30,7 +30,7 @@ export const NAV_STRUCTURE = {
     { id: 'h2h', href: 'h2h_grid.html', label: 'Head-to-Head Grid', icon: '⚔️', priority: 3 },
     { id: 'charts', href: 'charts.html', label: 'Performance Charts', icon: '📊', priority: 3 },
     { id: 'pictures', href: 'pictures.html', label: 'Gallery', icon: '📷', priority: 3 },
-    { id: 'game-preview', href: 'game-preview.html', label: 'Game Preview', icon: '🔭', priority: 3 },
+    // game-preview removed - requires specific game ID parameter
   ],
   
   // Tier 4: AUTH - User-specific pages (only visible when authenticated)
@@ -130,7 +130,7 @@ export const PAGE_CONFIGS = {
   },
   
   'h2h_grid.html': {
-    desktop: ['home', 'current-season', 'teams', 'team-compare', 'h2h', 'game-preview']
+    desktop: ['home', 'current-season', 'teams', 'team-compare', 'h2h']
   },
   
   'charts.html': {
@@ -141,8 +141,9 @@ export const PAGE_CONFIGS = {
     desktop: ['home', 'current-season', 'teams', 'players', 'pictures']
   },
   
+  // Game preview page - no nav needed (accessed via weekend-preview game cards)
   'game-preview.html': {
-    desktop: ['home', 'current-season', 'weekend-preview', 'game-preview', 'teams', 'h2h']
+    desktop: ['home', 'current-season', 'weekend-preview']
   },
   
   // Auth-specific pages
