@@ -101,7 +101,7 @@ export class NavigationComponent {
       <div class="mobile-nav-container">
         <div class="mobile-nav-header">
           <div class="mobile-nav-title">⚾ Mountainside Aces</div>
-          <button class="hamburger-menu" onclick="toggleMobileMenu()" aria-label="Toggle navigation">☰</button>
+          <button class="hamburger-menu" id="mobileMenuBtn" aria-label="Toggle navigation">☰</button>
         </div>
         <nav class="mobile-nav-menu" id="mobileNavMenu">
           ${links.map(link => `
