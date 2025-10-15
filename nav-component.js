@@ -156,11 +156,33 @@ export class NavigationComponent {
       }
     }
     
-    // Set up mobile menu toggle
+    // IMPORTANT: Set up event listeners AFTER the HTML is inserted
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileNavMenu = document.getElementById('mobileNavMenu');
+      
+      console.log('Setting up mobile menu...', { mobileMenuBtn, mobileNavMenu });
+      
+      if (mobileMenuBtn && mobileNavMenu) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Mobile menu button clicked!'); // Debug log
+          mobileNavMenu.classList.toggle('open');
+          console.log('Menu open state:', mobileNavMenu.classList.contains('open')); // Debug log
+        });
+        console.log('✅ Mobile menu event listener attached');
+      } else {
+        console.error('❌ Mobile nav elements not found!', { mobileMenuBtn, mobileNavMenu });
+      }
+    }, 0);
+    
+    // Keep the global function for backwards compatibility
     window.toggleMobileMenu = function() {
       const menu = document.getElementById('mobileNavMenu');
       if (menu) {
         menu.classList.toggle('open');
+        console.log('Toggle via global function');
       }
     };
     
