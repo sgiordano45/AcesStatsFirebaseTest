@@ -95,12 +95,13 @@
   }
   
   .header::after {
-    content: 'âš¾';
+    content: '⚾';
     position: absolute;
     bottom: -30px;
     left: -30px;
     font-size: 200px;
     opacity: 0.05;
+    pointer-events: none;
   }
   
   .header h1 {
@@ -462,7 +463,7 @@
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay">
-  <div class="softball-spinner"></div>
+  <div class="softball-spinner">⚾</div>
   <div class="loading-text">Loading career leaders...</div>
 </div>
 
@@ -561,7 +562,16 @@ async function loadData() {
           career.games += Number(season.games) || 0;
           career.totalIP += parseFloat(season.inningsPitched || season.IP) || 0;
           career.runsAllowed += Number(season.runsAllowed) || 0;
-          career.earnedRuns += Number(season.earnedRuns) || 0;
+          
+          // Handle both earnedRuns and earnedRunAverage fields
+          if (season.earnedRuns) {
+            career.earnedRuns += Number(season.earnedRuns) || 0;
+          } else if (season.earnedRunAverage && season.inningsPitched) {
+            // Calculate earned runs from ERA: earnedRuns = (ERA * IP) / 7
+            const ip = parseFloat(season.inningsPitched || season.IP) || 0;
+            const era = parseFloat(season.earnedRunAverage) || 0;
+            career.earnedRuns += (era * ip) / 7;
+          }
         });
         
         // Calculate career ERA
