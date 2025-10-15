@@ -190,18 +190,17 @@
     display: block;
   }
   
-  /* Add padding to body to account for fixed nav */
+  /* Add padding to body to account for fixed nav - use !important to override * selector */
   body {
-    padding-top: 60px;
+    padding-top: 60px !important;
   }
   
-  /* Page header adjustments */
-  .page-header,
-  .header {
+  /* Ensure page header doesn't overlap */
+  .page-header {
     margin-top: 0 !important;
   }
   
-  .page-container {
+  .header {
     margin-top: 0 !important;
   }
   
