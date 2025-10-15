@@ -115,8 +115,13 @@ export class NavigationComponent {
   }
 
   // Render mobile navigation
+// Render mobile navigation
   renderMobile() {
     const links = this.getMobileLinks();
+    
+    // Split links into public and auth pages
+    const publicLinks = links.filter(link => !link.requiresAuth);
+    const authLinks = links.filter(link => link.requiresAuth);
     
     return `
       <div class="mobile-nav-container">
@@ -125,13 +130,18 @@ export class NavigationComponent {
           <button class="hamburger-menu" id="mobileMenuBtn" aria-label="Toggle navigation">☰</button>
         </div>
         <nav class="mobile-nav-menu" id="mobileNavMenu">
-          ${links.map(link => `
+          ${publicLinks.map(link => `
             <a href="${link.href}" class="mobile-nav-item ${link.active ? 'active' : ''}">
               ${link.icon} ${link.label}
             </a>
           `).join('')}
-          ${this.isAuthenticated ? `
+          ${this.isAuthenticated && authLinks.length > 0 ? `
             <div class="mobile-nav-section-divider">Account</div>
+            ${authLinks.map(link => `
+              <a href="${link.href}" class="mobile-nav-item ${link.active ? 'active' : ''}">
+                ${link.icon} ${link.label}
+              </a>
+            `).join('')}
           ` : ''}
         </nav>
       </div>
