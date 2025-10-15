@@ -236,33 +236,35 @@ if (typeof window !== 'undefined') {
     NavigationComponent.init();
   }
   
-  // Listen for Firebase auth state changes
-  // This will trigger after Firebase initializes
-  if (typeof window.auth !== 'undefined') {
-    console.log('👂 Setting up auth state listener for navigation...');
-    window.auth.onAuthStateChanged((user) => {
-      console.log('🔐 Auth state changed, user:', user ? user.email : 'none');
-      // Small delay to ensure auth state is fully processed
-      setTimeout(() => {
-        window.reinitializeNav();
-      }, 100);
-    });
-  } else {
-    // Firebase not loaded yet, set up a check
+// CRITICAL: Set up Firebase auth state listener with longer wait time
+  // Firebase auth may not be immediately available
+  const setupAuthListener = () => {
+    if (typeof window.auth !== 'undefined' && window.auth.onAuthStateChanged) {
+      console.log('👂 Setting up auth state listener for navigation...');
+      window.auth.onAuthStateChanged((user) => {
+        console.log('🔐 Auth state changed, user:', user ? user.email : 'none');
+        // Reinitialize navigation with new auth state
+        setTimeout(() => {
+          window.reinitializeNav();
+        }, 100);
+      });
+      return true;
+    }
+    return false;
+  };
+  
+  // Try immediately
+  if (!setupAuthListener()) {
+    // Firebase not loaded yet, set up a check with longer intervals
     console.log('⏳ Firebase auth not loaded, will check again...');
     let authCheckAttempts = 0;
     const authCheckInterval = setInterval(() => {
-      if (typeof window.auth !== 'undefined') {
-        console.log('✅ Firebase auth now available, setting up listener...');
+      if (setupAuthListener()) {
+        console.log('✅ Firebase auth now available, listener attached');
         clearInterval(authCheckInterval);
-        window.auth.onAuthStateChanged((user) => {
-          console.log('🔐 Auth state changed (delayed), user:', user ? user.email : 'none');
-          setTimeout(() => {
-            window.reinitializeNav();
-          }, 100);
-        });
-      } else if (++authCheckAttempts > 20) {
-        console.warn('⚠️ Firebase auth not found after 20 attempts');
+      } else if (++authCheckAttempts > 40) {
+        // Increased from 20 to 40 attempts (10 seconds total)
+        console.warn('⚠️ Firebase auth not found after 40 attempts (10 seconds)');
         clearInterval(authCheckInterval);
       }
     }, 250);
