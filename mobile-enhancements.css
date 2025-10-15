@@ -1,8 +1,8 @@
 /**
  * Mobile Enhancements CSS - Mountainside Aces Style
  * Shared styles for mobile-responsive improvements
- * Include this after your main style.css
- * @version 2.0.0
+ * Include this after nav-styles.css
+ * @version 2.1.0 - Updated for new navigation system
  */
 
 /* ========================================
@@ -23,63 +23,19 @@
 
 /* ========================================
    MOBILE NAVIGATION
+   REMOVED - Now handled by nav-styles.css
    ======================================== */
-
-/* Hide mobile nav on desktop */
-.mobile-nav-container {
-  display: none;
-}
 
 /* Mobile Navigation Styles */
 @media (max-width: 768px) {
   /* Hide desktop navigation on mobile */
-  .back-nav,
-  .filters-nav {
+  .back-nav {
     display: none !important;
   }
-
-  /* Show mobile navigation */
-  .mobile-nav-container {
-    display: block;
-    margin: 1rem;
-    background: var(--card-bg);
-    box-shadow: var(--shadow-md);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    z-index: 100;
-    border: 1px solid var(--border-color);
-  }
-
-  .mobile-nav-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    color: white;
-    position: relative;
-    overflow: hidden;
-  }
   
-  /* Decorative element for mobile nav header */
-  .mobile-nav-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 150px;
-    height: 150px;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-
-  .mobile-nav-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-    position: relative;
-    z-index: 1;
-    font-family: 'Inter', sans-serif;
+  /* Keep filter sections visible on mobile */
+  .filters-nav .filters-section {
+    display: flex !important;
   }
   
   /* Touch Target Improvements */
@@ -121,7 +77,7 @@
   /* Sticky Search Bar */
   .global-search-container {
     position: sticky;
-    top: 0;
+    top: 60px; /* Account for fixed mobile nav */
     z-index: 90;
     margin: 0 !important;
     border-radius: 0;
@@ -219,7 +175,6 @@
   }
 
   /* Safe Area Insets for Notched Devices */
-  .mobile-nav-container,
   .header,
   .global-search-container,
   .dashboard-container {
@@ -227,91 +182,8 @@
     padding-right: max(1rem, env(safe-area-inset-right)) !important;
   }
   
-  .mobile-nav-container {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-  }
-  
   .header {
     padding-top: max(3rem, calc(3rem + env(safe-area-inset-top))) !important;
-  }
-  
-  /* Ensure mobile menu respects safe areas */
-  .mobile-nav-menu.open {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .hamburger-menu {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    z-index: 1;
-  }
-
-  .hamburger-menu:active {
-    background-color: rgba(255,255,255,0.2);
-    transform: scale(0.95);
-  }
-
-  .mobile-nav-menu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: var(--card-bg);
-  }
-
-  .mobile-nav-menu.open {
-    max-height: 80vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    background: 
-      linear-gradient(white 30%, rgba(255,255,255,0)) top,
-      linear-gradient(rgba(255,255,255,0), white 70%) bottom;
-    background-repeat: no-repeat;
-    background-size: 100% 20px;
-    background-attachment: local, local;
-  }
-
-  .mobile-nav-item {
-    display: block;
-    padding: 0.875rem 1.5rem;
-    color: var(--text-dark);
-    text-decoration: none;
-    border-bottom: 1px solid var(--border-color);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .mobile-nav-item:active {
-    background-color: #f7fafc;
-    color: var(--primary-color);
-  }
-  
-  .mobile-nav-item.active {
-    background: linear-gradient(90deg, rgba(45, 80, 22, 0.05) 0%, transparent 100%);
-    color: var(--primary-color);
-    font-weight: 700;
-    border-left: 4px solid var(--primary-color);
-    padding-left: calc(1.5rem - 4px);
-  }
-
-  .mobile-nav-item:last-child {
-    border-bottom: none;
-    padding-bottom: 1.5rem;
   }
 }
 
@@ -402,7 +274,6 @@
 
   /* Container padding */
   .container,
-  .page-container,
   .dashboard-container {
     padding: 1rem !important;
   }
@@ -518,12 +389,6 @@
     grid-template-columns: 1fr !important;
   }
 
-  /* Tighter spacing */
-  .section,
-  .mobile-nav-container {
-    margin: 0.5rem !important;
-  }
-
   /* Smaller table text */
   .standings-table,
   .schedule-table,
@@ -561,13 +426,11 @@
   }
 
   /* Remove hover effects on mobile, use active states */
-  .mobile-nav-item:hover,
   .card:hover,
   .nav-link:hover {
     transform: none;
   }
 
-  .mobile-nav-item:active,
   .card:active {
     opacity: 0.8;
   }
@@ -658,25 +521,6 @@
 
 /* Dark mode support with brand colors */
 @media (prefers-color-scheme: dark) {
-  .mobile-nav-container {
-    background: var(--text-dark);
-    border-color: #4a5568;
-  }
-
-  .mobile-nav-menu {
-    background: var(--text-dark);
-  }
-
-  .mobile-nav-item {
-    color: #e2e8f0;
-    border-bottom-color: #4a5568;
-  }
-  
-  .mobile-nav-item.active {
-    background: linear-gradient(90deg, rgba(45, 80, 22, 0.2) 0%, transparent 100%);
-    border-left-color: var(--accent-color);
-  }
-
   .swipe-indicator {
     background: #4a5568;
     color: #e2e8f0;
