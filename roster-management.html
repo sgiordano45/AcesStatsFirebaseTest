@@ -85,45 +85,30 @@
     50% { transform: rotate(180deg) scale(1.1); }
   }
   
-  .back-btn {
-    padding: 0.75rem 1.5rem;
-    border: 2px solid var(--primary-color);
-    background: white;
-    color: var(--primary-color);
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .back-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--primary-color);
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: -1;
-  }
-  
-  .back-btn:hover::before {
-    transform: translateX(0);
-  }
-  
-  .back-btn:hover {
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
+.back-home-btn {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.3);
+      z-index: 2;
+    }
+
+    .back-home-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateX(-5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
 </style>
 </head>
 <body>
