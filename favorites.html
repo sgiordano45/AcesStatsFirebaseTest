@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#2d5016">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="mobile-enhancements.css">
+<link rel="stylesheet" href="nav-styles.css">
 <style>
 :root {
   --primary-color: #2d5016;
@@ -476,6 +478,11 @@ body {
           <h1>⭐ My Favorites</h1>
           <p>Track your favorite teams and players</p>
         </div>
+	 <div class="header-actions">
+          <a href="index.html" class="btn btn-secondary">
+            🏠 Home
+          </a>
+        </div>
         <div class="header-actions">
           <a href="profile.html" class="btn btn-secondary">
             👤 My Profile
@@ -883,5 +890,9 @@ body {
       document.getElementById('loadingOverlay').classList.add('hidden');
     }
   </script>
+  <script type="module">
+  import { NavigationComponent } from './nav-component.js';
+  // Navigation auto-initializes on load!
+</script>
 </body>
 </html>
