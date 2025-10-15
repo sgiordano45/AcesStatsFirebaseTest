@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#2d5016">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="mobile-enhancements.css">
+<link rel="stylesheet" href="nav-styles.css">
 <style>
 :root {
   --primary-color: #2d5016;
@@ -2257,5 +2259,9 @@ if (userProfile.linkedTeam) {
     window.closePlayerModal = closePlayerModal;
     window.confirmAddPlayer = confirmAddPlayer;
   </script>
+  <script type="module">
+  import { NavigationComponent } from './nav-component.js';
+  // Navigation auto-initializes on load!
+</script>
 </body>
 </html>
