@@ -777,18 +777,41 @@ window.addEventListener('load', function() {
 function formatPlayerName(name) {
   if (!name) return "";
   
+  // If name already has spaces, capitalize each word properly
   if (name.includes(' ')) {
     return name.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => {
+        // Handle special cases like DelleDonne, McDonald, etc.
+        if (word.toLowerCase() === 'delledonne') return 'DelleDonne';
+        if (word.toLowerCase() === 'mcdonald') return 'McDonald';
+        if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
+        // Add more special cases as needed
+        
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
       .join(' ');
   }
   
+  // If name has underscores, replace with spaces and capitalize
   if (name.includes('_')) {
     return name.split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => {
+        // Handle special cases
+        if (word.toLowerCase() === 'delledonne') return 'DelleDonne';
+        if (word.toLowerCase() === 'mcdonald') return 'McDonald';
+        if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
+        
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
       .join(' ');
   }
   
+  // Handle special cases for single words
+  if (name.toLowerCase() === 'delledonne') return 'DelleDonne';
+  if (name.toLowerCase() === 'mcdonald') return 'McDonald';
+  if (name.toLowerCase() === 'mccarthy') return 'McCarthy';
+  
+  // Otherwise just capitalize the single name
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
@@ -1029,7 +1052,12 @@ function generatePitchingLeaderboards(container) {
       minimum: 40,
       minimumField: "totalIP",
       minimumNote: "Minimum 40 innings pitched",
-      sortAscending: true
+      sortAscending: true,
+      extraColumn: {
+        title: "IP",
+        stat: "totalIP",
+        format: (val) => val.toFixed(1)
+      }
     },
     {
       title: "Career ERA",
@@ -1072,7 +1100,21 @@ function generateLeaderTable(players, category, type) {
   
   const top10 = qualifyingPlayers.slice(0, 10);
   
+  // Calculate ranks with tie handling
+  const rankedPlayers = [];
+  let currentRank = 1;
+  for (let i = 0; i < top10.length; i++) {
+    if (i > 0 && top10[i][category.stat] !== top10[i-1][category.stat]) {
+      currentRank = i + 1;
+    }
+    rankedPlayers.push({
+      ...top10[i],
+      displayRank: currentRank
+    });
+  }
+  
   const sectionClass = type === 'pitching' ? 'pitching' : '';
+  const hasExtraColumn = category.extraColumn !== undefined;
   
   let html = `
     <div class="leader-section ${sectionClass}">
@@ -1084,13 +1126,14 @@ function generateLeaderTable(players, category, type) {
             <th class="rank">Rank</th>
             <th>Player</th>
             <th class="stat-value">${category.title}</th>
+            ${hasExtraColumn ? `<th class="stat-value">${category.extraColumn.title}</th>` : ''}
           </tr>
         </thead>
         <tbody>
   `;
   
-  top10.forEach((player, index) => {
-    const rank = index + 1;
+  rankedPlayers.forEach((player) => {
+    const rank = player.displayRank;
     const statValue = category.format(player[category.stat]);
     const rankClass = rank <= 3 ? `rank-${rank}` : '';
     
@@ -1103,6 +1146,7 @@ function generateLeaderTable(players, category, type) {
         <td class="rank">${rank}</td>
         <td><a href="${playerLink}">${player.name}</a></td>
         <td class="stat-value">${statValue}</td>
+        ${hasExtraColumn ? `<td class="stat-value">${category.extraColumn.format(player[category.extraColumn.stat])}</td>` : ''}
       </tr>
     `;
   });
