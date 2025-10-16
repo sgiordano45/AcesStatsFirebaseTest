@@ -787,31 +787,36 @@
       }
     }
     
-    function checkPermission(profile) {
-      const role = profile.userRole;
-      
-      // Admin and league staff can access
-      if (role === USER_ROLES.ADMIN || role === USER_ROLES.LEAGUE_STAFF) {
-        return true;
-      }
-      
-      // Captain can access
-      if (role === USER_ROLES.CAPTAIN) {
-        return true;
-      }
-      
-      // Check if user is captain of any team via teamRoles
-      if (profile.teamRoles) {
-        const isCaptainOfAnyTeam = Object.values(profile.teamRoles).some(
-          teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
-        );
-        if (isCaptainOfAnyTeam) {
-          return true;
-        }
-      }
-      
-      return false;
+function checkPermission(profile) {
+  const role = profile.userRole;
+  
+  // Admin and league staff can access
+  if (role === USER_ROLES.ADMIN || role === USER_ROLES.LEAGUE_STAFF) {
+    return true;
+  }
+  
+  // Captain can access
+  if (role === USER_ROLES.CAPTAIN) {
+    return true;
+  }
+  
+  // Check if user is captain of any team via teamRoles
+  if (profile.teamRoles) {
+    const isCaptainOfAnyTeam = Object.values(profile.teamRoles).some(
+      teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
+    );
+    if (isCaptainOfAnyTeam) {
+      return true;
     }
+  }
+  
+  // ⭐ LEGACY CHECK: Support old isCaptain field
+  if (profile.isCaptain === true) {
+    return true;
+  }
+  
+  return false;
+}
     
     function updateRoleBadge(profile) {
       const role = profile.userRole;
