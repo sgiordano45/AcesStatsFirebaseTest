@@ -504,6 +504,12 @@
       color: #1e40af;
     }
     
+    .alert-warning {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+    
     .loading {
       text-align: center;
       padding: 3rem;
@@ -575,6 +581,40 @@
       margin-bottom: 0.5rem;
       position: relative;
       z-index: 1;
+    }
+    
+    .pending-request-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border: 2px solid #f59e0b;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .pending-request-card h3 {
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      font-size: 20px;
+    }
+    
+    .pending-request-card p {
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
+    }
+    
+    .pending-request-card strong {
+      color: var(--text-dark);
+    }
+    
+    .request-status {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
     }
     
     @media (max-width: 768px) {
@@ -668,6 +708,27 @@
           </div>
         </div>
         
+        <!-- Pending Request Section -->
+        <div id="pendingRequestSection" style="display: none;">
+          <div class="pending-request-card">
+            <h3>⏳ Link Request Pending</h3>
+            <p><strong>Player:</strong> <span id="pendingPlayerName"></span></p>
+            <p><strong>Team:</strong> <span id="pendingTeamName"></span></p>
+            <p><strong>Requested:</strong> <span id="pendingRequestDate"></span></p>
+            <p><strong>Status:</strong> <span id="pendingRequestStatus" class="request-status">Awaiting Approval</span></p>
+            <p style="margin-top: 1rem; font-size: 14px;">
+              Your request is being reviewed by the team captain or league staff. 
+              You'll receive an email once it's approved.
+            </p>
+          </div>
+          <div class="linked-buttons">
+            <button class="btn btn-secondary" onclick="cancelPendingRequest()">
+              ✖️ Cancel Request
+            </button>
+          </div>
+        </div>
+        
+        <!-- Already Linked Section -->
         <div id="alreadyLinkedSection" style="display: none;">
           <div class="linked-player-card">
             <h3>✅ Account Linked</h3>
@@ -695,6 +756,11 @@
           <strong>💡 Suggestion:</strong> We found a player that matches your name. Is this you?
         </div>
         
+        <div id="approvalInfoAlert" class="alert alert-warning" style="display: none;">
+          <strong>ℹ️ Approval Required:</strong> 
+          <span id="approvalInfoText"></span>
+        </div>
+        
         <input 
           type="text" 
           id="searchBox" 
@@ -704,7 +770,7 @@
         
         <!-- Confirm button at the top -->
         <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmLink()" style="margin-bottom: 2rem;">
-          <span>Confirm Link</span>
+          <span>Submit Link Request</span>
         </button>
         
         <div id="playersContainer">
@@ -715,13 +781,23 @@
   </div>
   
   <script type="module">
-    import { getCurrentUser, onAuthChange, getUserProfile, logoutUser } from './firebase-auth.js';
-    import { linkPlayerToUser } from './firebase-auth.js';
+    import { 
+      getCurrentUser, 
+      onAuthChange, 
+      getUserProfile, 
+      logoutUser,
+      requestPlayerLink,
+      cancelPlayerLinkRequest,
+      requestPlayerUnlink,
+      processPlayerLinkRequest
+    } from './firebase-auth.js';
     import { getAllPlayerStatsOptimized } from './firebase-data.js';
     
     let currentUser = null;
+    let userProfile = null;
     let selectedPlayer = null;
     let allPlayers = [];
+    let pendingRequestId = null;
     
     // Initialize
     onAuthChange(async (user) => {
@@ -746,16 +822,34 @@
       document.getElementById('userEmail').textContent = user.email;
       document.getElementById('userAvatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.email);
       
-      // Check if already linked
+      // Check if already linked or has pending request
       try {
         const profile = await getUserProfile(user.uid);
-        if (profile.success && profile.data.linkedPlayer) {
-          console.log('✓ User already linked to:', profile.data.linkedPlayer);
-          showAlreadyLinked(profile.data);
-        } else {
-          console.log('→ User not linked, showing selection');
-          await showPlayerSelection();
+        if (profile.success && profile.data) {
+          userProfile = profile.data;
+          
+          // Check for already linked player
+          if (profile.data.linkedPlayer) {
+            console.log('✓ User already linked to:', profile.data.linkedPlayer);
+            showAlreadyLinked(profile.data);
+            return;
+          }
+          
+          // Check for pending link requests
+          const pendingRequests = profile.data.playerLinkRequests || [];
+          const activePending = pendingRequests.find(r => r.status === 'pending');
+          
+          if (activePending) {
+            console.log('⏳ User has pending request:', activePending);
+            showPendingRequest(activePending);
+            return;
+          }
         }
+        
+        // No link and no pending request, show selection
+        console.log('→ User not linked, showing selection');
+        await showPlayerSelection();
+        
       } catch (error) {
         console.error('Error checking profile:', error);
         await showPlayerSelection();
@@ -770,13 +864,65 @@
     
     function showAlreadyLinked(profileData) {
       document.getElementById('alreadyLinkedSection').style.display = 'block';
+      document.getElementById('pendingRequestSection').style.display = 'none';
       document.getElementById('selectionSection').style.display = 'none';
       document.getElementById('linkedPlayerName').textContent = profileData.linkedPlayer || 'Unknown';
       document.getElementById('linkedTeamName').textContent = profileData.linkedTeam || 'Unknown';
     }
     
+    function showPendingRequest(request) {
+      document.getElementById('pendingRequestSection').style.display = 'block';
+      document.getElementById('alreadyLinkedSection').style.display = 'none';
+      document.getElementById('selectionSection').style.display = 'none';
+      
+      document.getElementById('pendingPlayerName').textContent = request.playerName || 'Unknown';
+      document.getElementById('pendingTeamName').textContent = request.teamId || 'Unknown';
+      
+      const requestDate = request.requestedAt?.seconds 
+        ? new Date(request.requestedAt.seconds * 1000).toLocaleString()
+        : 'Unknown';
+      document.getElementById('pendingRequestDate').textContent = requestDate;
+      
+      // Set status text based on approval level
+      const statusElement = document.getElementById('pendingRequestStatus');
+      if (request.approvalLevel === 'auto') {
+        statusElement.textContent = '✅ Auto-Approved - Processing';
+        statusElement.style.background = '#d1fae5';
+        statusElement.style.color = '#065f46';
+      } else if (request.approvalLevel === 'captain') {
+        statusElement.textContent = '⏳ Awaiting Captain Approval';
+      } else {
+        statusElement.textContent = '⏳ Awaiting League Staff Approval';
+      }
+      
+      pendingRequestId = request.requestId;
+      
+      // Process auto-approve if applicable
+      if (request.approvalLevel === 'auto') {
+        processAutoApproval(request.requestId);
+      }
+    }
+    
+    async function processAutoApproval(requestId) {
+      try {
+        console.log('Processing auto-approval for request:', requestId);
+        const result = await processPlayerLinkRequest(requestId);
+        
+        if (result.success) {
+          console.log('✅ Auto-approval processed');
+          // Reload page to show linked status
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error processing auto-approval:', error);
+      }
+    }
+    
     async function showPlayerSelection() {
       document.getElementById('alreadyLinkedSection').style.display = 'none';
+      document.getElementById('pendingRequestSection').style.display = 'none';
       document.getElementById('selectionSection').style.display = 'block';
       
       // Load all players
@@ -793,6 +939,9 @@
         if (suggestedPlayer) {
           console.log('✓ Found suggested player:', suggestedPlayer.name);
           document.getElementById('suggestionAlert').style.display = 'block';
+          
+          // Show approval info based on match quality
+          showApprovalInfo(suggestedPlayer);
         }
         
         renderPlayers(playersByTeam, suggestedPlayer);
@@ -803,6 +952,25 @@
         document.getElementById('playersContainer').innerHTML = 
           '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Error loading players. Please refresh the page.</p></div>';
       }
+    }
+    
+    function showApprovalInfo(player) {
+      const similarity = calculateNameSimilarity(currentUser.displayName, player.name);
+      const approvalAlert = document.getElementById('approvalInfoAlert');
+      const approvalText = document.getElementById('approvalInfoText');
+      
+      if (similarity >= 0.9) {
+        approvalText.textContent = 'High name match detected! Your request will be auto-approved instantly.';
+        approvalAlert.style.background = '#d1fae5';
+        approvalAlert.style.borderColor = '#10b981';
+        approvalAlert.style.color = '#065f46';
+      } else if (similarity >= 0.6) {
+        approvalText.textContent = 'Your request will require approval from your team captain.';
+      } else {
+        approvalText.textContent = 'Low name match. Your request will require approval from league staff.';
+      }
+      
+      approvalAlert.style.display = 'block';
     }
     
     function groupPlayersByTeam(players) {
@@ -822,6 +990,30 @@
       });
       
       return teams;
+    }
+    
+    function calculateNameSimilarity(name1, name2) {
+      if (!name1 || !name2) return 0;
+      
+      const clean1 = name1.toLowerCase().trim();
+      const clean2 = name2.toLowerCase().trim();
+      
+      if (clean1 === clean2) return 1.0;
+      
+      const parts1 = clean1.split(/\s+/);
+      const parts2 = clean2.split(/\s+/);
+      
+      const shorter = parts1.length <= parts2.length ? parts1 : parts2;
+      const longer = parts1.length > parts2.length ? parts1 : parts2;
+      
+      let matches = 0;
+      shorter.forEach(part => {
+        if (longer.some(p => p.includes(part) || part.includes(p))) {
+          matches++;
+        }
+      });
+      
+      return matches / Math.max(parts1.length, parts2.length);
     }
     
     function findMatchingPlayer(googleName, players) {
@@ -940,6 +1132,9 @@
       // Enable confirm button
       document.getElementById('confirmBtn').disabled = false;
       
+      // Update approval info for this player
+      showApprovalInfo(player);
+      
       console.log('Selected player:', player.name);
     }
     
@@ -971,46 +1166,92 @@
       const confirmBtn = document.getElementById('confirmBtn');
       const btnText = confirmBtn.querySelector('span');
       confirmBtn.disabled = true;
-      btnText.textContent = 'Linking...';
+      btnText.textContent = 'Submitting Request...';
       
       try {
-        console.log('Linking user to player:', selectedPlayer.name);
+        console.log('Requesting link to player:', selectedPlayer.name);
         
-        const result = await linkPlayerToUser(
+        const result = await requestPlayerLink(
           currentUser.uid,
           selectedPlayer.name,
           selectedPlayer.currentTeam,
-          false
+          'Linking my player account'
         );
         
         if (result.success) {
-          console.log('✅ Link successful!');
-          alert('✅ Player linked successfully!');
-          window.location.reload();
+          console.log('✅ Request submitted successfully');
+          
+          // Check if auto-approved
+          const similarity = calculateNameSimilarity(currentUser.displayName, selectedPlayer.name);
+          
+          if (similarity >= 0.9) {
+            alert('✅ Perfect name match! Your account is being linked automatically...');
+            // Wait a moment for the approval to process, then reload
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else if (similarity >= 0.6) {
+            alert('✅ Link request submitted!\n\nYour team captain will review and approve your request. You\'ll receive an email notification once approved.');
+            window.location.reload();
+          } else {
+            alert('✅ Link request submitted!\n\nDue to name mismatch, this request requires league staff approval. You\'ll receive an email notification once approved.');
+            window.location.reload();
+          }
         } else {
-          throw new Error('Link failed');
+          throw new Error(result.message || 'Request failed');
         }
         
       } catch (error) {
-        console.error('Error linking player:', error);
-        alert('❌ Failed to link player. Please try again.');
+        console.error('Error requesting link:', error);
+        alert(`❌ ${error.message || 'Failed to submit request. Please try again.'}`);
         confirmBtn.disabled = false;
-        btnText.textContent = 'Confirm Link';
+        btnText.textContent = 'Submit Link Request';
       }
     }
     
-    async function unlinkPlayer() {
-      if (!confirm('Are you sure you want to change your linked player?')) {
+    async function cancelPendingRequest() {
+      if (!confirm('Are you sure you want to cancel your pending link request?')) {
         return;
       }
       
       try {
-        console.log('Unlinking player...');
-        await linkPlayerToUser(currentUser.uid, null, null, false);
-        window.location.reload();
+        console.log('Cancelling pending request:', pendingRequestId);
+        const result = await cancelPlayerLinkRequest(currentUser.uid, pendingRequestId);
+        
+        if (result.success) {
+          alert('✅ Request cancelled successfully.');
+          window.location.reload();
+        } else {
+          throw new Error(result.message || 'Failed to cancel');
+        }
+      } catch (error) {
+        console.error('Error cancelling request:', error);
+        alert('❌ Failed to cancel request. Please try again.');
+      }
+    }
+    
+    async function unlinkPlayer() {
+      if (!confirm('Are you sure you want to change your linked player?\n\nThis will require approval if you have game statistics.')) {
+        return;
+      }
+      
+      try {
+        console.log('Requesting player unlink...');
+        const result = await requestPlayerUnlink(currentUser.uid, 'Changing linked player');
+        
+        if (result.success) {
+          if (result.message.includes('unlinked successfully')) {
+            alert('✅ Player unlinked successfully. You can now select a new player.');
+          } else {
+            alert('✅ Unlink request submitted.\n\nYour captain or league staff will review this request.');
+          }
+          window.location.reload();
+        } else {
+          throw new Error(result.message || 'Unlink failed');
+        }
       } catch (error) {
         console.error('Error unlinking:', error);
-        alert('Failed to unlink. Please try again.');
+        alert('❌ Failed to unlink. Please try again.');
       }
     }
     
@@ -1030,6 +1271,7 @@
     
     // Make functions available globally
     window.confirmLink = confirmLink;
+    window.cancelPendingRequest = cancelPendingRequest;
     window.unlinkPlayer = unlinkPlayer;
     window.handleLogout = handleLogout;
   </script>
