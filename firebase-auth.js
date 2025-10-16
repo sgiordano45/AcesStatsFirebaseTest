@@ -264,7 +264,7 @@ async function createUserProfile(userId, data) {
   await setDoc(userRef, {
     ...data,
     // Enhanced role system
-    userRole: USER_ROLES.PLAYER, // Default role
+    userRole: USER_ROLES.FAN, // Default role
     teamRoles: {}, // Multi-team role tracking
     
     // Legacy fields (keep for backward compatibility)
@@ -272,8 +272,9 @@ async function createUserProfile(userId, data) {
     linkedTeam: null,
     isCaptain: false,
     
-    // Staff management
+	// Staff management
     staffRequests: [],
+    playerLinkRequests: [], // needed for link-player.html
     
     // Preferences
     favoriteTeams: [],
