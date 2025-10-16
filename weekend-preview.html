@@ -1324,6 +1324,31 @@ function getWeatherIcon(condition) {
 function generateWeekendPreview() {
   const weekendGames = getWeekendGames();
   
+  // Sort games by date and time
+  weekendGames.sort((a, b) => {
+    const dateA = parseGameDate(a.date);
+    const dateB = parseGameDate(b.date);
+    
+    // First sort by date
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateA - dateB;
+    }
+    
+    // If same date, sort by time from preview data
+    const previewA = getGamePreview(a["home team"], a["away team"], a.date);
+    const previewB = getGamePreview(b["home team"], b["away team"], b.date);
+    
+    if (previewA && previewA.time && previewB && previewB.time) {
+      // Parse time strings (e.g., "9:00 AM", "12:30 PM")
+      const timeA = parseTimeString(previewA.time);
+      const timeB = parseTimeString(previewB.time);
+      return timeA - timeB;
+    }
+    
+    return 0;
+  });
+  
+  
   const weekendInfoElement = document.getElementById('weekendInfo');
   weekendInfoElement.classList.remove('loading');
   
