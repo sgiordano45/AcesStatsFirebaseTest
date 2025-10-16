@@ -818,47 +818,66 @@ function checkPermission(profile) {
   return false;
 }
     
-    function updateRoleBadge(profile) {
-      const role = profile.userRole;
-      const badge = document.getElementById('roleBadge');
-      const description = document.getElementById('roleDescription');
-      
-      if (role === USER_ROLES.ADMIN) {
-        badge.textContent = '👑 Admin';
-        description.textContent = 'You can approve all player link requests across all teams';
-      } else if (role === USER_ROLES.LEAGUE_STAFF) {
-        badge.textContent = '⚙️ League Staff';
-        description.textContent = 'You can approve all player link requests across all teams';
-      } else if (role === USER_ROLES.CAPTAIN) {
-        badge.textContent = '🎯 Team Captain';
-        description.textContent = 'You can approve player link requests for your team';
-        
-        // Show team filter for captains
-        document.getElementById('teamFilter').style.display = 'block';
-        populateTeamFilter(profile);
-      }
-    }
+function updateRoleBadge(profile) {
+  const role = profile.userRole;
+  const badge = document.getElementById('roleBadge');
+  const description = document.getElementById('roleDescription');
+  
+  // Check for captain via multiple methods
+  const isCaptain = role === USER_ROLES.CAPTAIN || 
+                    profile.isCaptain === true ||
+                    (profile.teamRoles && Object.values(profile.teamRoles).some(
+                      teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
+                    ));
+  
+  if (role === USER_ROLES.ADMIN) {
+    badge.textContent = '👑 Admin';
+    description.textContent = 'You can approve all player link requests across all teams';
+  } else if (role === USER_ROLES.LEAGUE_STAFF) {
+    badge.textContent = '⚙️ League Staff';
+    description.textContent = 'You can approve all player link requests across all teams';
+  } else if (isCaptain) {
+    badge.textContent = '🎯 Team Captain';
+    description.textContent = 'You can approve player link requests for your team';
     
-    function populateTeamFilter(profile) {
-      const select = document.getElementById('teamSelect');
-      
-      // Get all teams user is captain of
-      if (profile.teamRoles) {
-        Object.entries(profile.teamRoles).forEach(([teamId, teamRole]) => {
-          if (teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active') {
-            const option = document.createElement('option');
-            option.value = teamId;
-            option.textContent = teamId;
-            select.appendChild(option);
-          }
-        });
+    // Show team filter for captains
+    document.getElementById('teamFilter').style.display = 'block';
+    populateTeamFilter(profile);
+  } else {
+    // Fallback
+    badge.textContent = '👤 User';
+    description.textContent = 'Role information unavailable';
+  }
+}
+    
+function populateTeamFilter(profile) {
+  const select = document.getElementById('teamSelect');
+  
+  // Get all teams user is captain of
+  if (profile.teamRoles) {
+    Object.entries(profile.teamRoles).forEach(([teamId, teamRole]) => {
+      if (teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active') {
+        const option = document.createElement('option');
+        option.value = teamId;
+        option.textContent = teamId;
+        select.appendChild(option);
       }
-      
-      // If only one team, select it by default
-      if (select.options.length === 2) {
-        select.selectedIndex = 1;
-      }
-    }
+    });
+  }
+  
+  // ⭐ LEGACY: Add linkedTeam if user is captain but no teamRoles
+  if (profile.isCaptain && profile.linkedTeam && select.options.length === 1) {
+    const option = document.createElement('option');
+    option.value = profile.linkedTeam;
+    option.textContent = profile.linkedTeam;
+    select.appendChild(option);
+  }
+  
+  // If only one team, select it by default
+  if (select.options.length === 2) {
+    select.selectedIndex = 1;
+  }
+}
     
     async function loadRequests() {
       try {
