@@ -886,6 +886,30 @@ body {
         </div>
       </div>
 
+<div class="section-card" id="captainToolsSection" style="display: none;">
+  <div class="section-header">
+    <h2><span class="section-icon">👑</span> Captain Tools</h2>
+  </div>
+  <div class="quick-links">
+    <a href="approve-links.html" class="quick-link-card">
+      <div class="quick-link-icon">🔗</div>
+      <div class="quick-link-content">
+        <h3>Approve Player Links</h3>
+        <p id="pendingLinksCaptainText">Review pending link requests</p>
+      </div>
+    </a>
+    <a href="roster-management.html" class="quick-link-card">
+      <div class="quick-link-icon">📋</div>
+      <div class="quick-link-content">
+        <h3>Roster Management</h3>
+        <p>Manage team roster & RSVPs</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+
+
       <div class="section-card">
         <div class="section-header">
           <h2><span class="section-icon">🔗</span> Quick Links</h2>
@@ -919,6 +943,13 @@ body {
               <p>Manage availability</p>
             </div>
           </a>
+		  <a href="approve-links.html" class="quick-link-card" id="linkApproveLinks" style="display: none;">
+				<div class="quick-link-icon">🔗</div>
+				<div class="quick-link-content">
+					<h3>Approve Player Links</h3>
+					<p id="pendingLinksQuickText">Review pending requests</p>
+				</div>
+			</a>
         </div>
       </div>
     </div>
@@ -1283,6 +1314,7 @@ body {
         currentUser = user;
         try {
           await loadUserProfile(user);
+		  await loadCaptainTools();
           await loadUserStats(user);
         } catch (error) {
           console.error('❌ Error loading profile data:', error);
@@ -1622,6 +1654,132 @@ if (userProfile.linkedTeam) {
     document.getElementById('statAvg').textContent = '.000';
     document.getElementById('statHits').textContent = '0';
     document.getElementById('statRuns').textContent = '0';
+  }
+}
+
+// ========================================
+// CAPTAIN TOOLS LOADER
+// Add this function to your profile.html <script type="module"> section
+// Place it after the loadUserStats function
+// ========================================
+
+async function loadCaptainTools() {
+  console.log('👑 Checking captain/admin status...');
+  
+  // Check if user is captain, admin, or league staff
+  const isCaptain = userProfile?.isCaptain === true || 
+                    userProfile?.userRole === 'captain' ||
+                    (userProfile?.teamRoles && Object.values(userProfile.teamRoles).some(
+                      teamRole => teamRole.role === 'captain' && teamRole.status === 'active'
+                    ));
+  
+  const isAdmin = userProfile?.userRole === 'admin';
+  const isLeagueStaff = userProfile?.userRole === 'league-staff';
+  
+  const hasCaptainAccess = isCaptain || isAdmin || isLeagueStaff;
+  
+  console.log('🔍 Captain access:', hasCaptainAccess, {
+    isCaptain,
+    isAdmin,
+    isLeagueStaff,
+    userRole: userProfile?.userRole
+  });
+  
+  if (hasCaptainAccess) {
+    // Show the Quick Links item
+    const quickLinkItem = document.getElementById('linkApproveLinks');
+    if (quickLinkItem) {
+      quickLinkItem.style.display = 'flex';
+    }
+    
+    // Show the Captain Tools section
+    const captainSection = document.getElementById('captainToolsSection');
+    if (captainSection) {
+      captainSection.style.display = 'block';
+    }
+    
+    // Load pending requests count
+    try {
+      const { getPendingPlayerLinkRequests } = await import('./firebase-auth.js');
+      
+      // Get team filter if captain (not admin/league staff)
+      let teamFilter = null;
+      if (isCaptain && !isAdmin && !isLeagueStaff) {
+        teamFilter = userProfile?.linkedTeam;
+      }
+      
+      const result = await getPendingPlayerLinkRequests(teamFilter);
+      
+      if (result.success) {
+        const pendingCount = result.requests.length;
+        console.log('📊 Pending link requests:', pendingCount);
+        
+        if (pendingCount > 0) {
+          // Update Quick Links text
+          const quickText = document.getElementById('pendingLinksQuickText');
+          if (quickText) {
+            quickText.innerHTML = `<span style="color: #f59e0b; font-weight: 600;">${pendingCount} pending ${pendingCount === 1 ? 'request' : 'requests'}</span>`;
+          }
+          
+          // Update Captain Tools section text
+          const captainText = document.getElementById('pendingLinksCaptainText');
+          if (captainText) {
+            captainText.innerHTML = `<span style="color: #f59e0b; font-weight: 600;">${pendingCount} pending ${pendingCount === 1 ? 'request' : 'requests'} ⚠️</span>`;
+          }
+          
+          // Add a badge to the quick link
+          if (quickLinkItem && !quickLinkItem.querySelector('.pending-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'pending-badge';
+            badge.textContent = pendingCount;
+            badge.style.cssText = `
+              position: absolute;
+              top: 0.5rem;
+              right: 0.5rem;
+              background: #f59e0b;
+              color: white;
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: 700;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            quickLinkItem.style.position = 'relative';
+            quickLinkItem.appendChild(badge);
+          }
+        } else {
+          // No pending requests
+          const quickText = document.getElementById('pendingLinksQuickText');
+          if (quickText) {
+            quickText.textContent = 'No pending requests ✓';
+          }
+          
+          const captainText = document.getElementById('pendingLinksCaptainText');
+          if (captainText) {
+            captainText.textContent = 'No pending requests ✓';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading pending requests:', error);
+      // Don't block the page, just show default text
+    }
+  } else {
+    console.log('ℹ️ User does not have captain access');
+    // Hide captain tools
+    const quickLinkItem = document.getElementById('linkApproveLinks');
+    if (quickLinkItem) {
+      quickLinkItem.style.display = 'none';
+    }
+    
+    const captainSection = document.getElementById('captainToolsSection');
+    if (captainSection) {
+      captainSection.style.display = 'none';
+    }
   }
 }
 
