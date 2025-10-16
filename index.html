@@ -1192,147 +1192,154 @@
 
   <script type="module">
   // Import auth from firebase-auth.js (which already initializes it)
-  import { auth, onAuthChange, getUserProfile } from './firebase-auth.js';
+  import { auth, onAuthChange, getUserProfile,USER_ROLES  } from './firebase-auth.js';
   
   const authSection = document.getElementById('authSection');
   const mobileAuthSection = document.getElementById('mobileAuthSection');
   const personalizationSection = document.getElementById('personalizationSection');
 
   // Listen for auth state changes
-  onAuthChange(async (user) => {
-    console.log('🔐 Auth state changed:', user ? user.email : 'No user');
+onAuthChange(async (user) => {
+  console.log('🔐 Auth state changed:', user ? user.email : 'No user');
+  
+  if (user) {
+    // User is signed in
+    console.log('✅ User signed in:', user.email);
     
-    if (user) {
-      // User is signed in
-      console.log('✅ User signed in:', user.email);
+    // Get the user's preferred display name from their profile
+    let displayName = user.displayName || user.email.split('@')[0];
+    let isCaptain = false; // Initialize captain status
+    let isStaff = false;
+    let profile = null; // Initialize profile variable
+    
+    try {
+      const profileResult = await getUserProfile(user.uid);
+      if (profileResult.success && profileResult.data) {
+        profile = profileResult.data; // Store the profile data
+        
+        if (profile.preferredDisplayName) {
+          displayName = profile.preferredDisplayName;
+          console.log('✅ Using preferred display name:', displayName);
+        }
+        
+        // Check captain status
+        isCaptain = profile.role === 'captain' || profile.isCaptain === true;
+        if (isCaptain) {
+          console.log('⭐ User is a captain');
+        }
+        
+        // Check staff status
+        isStaff = profile.role === 'staff';
+        if (isStaff) {
+          console.log('👔 User is staff');
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ Could not load user profile:', error);
+    }
+    
+    // Show personalization section with animation
+    if (personalizationSection) {
+      personalizationSection.style.display = 'block';
       
-      // Get the user's preferred display name from their profile
-      let displayName = user.displayName || user.email.split('@')[0];
-      let isCaptain = false; // Initialize captain status
-      let isStaff = false;
-	  
-      try {
-        const profile = await getUserProfile(user.uid);
-        if (profile.success && profile.data) {
-          if (profile.data.preferredDisplayName) {
-            displayName = profile.data.preferredDisplayName;
-            console.log('✅ Using preferred display name:', displayName);
+      // Only run these if profile was loaded successfully
+      if (profile) {
+        // Update the RSVP card stats based on role
+        const rsvpCardStats = document.querySelector('#personalizationSection .harvest-card .card-stats');
+        if (rsvpCardStats) {
+          const userRole = profile.userRole;
+          
+          // Check if user has captain/staff privileges
+          const canManageLineups = userRole === USER_ROLES.ADMIN || 
+                                   userRole === USER_ROLES.LEAGUE_STAFF || 
+                                   userRole === USER_ROLES.CAPTAIN ||
+                                   userRole === USER_ROLES.TEAM_STAFF;
+          
+          // Also check teamRoles for captain or team-staff status
+          const hasTeamRole = profile.teamRoles && 
+            Object.values(profile.teamRoles).some(
+              teamRole => (teamRole.role === USER_ROLES.CAPTAIN || 
+                           teamRole.role === USER_ROLES.TEAM_STAFF) && 
+                          teamRole.status === 'active'
+            );
+          
+          // Check legacy isCaptain field
+          const isCaptainLegacy = profile.isCaptain === true;
+          
+          const hasManagementAccess = canManageLineups || hasTeamRole || isCaptainLegacy;
+          
+          let statsHTML = '<div>📅 Update all games at once</div>';
+          
+          if (hasManagementAccess) {
+            statsHTML += '<div>📌 Set Batting Line-Ups</div>';
+            statsHTML += '<div>🔔 Preset your Defense Rotation</div>';
           }
           
-          // Check captain status
-          isCaptain = profile.data.role === 'captain' || profile.data.isCaptain === true;
-          if (isCaptain) {
-            console.log('⭐ User is a captain');
-          }
-		            // Check staff status
-          isStaff = profile.data.role === 'staff';
-          if (isStaff) {
-            console.log('👔 User is staff');
+          rsvpCardStats.innerHTML = statsHTML;
+          console.log('✅ RSVP card updated. Management features:', hasManagementAccess ? 'shown' : 'hidden', 'for role:', userRole);
+        } else {
+          console.warn('⚠️ Could not find RSVP card stats element');
+        }
+
+        // Show/hide Game Tracker card based on role
+        const gameTrackerCard = document.getElementById('gameTrackerCard');
+        if (gameTrackerCard) {
+          const userRole = profile.userRole;
+          
+          // Check if user is Admin, League Staff, Captain, or Team Staff
+          const canTrackGames = userRole === USER_ROLES.ADMIN || 
+                                userRole === USER_ROLES.LEAGUE_STAFF || 
+                                userRole === USER_ROLES.CAPTAIN ||
+                                userRole === USER_ROLES.TEAM_STAFF;
+          
+          // Also check teamRoles for captain or team-staff status
+          const hasTeamRole = profile.teamRoles && 
+            Object.values(profile.teamRoles).some(
+              teamRole => (teamRole.role === USER_ROLES.CAPTAIN || 
+                           teamRole.role === USER_ROLES.TEAM_STAFF) && 
+                          teamRole.status === 'active'
+            );
+          
+          // Check legacy isCaptain field
+          const isCaptainLegacy = profile.isCaptain === true;
+          
+          if (canTrackGames || hasTeamRole || isCaptainLegacy) {
+            gameTrackerCard.style.display = 'block';
+            console.log('✅ Game Tracker card shown for role:', userRole);
+          } else {
+            gameTrackerCard.style.display = 'none';
+            console.log('ℹ️ Game Tracker card hidden (insufficient permissions)');
           }
         }
-      } catch (error) {
-        console.error('⚠️ Could not load user profile:', error);
-      }
-      
-      // Show personalization section with animation
-      if (personalizationSection) {
-        personalizationSection.style.display = 'block';
-        
-// Update the RSVP card stats based on role
-const rsvpCardStats = document.querySelector('#personalizationSection .harvest-card .card-stats');
-if (rsvpCardStats) {
-  const userRole = profile.userRole;
-  
-  // Check if user has captain/staff privileges
-  const canManageLineups = userRole === USER_ROLES.ADMIN || 
-                           userRole === USER_ROLES.LEAGUE_STAFF || 
-                           userRole === USER_ROLES.CAPTAIN ||
-                           userRole === USER_ROLES.TEAM_STAFF;
-  
-  // Also check teamRoles for captain or team-staff status
-  const hasTeamRole = profile.teamRoles && 
-    Object.values(profile.teamRoles).some(
-      teamRole => (teamRole.role === USER_ROLES.CAPTAIN || 
-                   teamRole.role === USER_ROLES.TEAM_STAFF) && 
-                  teamRole.status === 'active'
-    );
-  
-  // Check legacy isCaptain field
-  const isCaptainLegacy = profile.isCaptain === true;
-  
-  const hasManagementAccess = canManageLineups || hasTeamRole || isCaptainLegacy;
-  
-  let statsHTML = '<div>📅 Update all games at once</div>';
-  
-  if (hasManagementAccess) {
-    statsHTML += '<div>📌 Set Batting Line-Ups</div>';
-    statsHTML += '<div>🔔 Preset your Defense Rotation</div>';
-  }
-  
-  rsvpCardStats.innerHTML = statsHTML;
-  console.log('✅ RSVP card updated. Management features:', hasManagementAccess ? 'shown' : 'hidden', 'for role:', userRole);
-} else {
-  console.warn('⚠️ Could not find RSVP card stats element');
-}
 
-// Show/hide Game Tracker card based on role
-const gameTrackerCard = document.getElementById('gameTrackerCard');
-if (gameTrackerCard) {
-  const userRole = profile.userRole;
-  
-  // Check if user is Admin, League Staff, Captain, or Team Staff
-  const canTrackGames = userRole === USER_ROLES.ADMIN || 
-                        userRole === USER_ROLES.LEAGUE_STAFF || 
-                        userRole === USER_ROLES.CAPTAIN ||
-                        userRole === USER_ROLES.TEAM_STAFF;
-  
-  // Also check teamRoles for captain or team-staff status
-  const hasTeamRole = profile.teamRoles && 
-    Object.values(profile.teamRoles).some(
-      teamRole => (teamRole.role === USER_ROLES.CAPTAIN || 
-                   teamRole.role === USER_ROLES.TEAM_STAFF) && 
-                  teamRole.status === 'active'
-    );
-  
-  // Check legacy isCaptain field
-  const isCaptainLegacy = profile.isCaptain === true;
-  
-  if (canTrackGames || hasTeamRole || isCaptainLegacy) {
-    gameTrackerCard.style.display = 'block';
-    console.log('✅ Game Tracker card shown for role:', userRole);
-  } else {
-    gameTrackerCard.style.display = 'none';
-    console.log('ℹ️ Game Tracker card hidden (insufficient permissions)');
-  }
-}
-	          // Show/hide Game Tracker card based on captain or staff status
         // Show/hide Approvals card based on role
-const approvalsCard = document.getElementById('approvalsCard');
-if (approvalsCard) {
-  const userRole = profile.userRole;
-  
-  // Check if user is Admin, League Staff, or Captain
-  const canApprove = userRole === USER_ROLES.ADMIN || 
-                     userRole === USER_ROLES.LEAGUE_STAFF || 
-                     userRole === USER_ROLES.CAPTAIN;
-  
-  // Also check legacy isCaptain field and teamRoles
-  const isCaptainViaTeamRoles = profile.teamRoles && 
-    Object.values(profile.teamRoles).some(
-      teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
-    );
-  
-  const isCaptainLegacy = profile.isCaptain === true;
-  
-  if (canApprove || isCaptainViaTeamRoles || isCaptainLegacy) {
-    approvalsCard.style.display = 'block';
-    console.log('✅ Approvals card shown for role:', userRole);
-  } else {
-    approvalsCard.style.display = 'none';
-    console.log('ℹ️ Approvals card hidden (insufficient permissions)');
-  }
-}
-}
+        const approvalsCard = document.getElementById('approvalsCard');
+        if (approvalsCard) {
+          const userRole = profile.userRole;
+          
+          // Check if user is Admin, League Staff, or Captain
+          const canApprove = userRole === USER_ROLES.ADMIN || 
+                             userRole === USER_ROLES.LEAGUE_STAFF || 
+                             userRole === USER_ROLES.CAPTAIN;
+          
+          // Also check legacy isCaptain field and teamRoles
+          const isCaptainViaTeamRoles = profile.teamRoles && 
+            Object.values(profile.teamRoles).some(
+              teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
+            );
+          
+          const isCaptainLegacy = profile.isCaptain === true;
+          
+          if (canApprove || isCaptainViaTeamRoles || isCaptainLegacy) {
+            approvalsCard.style.display = 'block';
+            console.log('✅ Approvals card shown for role:', userRole);
+          } else {
+            approvalsCard.style.display = 'none';
+            console.log('ℹ️ Approvals card hidden (insufficient permissions)');
+          }
+        }
+      }
+    }
       
       // Update desktop auth section with preferred name
       authSection.innerHTML = `
