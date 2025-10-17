@@ -921,6 +921,16 @@
     To prevent fraudulent account linking, your request will be reviewed by your team captain or league staff based on how well your registered name matches the player name.
   </div>
   
+  <!-- Skip Link Section - MOVED TO TOP -->
+  <div class="skip-link-section" style="margin-top: 0; margin-bottom: 2rem; padding-top: 0; padding-bottom: 1.5rem; border-top: none; border-bottom: 2px solid var(--border-color);">
+    <p style="font-size: 15px; margin-bottom: 1rem;">
+      <strong>Not a player?</strong> You can browse stats and follow teams without linking a player account.
+    </p>
+    <button class="btn-skip" onclick="skipLinking()">
+      Skip Player Linking →
+    </button>
+  </div>
+  
   <!-- Suggested Player Highlight Box -->
   <div id="suggestedPlayerBox" style="display: none;">
     <div class="suggested-player-highlight" onclick="selectSuggestedPlayer()">
@@ -964,13 +974,7 @@
     <!-- Players will be loaded here -->
   </div>
   
-  <!-- Skip Link Section -->
-  <div class="skip-link-section">
-    <p>Not a player? You can browse stats and follow teams without linking a player account.</p>
-    <button class="btn-skip" onclick="skipLinking()">
-      Skip Player Linking →
-    </button>
-  </div>
+
 </div>
     </div>
   </div>
