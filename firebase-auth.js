@@ -560,38 +560,7 @@ export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = f
   }
 }
 
-/**
- * Get the correct profile page URL for a user's role
- * @param {Object} userProfile - User profile data
- * @returns {string} - URL to correct profile page
- */
-export function getProfilePageForUser(userProfile) {
-  if (!userProfile) return 'profile-fan.html'; // Default to fan
-  
-  const role = userProfile.userRole;
-  
-  // Fans and family use fan profile
-  if (role === USER_ROLES.FAN || role === USER_ROLES.FAMILY) {
-    return 'profile-fan.html';
-  }
-  
-  // Players, captains, team-staff, league-staff, admin use full profile
-  return 'profile.html';
-}
 
-/**
- * Redirect user to correct profile page if on wrong one
- * @param {Object} userProfile - User profile data
- * @param {string} currentPage - Current page filename (e.g., 'profile.html')
- */
-export function ensureCorrectProfilePage(userProfile, currentPage) {
-  const correctPage = getProfilePageForUser(userProfile);
-  
-  if (currentPage !== correctPage) {
-    console.log(`🔀 Redirecting from ${currentPage} to ${correctPage}`);
-    window.location.href = correctPage;
-  }
-}
 /**
  * Get the correct profile page URL for a user's role
  * @param {Object} userProfile - User profile data
