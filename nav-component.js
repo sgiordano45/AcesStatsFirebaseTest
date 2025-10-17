@@ -6,6 +6,7 @@ export class NavigationComponent {
     this.currentPage = options.currentPage || this.detectCurrentPage();
     this.config = PAGE_CONFIGS[this.currentPage] || DEFAULT_CONFIG;
     this.isAuthenticated = options.isAuthenticated || this.checkAuth();
+    this.userDisplayName = options.userDisplayName || this.getUserDisplayName();
   }
 
   // Auto-detect current page from URL
@@ -15,7 +16,17 @@ export class NavigationComponent {
     return filename;
   }
   
-// Check if user is authenticated (integrate with your auth system)
+  // Get user display name from Firebase
+  getUserDisplayName() {
+    if (typeof window.auth !== 'undefined' && window.auth.currentUser) {
+      const user = window.auth.currentUser;
+      // Check for preferred display name in profile (this would need to be loaded separately)
+      return user.displayName || user.email?.split('@')[0] || 'User';
+    }
+    return 'User';
+  }
+  
+  // Check if user is authenticated (integrate with your auth system)
   checkAuth() {
     // Check Firebase Auth
     if (typeof window.auth !== 'undefined' && window.auth.currentUser) {
@@ -24,7 +35,6 @@ export class NavigationComponent {
     }
     
     // Fallback: check localStorage for Firebase persistence
-    // Firebase stores auth state in IndexedDB/localStorage with keys starting with 'firebase:authUser:'
     const localStorageKeys = Object.keys(localStorage);
     const hasFirebaseAuth = localStorageKeys.some(key => 
       key.startsWith('firebase:authUser:') && localStorage.getItem(key) !== null
@@ -114,8 +124,7 @@ export class NavigationComponent {
     `;
   }
 
-  // Render mobile navigation
-// Render mobile navigation
+  // Render mobile navigation with auth section
   renderMobile() {
     const links = this.getMobileLinks();
     
@@ -142,7 +151,14 @@ export class NavigationComponent {
                 ${link.icon} ${link.label}
               </a>
             `).join('')}
-          ` : ''}
+            <button class="mobile-nav-item mobile-signout-btn" id="mobileSignOutBtn">
+              🚪 Sign Out
+            </button>
+          ` : `
+            <div class="mobile-nav-section-divider">Account</div>
+            <a href="signin.html" class="mobile-nav-item">🔓 Sign In</a>
+            <a href="signup.html" class="mobile-nav-item">📝 Sign Up</a>
+          `}
         </nav>
       </div>
     `;
@@ -154,6 +170,25 @@ export class NavigationComponent {
       mobile: this.renderMobile(),
       desktop: this.renderDesktop()
     };
+  }
+
+  // Handle sign out
+  async handleSignOut() {
+    console.log('🚪 Mobile sign out clicked');
+    try {
+      // Check if Firebase auth is available
+      if (typeof window.auth !== 'undefined' && window.auth.signOut) {
+        await window.auth.signOut();
+        console.log('✅ User signed out successfully');
+        window.location.reload();
+      } else {
+        console.error('❌ Firebase auth not available');
+        alert('Sign out failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Sign out error:', error);
+      alert('Error signing out. Please try again.');
+    }
   }
 
   // Initialize navigation on page load
@@ -184,23 +219,46 @@ export class NavigationComponent {
     }
     
     // IMPORTANT: Set up event listeners AFTER the HTML is inserted
-    // Use setTimeout to ensure DOM has updated
     setTimeout(() => {
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileNavMenu = document.getElementById('mobileNavMenu');
+      const mobileSignOutBtn = document.getElementById('mobileSignOutBtn');
       
-      console.log('Setting up mobile menu...', { mobileMenuBtn, mobileNavMenu });
+      console.log('Setting up mobile menu...', { mobileMenuBtn, mobileNavMenu, mobileSignOutBtn });
       
+      // Mobile menu toggle
       if (mobileMenuBtn && mobileNavMenu) {
         mobileMenuBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          console.log('Mobile menu button clicked!'); // Debug log
+          console.log('Mobile menu button clicked!');
           mobileNavMenu.classList.toggle('open');
-          console.log('Menu open state:', mobileNavMenu.classList.contains('open')); // Debug log
+          console.log('Menu open state:', mobileNavMenu.classList.contains('open'));
         });
         console.log('✅ Mobile menu event listener attached');
       } else {
         console.error('❌ Mobile nav elements not found!', { mobileMenuBtn, mobileNavMenu });
+      }
+      
+      // Mobile sign out button
+      if (mobileSignOutBtn) {
+        mobileSignOutBtn.addEventListener('click', async function(e) {
+          e.preventDefault();
+          console.log('🚪 Mobile sign out clicked');
+          try {
+            if (typeof window.auth !== 'undefined' && window.auth.signOut) {
+              await window.auth.signOut();
+              console.log('✅ User signed out successfully');
+              window.location.reload();
+            } else {
+              console.error('❌ Firebase auth not available');
+              alert('Sign out failed. Please try again.');
+            }
+          } catch (error) {
+            console.error('❌ Sign out error:', error);
+            alert('Error signing out. Please try again.');
+          }
+        });
+        console.log('✅ Mobile sign-out button listener attached');
       }
     }, 0);
     
@@ -246,13 +304,12 @@ if (typeof window !== 'undefined') {
     NavigationComponent.init();
   }
   
-// CRITICAL: Set up Firebase auth state listener with longer wait time
-  // Firebase auth may not be immediately available
+  // CRITICAL: Set up Firebase auth state listener with longer wait time
   const setupAuthListener = () => {
     if (typeof window.auth !== 'undefined' && window.auth.onAuthStateChanged) {
       console.log('👂 Setting up auth state listener for navigation...');
       window.auth.onAuthStateChanged((user) => {
-        console.log('🔐 Auth state changed, user:', user ? user.email : 'none');
+        console.log('🔍 Auth state changed, user:', user ? user.email : 'none');
         // Reinitialize navigation with new auth state
         setTimeout(() => {
           window.reinitializeNav();
@@ -265,7 +322,6 @@ if (typeof window !== 'undefined') {
   
   // Try immediately
   if (!setupAuthListener()) {
-    // Firebase not loaded yet, set up a check with longer intervals
     console.log('⏳ Firebase auth not loaded, will check again...');
     let authCheckAttempts = 0;
     const authCheckInterval = setInterval(() => {
@@ -273,7 +329,6 @@ if (typeof window !== 'undefined') {
         console.log('✅ Firebase auth now available, listener attached');
         clearInterval(authCheckInterval);
       } else if (++authCheckAttempts > 40) {
-        // Increased from 20 to 40 attempts (10 seconds total)
         console.warn('⚠️ Firebase auth not found after 40 attempts (10 seconds)');
         clearInterval(authCheckInterval);
       }

@@ -1192,12 +1192,15 @@
 
  <!-- Replace the auth state change handler in index.html (around line 1106-1230) with this: -->
 
+<!-- Replace the auth state change handler in index.html (around line 1106-1230) with this: -->
+
 <script type="module">
   import { auth, onAuthChange, getUserProfile, USER_ROLES } from './firebase-auth.js';
   
   const authSection = document.getElementById('authSection');
-  const mobileAuthSection = document.getElementById('mobileAuthSection');
   const personalizationSection = document.getElementById('personalizationSection');
+  
+  // Mobile auth is handled by nav-component.js, not directly here
 
   // Listen for auth state changes
   onAuthChange(async (user) => {
@@ -1251,31 +1254,16 @@
         </div>
       `;
       
-      // Update mobile auth section
-      mobileAuthSection.innerHTML = `
-        <a href="profile.html" class="mobile-nav-item">👤 ${displayName}</a>
-        <a href="favorites.html" class="mobile-nav-item">⭐ My Favorites</a>
-        <button class="mobile-nav-item" id="mobileSignOutBtn" style="text-align: left; width: 100%; background: none; border: none; cursor: pointer; font: inherit; color: inherit;">🚪 Sign Out</button>
-      `;
-      
       // ⭐ KEY FIX: Add event listeners AFTER creating the buttons
       // Use setTimeout to ensure DOM is fully updated
       setTimeout(() => {
         const signOutBtn = document.getElementById('signOutBtn');
-        const mobileSignOutBtn = document.getElementById('mobileSignOutBtn');
         
         if (signOutBtn) {
           signOutBtn.addEventListener('click', handleSignOut);
           console.log('✅ Desktop sign-out button listener attached');
         } else {
           console.error('❌ Could not find signOutBtn');
-        }
-        
-        if (mobileSignOutBtn) {
-          mobileSignOutBtn.addEventListener('click', handleSignOut);
-          console.log('✅ Mobile sign-out button listener attached');
-        } else {
-          console.error('❌ Could not find mobileSignOutBtn');
         }
       }, 0);
       
@@ -1288,11 +1276,6 @@
       authSection.innerHTML = `
         <a href="signin.html" class="auth-button">Sign In</a>
         <a href="signup.html" class="auth-button primary">Sign Up</a>
-      `;
-      
-      mobileAuthSection.innerHTML = `
-        <a href="signin.html" class="mobile-nav-item">🔓 Sign In</a>
-        <a href="signup.html" class="mobile-nav-item">📝 Sign Up</a>
       `;
     }
   });

@@ -184,6 +184,36 @@
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
+/* Mobile sign out button styling */
+.mobile-signout-btn {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.mobile-signout-btn:hover {
+  background-color: rgba(255, 59, 48, 0.1) !important;
+  color: #ff3b30 !important;
+}
+
+.mobile-signout-btn:active {
+  background-color: rgba(255, 59, 48, 0.2) !important;
+}
+
+/* Make sure the sign out button has proper padding like other nav items */
+.mobile-nav-item.mobile-signout-btn {
+  padding: 1rem 1.5rem;
+  display: block;
+  font-weight: 500;
+}
+
+
+
 /* Adjust page content to account for fixed mobile nav */
 @media (max-width: 768px) {
   .mobile-nav-container {
