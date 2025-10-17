@@ -414,6 +414,21 @@
         font-size: 52px;
       }
     }
+	.form-hint {
+  font-size: 13px;
+  padding: 8px 12px;
+  background: #e0f2fe;
+  border-left: 3px solid #0284c7;
+  border-radius: 6px;
+  margin-top: 8px;
+  color: #075985;
+}
+
+.form-hint.warning {
+  background: #fef3c7;
+  border-left-color: #f59e0b;
+  color: #92400e;
+}
   </style>
 </head>
 <body>
@@ -424,6 +439,16 @@
     
     <div id="alertContainer"></div>
     
+	<div class="info-box" style="background: #e0f2fe; border: 2px solid #0284c7; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+  <strong style="color: #075985; display: block; margin-bottom: 0.5rem;">
+    🔒 Account Security
+  </strong>
+  <p style="color: #075985; font-size: 13px; margin: 0;">
+    Use your real name to help us match your account with your player profile. 
+    All link requests are reviewed to prevent unauthorized access.
+  </p>
+</div>
+	
     <form id="signupForm">
       <div class="form-group">
         <label class="form-label" for="displayName">Full Name *</label>
@@ -434,8 +459,12 @@
           placeholder="John Doe"
           required
         >
+		<div class="form-hint" id="nameHint" style="display: none;">
+			💡 <span id="nameHintText"></span>
+		</div>
         <div class="error-message" id="nameError">Please enter your full name</div>
       </div>
+	  
       
       <div class="form-group">
         <label class="form-label" for="email">Email Address *</label>
@@ -544,6 +573,42 @@
     passwordInput.addEventListener('blur', validatePassword);
     confirmPasswordInput.addEventListener('blur', validateConfirmPassword);
     
+	displayNameInput.addEventListener('input', () => {
+  const name = displayNameInput.value.trim();
+  const nameHint = document.getElementById('nameHint');
+  const nameHintText = document.getElementById('nameHintText');
+  
+  if (name.length === 0) {
+    nameHint.style.display = 'none';
+    return;
+  }
+  
+  // Check for valid format
+  const nameRegex = /^[a-zA-Z\s'-]+$/;
+  if (!nameRegex.test(name)) {
+    nameHint.style.display = 'block';
+    nameHint.className = 'form-hint warning';
+    nameHintText.textContent = 'Name can only contain letters, spaces, hyphens, and apostrophes';
+    return;
+  }
+  
+  // Check word count
+  const words = name.split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 1) {
+    nameHint.style.display = 'block';
+    nameHint.className = 'form-hint';
+    nameHintText.textContent = 'Including your last name helps with player account matching';
+  } else if (words.length >= 2) {
+    nameHint.style.display = 'block';
+    nameHint.className = 'form-hint';
+    nameHintText.textContent = 'Full name looks good! This will help match your player profile.';
+  } else {
+    nameHint.style.display = 'none';
+  }
+});
+
+	
+	
     function validateName() {
       const name = displayNameInput.value.trim();
       const nameError = document.getElementById('nameError');

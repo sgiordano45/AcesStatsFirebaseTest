@@ -151,27 +151,140 @@ export const ROLE_PERMISSIONS = {
 // AUTHENTICATION FUNCTIONS
 // ========================================
 
+/**
+ * Enhanced registration with name validation and audit trail
+ */
 export async function registerUser(email, password, displayName) {
   try {
+    // Validate display name format
+    const nameValidation = validateDisplayName(displayName);
+    if (!nameValidation.valid) {
+      return { 
+        success: false, 
+        error: 'invalid-display-name',
+        message: nameValidation.message 
+      };
+    }
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
     await updateProfile(user, { displayName });
     await sendEmailVerification(user);
     
+    // Create user profile with additional security fields
     await createUserProfile(user.uid, {
       email: user.email,
       displayName: displayName,
+      displayNameOriginal: displayName, // Store original for audit
+      registrationMethod: 'email', // Track how they signed up
+      registrationIP: null, // Could add IP tracking if needed
       createdAt: serverTimestamp(),
-      emailVerified: false
+      emailVerified: false,
+      accountFlags: {
+        requiresManualReview: false,
+        suspiciousActivity: false,
+        linkingAttempts: 0,
+        linkingAttemptsHistory: []
+      }
     });
     
     console.log('✅ User registered:', displayName);
-    return { success: true, user, message: 'Account created! Please check your email to verify.' };
+    return { 
+      success: true, 
+      user, 
+      message: 'Account created! Please check your email to verify.',
+      nameValidation: nameValidation.confidence
+    };
   } catch (error) {
     console.error('❌ Registration error:', error.code, error);
-    return { success: false, error: error.code, message: getErrorMessage(error.code) };
+    return { 
+      success: false, 
+      error: error.code, 
+      message: getErrorMessage(error.code) 
+    };
   }
+}
+
+/**
+ * Validate display name to prevent abuse
+ */
+function validateDisplayName(name) {
+  if (!name || name.trim().length === 0) {
+    return { valid: false, message: 'Name is required', confidence: 'low' };
+  }
+  
+  const trimmedName = name.trim();
+  
+  // Check minimum length
+  if (trimmedName.length < 2) {
+    return { 
+      valid: false, 
+      message: 'Name must be at least 2 characters', 
+      confidence: 'low' 
+    };
+  }
+  
+  // Check maximum length
+  if (trimmedName.length > 50) {
+    return { 
+      valid: false, 
+      message: 'Name must be less than 50 characters', 
+      confidence: 'low' 
+    };
+  }
+  
+  // Check for valid characters (letters, spaces, hyphens, apostrophes)
+  const nameRegex = /^[a-zA-Z\s'-]+$/;
+  if (!nameRegex.test(trimmedName)) {
+    return { 
+      valid: false, 
+      message: 'Name can only contain letters, spaces, hyphens, and apostrophes', 
+      confidence: 'low' 
+    };
+  }
+  
+  // Check for minimum word count (at least first name)
+  const words = trimmedName.split(/\s+/).filter(w => w.length > 0);
+  if (words.length < 1) {
+    return { 
+      valid: false, 
+      message: 'Please enter at least your first name', 
+      confidence: 'low' 
+    };
+  }
+  
+  // Warn if only one name provided (but allow it)
+  if (words.length === 1) {
+    return { 
+      valid: true, 
+      warning: 'Including your last name helps with player matching', 
+      confidence: 'medium' 
+    };
+  }
+  
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /^test/i,
+    /^admin/i,
+    /^fake/i,
+    /^asdf/i,
+    /^\d+$/,
+    /^[a-z]{20,}$/i, // Very long single word
+    /(.)\1{4,}/ // Same character repeated 5+ times
+  ];
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(trimmedName)) {
+      return { 
+        valid: false, 
+        message: 'Please enter a valid name', 
+        confidence: 'suspicious' 
+      };
+    }
+  }
+  
+  return { valid: true, confidence: 'high' };
 }
 
 export async function loginUser(email, password) {
@@ -796,10 +909,33 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
     const userData = userDoc.data();
     console.log('✓ User data loaded:', userData.displayName);
     
+    // SECURITY CHECK: Track linking attempts
+    const accountFlags = userData.accountFlags || {};
+    const linkingAttempts = accountFlags.linkingAttempts || 0;
+    
+    // Rate limiting: Max 3 requests per hour
+    const linkingHistory = accountFlags.linkingAttemptsHistory || [];
+    const recentAttempts = linkingHistory.filter(attempt => {
+      const attemptTime = new Date(attempt.timestamp);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      return attemptTime > oneHourAgo;
+    });
+    
+    if (recentAttempts.length >= 3) {
+      console.warn('⚠️ Rate limit exceeded for user:', userId);
+      return { 
+        success: false, 
+        message: 'Too many link requests. Please wait an hour before trying again.' 
+      };
+    }
+    
     // Check if already linked
     if (userData.linkedPlayer) {
       console.warn('⚠️ User already has linked player:', userData.linkedPlayer);
-      return { success: false, message: 'You already have a linked player. Please unlink first.' };
+      return { 
+        success: false, 
+        message: 'You already have a linked player. Please unlink first.' 
+      };
     }
     
     // Check if there's already a pending request
@@ -810,7 +946,10 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
     
     if (pendingRequest) {
       console.warn('⚠️ Pending request already exists for:', playerName);
-      return { success: false, message: 'You already have a pending request for this player' };
+      return { 
+        success: false, 
+        message: 'You already have a pending request for this player' 
+      };
     }
     
     // Check if this player is already claimed by someone else
@@ -837,26 +976,65 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
     
     console.log('✓ Player is available for linking');
     
-    // Determine approval level
-    const approvalLevel = determineApprovalLevel(userData, playerName, teamId);
-    console.log('✓ Approval level determined:', approvalLevel);
+    // Calculate name similarity
+    const similarity = calculateNameSimilarity(userData.displayName, playerName);
+    console.log('✓ Name similarity score:', similarity);
     
-    // Create link request with proper date handling
+    // Determine approval level with stricter thresholds for email users
+    const registrationMethod = userData.registrationMethod || 'google';
+    let approvalLevel = 'league-staff'; // Default to strictest
+    
+    if (registrationMethod === 'google') {
+      // Google users get normal thresholds
+      if (similarity >= 0.9) {
+        approvalLevel = 'auto';
+      } else if (similarity >= 0.6) {
+        approvalLevel = 'captain';
+      }
+    } else {
+      // Email users need higher similarity for auto-approval
+      if (similarity >= 0.95) {
+        approvalLevel = 'auto';
+      } else if (similarity >= 0.8) {
+        approvalLevel = 'captain';
+      }
+      // Otherwise stays as 'league-staff'
+    }
+    
+    console.log('✓ Approval level determined:', approvalLevel);
+    console.log('✓ Registration method:', registrationMethod);
+    
+    // Flag suspicious requests
+    let requiresManualReview = false;
+    if (similarity < 0.3 || linkingAttempts > 5) {
+      requiresManualReview = true;
+      approvalLevel = 'league-staff'; // Force manual review
+      console.warn('⚠️ Request flagged for manual review');
+    }
+    
+    // Create link request
     const now = new Date();
-    const expiresDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    const expiresDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const newRequest = {
       requestId: `${userId}-${Date.now()}`,
       playerName: playerName,
       teamId: teamId,
       reason: reason || 'Player linking their account',
-      requestedAt: now.toISOString(), // Use ISO string instead of serverTimestamp for array items
+      requestedAt: now.toISOString(),
       requestedBy: userId,
       status: 'pending',
       approvalLevel: approvalLevel,
       reviewedBy: null,
       reviewedAt: null,
-      expiresAt: expiresDate.toISOString()
+      expiresAt: expiresDate.toISOString(),
+      securityInfo: {
+        registrationMethod: registrationMethod,
+        nameSimilarity: similarity,
+        requiresManualReview: requiresManualReview,
+        userDisplayName: userData.displayName,
+        linkingAttemptNumber: linkingAttempts + 1
+      }
     };
     
     console.log('✓ Created request object:', newRequest.requestId);
@@ -864,28 +1042,54 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
     // Add to array
     playerLinkRequests.push(newRequest);
     
-    // Update Firestore with updatedAt as serverTimestamp
+    // Update linking attempts tracking
+    const updatedHistory = [
+      ...linkingHistory,
+      {
+        timestamp: now.toISOString(),
+        playerName: playerName,
+        approvalLevel: approvalLevel,
+        similarity: similarity
+      }
+    ].slice(-10); // Keep last 10 attempts
+    
+    // Update Firestore
     console.log('💾 Updating Firestore...');
     await updateDoc(userRef, {
       playerLinkRequests: playerLinkRequests,
+      'accountFlags.linkingAttempts': linkingAttempts + 1,
+      'accountFlags.linkingAttemptsHistory': updatedHistory,
+      'accountFlags.requiresManualReview': requiresManualReview,
       updatedAt: serverTimestamp()
     });
     
     console.log('✅ Player link request submitted successfully');
+    
+    // Return appropriate message based on approval level
+    let message = '';
+    if (approvalLevel === 'auto') {
+      message = 'Perfect name match! Your account will be linked automatically.';
+    } else if (approvalLevel === 'captain') {
+      message = 'Link request submitted. Your team captain will review and approve.';
+    } else {
+      message = 'Link request submitted for review by league staff. This may take 1-2 business days.';
+    }
+    
+    if (requiresManualReview) {
+      message += ' (Manual review required due to security check)';
+    }
+    
     return { 
       success: true, 
-      message: 'Link request submitted. Awaiting approval from team captain or league staff.',
+      message: message,
       requestId: newRequest.requestId,
-      approvalLevel: approvalLevel
+      approvalLevel: approvalLevel,
+      similarity: similarity,
+      requiresManualReview: requiresManualReview
     };
     
   } catch (error) {
     console.error('❌ Error requesting player link:', error);
-    console.error('Error details:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack
-    });
     return { 
       success: false, 
       error: error.code,
