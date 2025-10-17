@@ -1238,21 +1238,68 @@ async function skipLinking() {
   }
   
   try {
-    // Update user profile to mark linking as skipped
-    const result = await updateUserProfile(currentUser.uid, {
-      linkingSkipped: true,
-      linkingSkippedAt: new Date().toISOString()
-    });
+    console.log('🎯 Skipping player linking for user:', currentUser.uid);
     
-    if (result.success) {
-      console.log('✓ User skipped linking');
-      // Redirect to home page or profile
-      window.location.href = 'index.html';
+    // Make sure user profile exists first
+    let profile = await getUserProfile(currentUser.uid);
+    
+    if (!profile.success || !profile.data) {
+      console.log('📝 Creating initial user profile...');
+      // Create a basic profile if it doesn't exist
+      const { createUserProfile } = await import('./firebase-auth.js');
+      // We'll need to export createUserProfile or use updateUserProfile which will create if needed
+      
+      // Use Firestore directly to ensure profile exists
+      const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+      const { db } = await import('./firebase-data.js');
+      
+      const userRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userRef, {
+        email: currentUser.email,
+        displayName: currentUser.displayName,
+        photoURL: currentUser.photoURL,
+        createdAt: serverTimestamp(),
+        emailVerified: currentUser.emailVerified,
+        userRole: 'fan',
+        linkedPlayer: null,
+        linkedTeam: null,
+        linkingSkipped: true,
+        linkingSkippedAt: serverTimestamp(),
+        favoriteTeams: [],
+        favoritePlayers: [],
+        preferences: {
+          emailGameReminders: true,
+          emailScoreUpdates: false,
+          favoriteTeamNotifications: true,
+          favoritePlayerAlerts: true,
+          publicFavorites: false
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true }); // merge: true ensures we don't overwrite if profile exists
+      
+      console.log('✅ User profile created/updated with skip flag');
+    } else {
+      // Profile exists, just update it
+      const result = await updateUserProfile(currentUser.uid, {
+        linkingSkipped: true,
+        linkingSkippedAt: serverTimestamp(),
+        userRole: 'fan' // Ensure they're marked as fan
+      });
+      
+      if (!result.success) {
+        throw new Error('Failed to update profile');
+      }
+      
+      console.log('✅ User profile updated with skip flag');
     }
+    
+    // Redirect to fan profile
+    console.log('➡️ Redirecting to fan profile...');
+    window.location.href = 'profile-fan.html';
+    
   } catch (error) {
-    console.error('Error skipping linking:', error);
-    // Still allow them to proceed even if update fails
-    window.location.href = 'index.html';
+    console.error('❌ Error skipping linking:', error);
+    alert('Error saving preferences. Please try again.');
   }
 }
     
