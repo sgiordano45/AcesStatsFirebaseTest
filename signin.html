@@ -67,7 +67,6 @@
       max-width: 480px;
       width: 100%;
       box-shadow: var(--shadow-lg);
-      text-align: center;
       position: relative;
       z-index: 1;
       border: 1px solid var(--border-color);
@@ -97,7 +96,8 @@
     }
     
     .logo {
-      font-size: 80px;
+      font-size: 64px;
+      text-align: center;
       margin-bottom: 20px;
       animation: bounce 2s ease-in-out infinite;
     }
@@ -112,6 +112,7 @@
       margin-bottom: 10px;
       font-size: 2rem;
       font-weight: 700;
+      text-align: center;
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -120,9 +121,124 @@
     
     .subtitle {
       color: var(--text-light);
-      margin-bottom: 40px;
+      margin-bottom: 30px;
       font-size: 15px;
       line-height: 1.6;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 14px;
+      text-align: left;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+    }
+    
+    .forgot-password {
+      text-align: right;
+      margin-top: 8px;
+    }
+    
+    .forgot-password a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s ease;
+    }
+    
+    .forgot-password a:hover {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .submit-btn:hover:not(:disabled)::before {
+      opacity: 1;
+    }
+    
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .submit-btn span {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 30px 0;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+    
+    .divider span {
+      padding: 0 15px;
     }
     
     .google-signin-btn {
@@ -226,7 +342,7 @@
       display: inline-block;
       width: 16px;
       height: 16px;
-      border: 2px solid var(--primary-color);
+      border: 2px solid white;
       border-top-color: transparent;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
@@ -236,70 +352,30 @@
       to { transform: rotate(360deg); }
     }
     
-    .feature-list {
-      margin-top: 40px;
-      padding-top: 30px;
-      border-top: 1px solid var(--border-color);
-      text-align: left;
-    }
-    
-    .feature-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-      color: var(--text-light);
-      font-size: 14px;
-      animation: fadeInLeft 0.6s ease backwards;
-    }
-    
-    .feature-item:nth-child(1) { animation-delay: 0.2s; }
-    .feature-item:nth-child(2) { animation-delay: 0.3s; }
-    .feature-item:nth-child(3) { animation-delay: 0.4s; }
-    
-    @keyframes fadeInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    .feature-item::before {
-      content: "✓";
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      color: white;
-      border-radius: 50%;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    
-    .footer-link {
+    .footer-links {
       margin-top: 30px;
       padding-top: 20px;
       border-top: 1px solid var(--border-color);
       font-size: 14px;
       color: var(--text-light);
+      text-align: center;
     }
     
-    .footer-link a {
+    .footer-links a {
       color: var(--primary-color);
       text-decoration: none;
       font-weight: 600;
       transition: color 0.2s ease;
     }
     
-    .footer-link a:hover {
+    .footer-links a:hover {
       color: var(--secondary-color);
       text-decoration: underline;
+    }
+    
+    .footer-links .separator {
+      margin: 0 8px;
+      color: var(--border-color);
     }
     
     @media (max-width: 768px) {
@@ -312,7 +388,7 @@
       }
       
       .logo {
-        font-size: 64px;
+        font-size: 52px;
       }
     }
   </style>
@@ -320,29 +396,70 @@
 <body>
   <div class="container">
     <div class="logo">⚾</div>
-    <h1>Mountainside Aces</h1>
+    <h1>Welcome Back</h1>
     <p class="subtitle">Sign in to access your player profile, stats, and team information</p>
     
     <div id="alertContainer"></div>
     
-    <button class="google-signin-btn" id="googleSignInBtn" onclick="handleGoogleSignIn()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-      <span id="btnText">Continue with Google</span>
-    </button>
+    <!-- Email/Password Sign In Form -->
+    <form id="signinForm">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          class="form-input" 
+          placeholder="your@email.com"
+          required
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          class="form-input" 
+          placeholder="Enter your password"
+          required
+        >
+        <div class="forgot-password">
+          <a href="reset-password.html">Forgot password?</a>
+        </div>
+      </div>
+      
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span id="btnText">Sign In</span>
+      </button>
+    </form>
     
-    <div class="feature-list">
-      <div class="feature-item">View your stats and career history</div>
-      <div class="feature-item">Access team rosters and schedules</div>
-      <div class="feature-item">Link your Google account to your player profile</div>
+    <div class="divider">
+      <span>or</span>
     </div>
     
-    <div class="footer-link">
-      <a href="index.html">← Back to Homepage</a>
+    <!-- Google Sign In Button -->
+    <button class="google-signin-btn" id="googleSignInBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      <span id="googleBtnText">Continue with Google</span>
+    </button>
+    
+    <div class="footer-links">
+      Don't have an account? <a href="signup.html">Sign Up</a>
+      <span class="separator">•</span>
+      <a href="index.html">← Home</a>
     </div>
   </div>
   
   <script type="module">
-    import { loginWithGoogle, onAuthChange, getUserProfile } from './firebase-auth.js';
+    import { loginUser, loginWithGoogle, onAuthChange, getUserProfile } from './firebase-auth.js';
+    
+    const form = document.getElementById('signinForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const googleBtnText = document.getElementById('googleBtnText');
     
     function showAlert(message, type = 'info') {
       const container = document.getElementById('alertContainer');
@@ -359,25 +476,98 @@
       }, 5000);
     }
     
-    function setButtonState(loading) {
-      const btn = document.getElementById('googleSignInBtn');
-      const btnText = document.getElementById('btnText');
-      
-      if (loading) {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-        btn.style.cursor = 'not-allowed';
-        btnText.innerHTML = 'Signing in... <span class="loading"></span>';
+    function setButtonState(loading, isGoogle = false) {
+      if (isGoogle) {
+        if (loading) {
+          googleSignInBtn.disabled = true;
+          googleBtnText.innerHTML = 'Signing in... <span class="loading"></span>';
+        } else {
+          googleSignInBtn.disabled = false;
+          googleBtnText.textContent = 'Continue with Google';
+        }
       } else {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-        btnText.textContent = 'Continue with Google';
+        if (loading) {
+          submitBtn.disabled = true;
+          btnText.innerHTML = 'Signing in... <span class="loading"></span>';
+        } else {
+          submitBtn.disabled = false;
+          btnText.textContent = 'Sign In';
+        }
       }
     }
     
-    window.handleGoogleSignIn = async function() {
-      setButtonState(true);
+    async function handleSuccessfulLogin(user) {
+      try {
+        const profile = await getUserProfile(user.uid);
+        
+        if (profile.success && profile.data && profile.data.linkedPlayer) {
+          console.log('✓ User has linked player, redirecting to profile...');
+          showAlert('✅ Welcome back! Redirecting to your profile...', 'success');
+          setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 1500);
+        } else {
+          console.log('→ User needs to link player, redirecting to link page...');
+          showAlert('✅ Signed in! Please link your player account...', 'success');
+          setTimeout(() => {
+            window.location.href = 'link-player.html';
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        setTimeout(() => {
+          window.location.href = 'link-player.html';
+        }, 1500);
+      }
+    }
+    
+    // Email/Password Sign In
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      
+      if (!email || !password) {
+        showAlert('❌ Please enter both email and password', 'error');
+        return;
+      }
+      
+      setButtonState(true, false);
+      showAlert('Signing you in...', 'info');
+      
+      try {
+        const result = await loginUser(email, password);
+        
+        if (result.success) {
+          showAlert('✅ Signed in successfully! Checking profile...', 'success');
+          await handleSuccessfulLogin(result.user);
+        } else {
+          throw new Error(result.message || 'Sign-in failed');
+        }
+        
+      } catch (error) {
+        console.error('Sign-in error:', error);
+        
+        let errorMessage = error.message || 'Failed to sign in. Please try again.';
+        
+        // Handle specific Firebase errors
+        if (errorMessage.includes('user-not-found')) {
+          errorMessage = 'No account found with this email. Please sign up first.';
+        } else if (errorMessage.includes('wrong-password')) {
+          errorMessage = 'Incorrect password. Please try again.';
+        } else if (errorMessage.includes('invalid-email')) {
+          errorMessage = 'Invalid email address.';
+        }
+        
+        showAlert(`❌ ${errorMessage}`, 'error');
+        setButtonState(false, false);
+      }
+    });
+    
+    // Google Sign In
+    googleSignInBtn.addEventListener('click', async () => {
+      setButtonState(true, true);
       showAlert('Opening Google sign-in...', 'info');
       
       try {
@@ -385,32 +575,8 @@
         
         if (result.success) {
           showAlert('✅ Signed in successfully! Checking profile...', 'success');
-          
-          // Check if user has linked player
-          try {
-            const profile = await getUserProfile(result.user.uid);
-            
-            if (profile.success && profile.data && profile.data.linkedPlayer) {
-              console.log('✓ User has linked player, redirecting to profile...');
-              showAlert('✅ Welcome back! Redirecting to your profile...', 'success');
-              setTimeout(() => {
-                window.location.href = 'profile.html';
-              }, 1500);
-            } else {
-              console.log('→ User needs to link player, redirecting to link page...');
-              showAlert('✅ Signed in! Please link your player account...', 'success');
-              setTimeout(() => {
-                window.location.href = 'link-player.html';
-              }, 1500);
-            }
-          } catch (error) {
-            console.error('Error checking profile:', error);
-            setTimeout(() => {
-              window.location.href = 'link-player.html';
-            }, 1500);
-          }
+          await handleSuccessfulLogin(result.user);
         } else {
-          // Handle specific error cases
           let errorMessage = result.message || 'Sign-in failed';
           
           if (result.error === 'auth/popup-closed-by-user') {
@@ -420,47 +586,21 @@
           }
           
           showAlert(`❌ ${errorMessage}`, 'error');
-          setButtonState(false);
+          setButtonState(false, true);
         }
       } catch (error) {
         console.error('Unexpected error during sign-in:', error);
         showAlert('❌ An unexpected error occurred. Please try again.', 'error');
-        setButtonState(false);
+        setButtonState(false, true);
       }
-    };
+    });
     
     // Check if user is already signed in
     onAuthChange(async (user) => {
       if (user) {
         console.log('✓ User already signed in:', user.email);
         showAlert('Already signed in! Checking profile...', 'success');
-        
-        try {
-          // Check if user has linked a player
-          const profile = await getUserProfile(user.uid);
-          
-          if (profile.success && profile.data && profile.data.linkedPlayer) {
-            // User has linked player, go to profile
-            console.log('✓ User has linked player, redirecting to profile...');
-            showAlert('Welcome back! Redirecting to your profile...', 'success');
-            setTimeout(() => {
-              window.location.href = 'profile.html';
-            }, 1000);
-          } else {
-            // User hasn't linked player, go to link page
-            console.log('→ User needs to link player, redirecting to link page...');
-            showAlert('Please link your player account...', 'info');
-            setTimeout(() => {
-              window.location.href = 'link-player.html';
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('Error checking profile:', error);
-          // If error, default to link page
-          setTimeout(() => {
-            window.location.href = 'link-player.html';
-          }, 1000);
-        }
+        await handleSuccessfulLogin(user);
       }
     });
   </script>
