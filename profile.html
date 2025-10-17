@@ -137,6 +137,58 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+.profile-roles {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.role-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.role-badge.admin {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.role-badge.league-staff {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+}
+
+.role-badge.captain {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.role-badge.team-staff {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+}
+
+.role-badge.player {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+
+
 .back-home-btn {
       position: absolute;
       top: 2rem;
@@ -831,6 +883,10 @@ body {
             <span id="playerName">Player Name</span>
             <span class="profile-badge" id="teamBadge">Team Name</span>
             <span class="profile-badge" id="memberSince">Member since 2024</span>
+			<span class="profile-badge" id="aceSince" style="display: none;">Ace since 2024</span>
+          </div>
+		  <div class="profile-roles" id="profileRoles" style="display: none; margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- Role badges will be inserted here dynamically -->
           </div>
         </div>
       </div>
@@ -1383,7 +1439,17 @@ body {
         // Calculate member since
         const createdDate = new Date(user.metadata.creationTime);
         document.getElementById('memberSince').textContent = `Member since ${createdDate.getFullYear()}`;
-        
+
+
+		// NEW: Load "Ace since" year (first year they appear in data)
+		if (userProfile?.linkedPlayer) {
+			await loadAceSinceYear(userProfile, mergedProfileData);
+			}
+
+			// NEW: Display role badges
+			displayRoleBadges(userProfile);
+		
+		
         // Load player info form - prefer merged profile data, fall back to current profile
         if (userProfile) {
           const nickname = userProfile.nickname || mergedProfileData?.nickname || '';
@@ -1487,6 +1553,99 @@ if (userProfile.linkedTeam) {
         document.getElementById('accountEmail').value = user.email;
       }
     }
+
+// NEW: Load "Ace since" year - find first year player appears in data
+async function loadAceSinceYear(userProfile, mergedProfileData) {
+  try {
+    let earliestYear = null;
+    
+    // Check current profile
+    if (userProfile.seasons && typeof userProfile.seasons === 'object') {
+      const seasonKeys = Object.keys(userProfile.seasons);
+      seasonKeys.forEach(seasonKey => {
+        const year = parseInt(seasonKey.split('-')[0]);
+        if (!isNaN(year) && (!earliestYear || year < earliestYear)) {
+          earliestYear = year;
+        }
+      });
+    }
+    
+    // Check merged profile
+    if (mergedProfileData && mergedProfileData.seasons && typeof mergedProfileData.seasons === 'object') {
+      const seasonKeys = Object.keys(mergedProfileData.seasons);
+      seasonKeys.forEach(seasonKey => {
+        const year = parseInt(seasonKey.split('-')[0]);
+        if (!isNaN(year) && (!earliestYear || year < earliestYear)) {
+          earliestYear = year;
+        }
+      });
+    }
+    
+    // If we found a year, display it
+    if (earliestYear) {
+      const aceSinceElement = document.getElementById('aceSince');
+      aceSinceElement.textContent = `Ace since ${earliestYear}`;
+      aceSinceElement.style.display = 'inline-block';
+      console.log('✅ Ace since year loaded:', earliestYear);
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load Ace since year:', error);
+  }
+}
+
+// NEW: Display role badges
+function displayRoleBadges(userProfile) {
+  if (!userProfile) return;
+  
+  const rolesContainer = document.getElementById('profileRoles');
+  const badges = [];
+  
+  // Check for admin
+  if (userProfile.userRole === 'admin') {
+    badges.push({ role: 'admin', label: '👑 Admin' });
+  }
+  
+  // Check for league staff
+  if (userProfile.userRole === 'league-staff') {
+    badges.push({ role: 'league-staff', label: '⚡ League Staff' });
+  }
+  
+  // Check for captain (either legacy or new system)
+  const isCaptain = userProfile.isCaptain === true || 
+                    userProfile.userRole === 'captain' ||
+                    (userProfile.teamRoles && Object.values(userProfile.teamRoles).some(
+                      teamRole => teamRole.role === 'captain' && teamRole.status === 'active'
+                    ));
+  
+  if (isCaptain) {
+    badges.push({ role: 'captain', label: '⭐ Captain' });
+  }
+  
+  // Check for team-staff
+  if (userProfile.userRole === 'team-staff' ||
+      (userProfile.teamRoles && Object.values(userProfile.teamRoles).some(
+        teamRole => teamRole.role === 'team-staff' && teamRole.status === 'active'
+      ))) {
+    badges.push({ role: 'team-staff', label: '🛠️ Team Staff' });
+  }
+  
+  // Check for player (only show if no other special roles)
+  if (badges.length === 0 && userProfile.linkedPlayer && userProfile.userRole === 'player') {
+    badges.push({ role: 'player', label: '⚾ Player' });
+  }
+  
+  // Render badges
+  if (badges.length > 0) {
+    rolesContainer.innerHTML = badges.map(badge => 
+      `<span class="role-badge ${badge.role}">${badge.label}</span>`
+    ).join('');
+    rolesContainer.style.display = 'flex';
+  } else {
+    rolesContainer.style.display = 'none';
+  }
+  
+  console.log('✅ Role badges displayed:', badges.length);
+}
 
  async function loadUserStats(user) {
   console.log('📊 Loading user stats...');
