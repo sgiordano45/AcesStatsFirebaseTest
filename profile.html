@@ -941,6 +941,10 @@ body {
             <div class="stat-value" id="statRuns">0</div>
             <div class="stat-label">Runs Scored</div>
           </div>
+		  <div class="stat-box">
+            <div class="stat-value" id="statBPI">-</div>
+            <div class="stat-label">Aces BPIf</div>
+          </div>
         </div>
       </div>
 
@@ -1720,7 +1724,8 @@ function displayRoleBadges(userProfile) {
       document.getElementById('statAvg').textContent = '-';
       document.getElementById('statHits').textContent = '-';
       document.getElementById('statRuns').textContent = '-';
-      
+      document.getElementById('statBPI').textContent = '-';
+	  
       // Add a small note below the stats
       const statsSection = document.querySelector('.stats-grid').parentElement;
       if (statsSection && !document.getElementById('newUserNote')) {
@@ -1873,6 +1878,12 @@ function displayRoleBadges(userProfile) {
       document.getElementById('statAvg').textContent = (playerStats.battingAverage || 0).toFixed(3);
       document.getElementById('statHits').textContent = playerStats.hits || 0;
       document.getElementById('statRuns').textContent = playerStats.runs || 0;
+	  // Display BPI if available
+		if (playerStats.acesBPI !== undefined && playerStats.acesBPI !== null) {
+		document.getElementById('statBPI').textContent = playerStats.acesBPI.toFixed(1);
+		} else {
+			document.getElementById('statBPI').textContent = '-';
+  }
     } else {
       console.log('⚠️ No stats found for player:', userProfile.linkedPlayer);
       
@@ -1889,6 +1900,7 @@ function displayRoleBadges(userProfile) {
     document.getElementById('statAvg').textContent = '.000';
     document.getElementById('statHits').textContent = '0';
     document.getElementById('statRuns').textContent = '0';
+	document.getElementById('statBPI').textContent = '-';
   }
 }
 
