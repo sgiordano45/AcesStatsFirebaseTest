@@ -773,19 +773,32 @@ export async function getTeamStaffMembers(teamId) {
  * @param {string} reason - Optional reason for linking
  * @returns {Promise<Object>}
  */
+/**
+ * Request to link a player account (requires approval) - FIXED VERSION
+ * @param {string} userId - User's Firebase UID
+ * @param {string} playerName - Player name to link
+ * @param {string} teamId - Team ID
+ * @param {string} reason - Optional reason for linking
+ * @returns {Promise<Object>}
+ */
 export async function requestPlayerLink(userId, playerName, teamId, reason = '') {
   try {
+    console.log('🔗 Starting player link request for:', playerName);
+    
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
+      console.error('❌ User not found:', userId);
       return { success: false, message: 'User not found' };
     }
     
     const userData = userDoc.data();
+    console.log('✓ User data loaded:', userData.displayName);
     
     // Check if already linked
     if (userData.linkedPlayer) {
+      console.warn('⚠️ User already has linked player:', userData.linkedPlayer);
       return { success: false, message: 'You already have a linked player. Please unlink first.' };
     }
     
@@ -796,10 +809,12 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
     );
     
     if (pendingRequest) {
+      console.warn('⚠️ Pending request already exists for:', playerName);
       return { success: false, message: 'You already have a pending request for this player' };
     }
     
     // Check if this player is already claimed by someone else
+    console.log('🔍 Checking if player is already claimed...');
     const usersSnapshot = await getDocs(collection(db, 'users'));
     let playerAlreadyClaimed = false;
     
@@ -808,6 +823,7 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
         const otherUserData = docSnap.data();
         if (otherUserData.linkedPlayer === playerName) {
           playerAlreadyClaimed = true;
+          console.warn('⚠️ Player already claimed by:', docSnap.id);
         }
       }
     });
@@ -819,38 +835,62 @@ export async function requestPlayerLink(userId, playerName, teamId, reason = '')
       };
     }
     
-    // Create link request
+    console.log('✓ Player is available for linking');
+    
+    // Determine approval level
+    const approvalLevel = determineApprovalLevel(userData, playerName, teamId);
+    console.log('✓ Approval level determined:', approvalLevel);
+    
+    // Create link request with proper date handling
+    const now = new Date();
+    const expiresDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    
     const newRequest = {
       requestId: `${userId}-${Date.now()}`,
-      playerName,
-      teamId,
+      playerName: playerName,
+      teamId: teamId,
       reason: reason || 'Player linking their account',
-      requestedAt: serverTimestamp(),
+      requestedAt: now.toISOString(), // Use ISO string instead of serverTimestamp for array items
       requestedBy: userId,
-      status: 'pending', // pending, approved, denied, expired
-      approvalLevel: determineApprovalLevel(userData, playerName, teamId),
+      status: 'pending',
+      approvalLevel: approvalLevel,
       reviewedBy: null,
       reviewedAt: null,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      expiresAt: expiresDate.toISOString()
     };
     
+    console.log('✓ Created request object:', newRequest.requestId);
+    
+    // Add to array
     playerLinkRequests.push(newRequest);
     
+    // Update Firestore with updatedAt as serverTimestamp
+    console.log('💾 Updating Firestore...');
     await updateDoc(userRef, {
-      playerLinkRequests,
+      playerLinkRequests: playerLinkRequests,
       updatedAt: serverTimestamp()
     });
     
-    console.log('✅ Player link request submitted:', playerName);
+    console.log('✅ Player link request submitted successfully');
     return { 
       success: true, 
       message: 'Link request submitted. Awaiting approval from team captain or league staff.',
-      requestId: newRequest.requestId
+      requestId: newRequest.requestId,
+      approvalLevel: approvalLevel
     };
     
   } catch (error) {
     console.error('❌ Error requesting player link:', error);
-    return { success: false, error: error.code };
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    return { 
+      success: false, 
+      error: error.code,
+      message: error.message || 'An error occurred while submitting the request'
+    };
   }
 }
 
