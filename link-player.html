@@ -1261,6 +1261,7 @@ function dismissSuggestion() {
 }
 
 // NEW FUNCTION: Skip linking
+// NEW FUNCTION: Skip linking
 async function skipLinking() {
   if (!confirm('Are you sure you want to skip player linking?\n\nYou can link a player later from your profile page, but you won\'t have access to player-specific features until you do.')) {
     return;
@@ -1269,20 +1270,17 @@ async function skipLinking() {
   try {
     console.log('🎯 Skipping player linking for user:', currentUser.uid);
     
-    // Make sure user profile exists first
-    let profile = await getUserProfile(currentUser.uid);
+    // Import serverTimestamp at the start
+    const { doc, setDoc, getDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { db } = await import('./firebase-data.js');
     
-    if (!profile.success || !profile.data) {
+    // Make sure user profile exists first
+    const userRef = doc(db, 'users', currentUser.uid);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
       console.log('📝 Creating initial user profile...');
       // Create a basic profile if it doesn't exist
-      const { createUserProfile } = await import('./firebase-auth.js');
-      // We'll need to export createUserProfile or use updateUserProfile which will create if needed
-      
-      // Use Firestore directly to ensure profile exists
-      const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-      const { db } = await import('./firebase-data.js');
-      
-      const userRef = doc(db, 'users', currentUser.uid);
       await setDoc(userRef, {
         email: currentUser.email,
         displayName: currentUser.displayName,
@@ -1304,20 +1302,18 @@ async function skipLinking() {
           publicFavorites: false
         },
         updatedAt: serverTimestamp()
-      }, { merge: true }); // merge: true ensures we don't overwrite if profile exists
-      
-      console.log('✅ User profile created/updated with skip flag');
-    } else {
-      // Profile exists, just update it
-      const result = await updateUserProfile(currentUser.uid, {
-        linkingSkipped: true,
-        linkingSkippedAt: serverTimestamp(),
-        userRole: 'fan' // Ensure they're marked as fan
       });
       
-      if (!result.success) {
-        throw new Error('Failed to update profile');
-      }
+      console.log('✅ User profile created with skip flag');
+    } else {
+      // Profile exists, just update it with merge
+      console.log('📝 Updating existing profile with skip flag...');
+      await setDoc(userRef, {
+        linkingSkipped: true,
+        linkingSkippedAt: serverTimestamp(),
+        userRole: 'fan',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
       
       console.log('✅ User profile updated with skip flag');
     }
