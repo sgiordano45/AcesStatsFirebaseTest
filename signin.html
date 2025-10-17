@@ -496,18 +496,55 @@
       }
     }
     
-    async function handleSuccessfulLogin(user) {
+  async function handleSuccessfulLogin(user) {
       try {
         const profile = await getUserProfile(user.uid);
         
-        if (profile.success && profile.data && profile.data.linkedPlayer) {
-          console.log('✓ User has linked player, redirecting to profile...');
-          showAlert('✅ Welcome back! Redirecting to your profile...', 'success');
+        if (profile.success && profile.data) {
+          const profileData = profile.data;
+          
+          // Check if already linked to a player
+          if (profileData.linkedPlayer) {
+            console.log('✔ User has linked player, redirecting to profile...');
+            showAlert('✅ Welcome back! Redirecting to your profile...', 'success');
+            setTimeout(() => {
+              window.location.href = 'profile.html';
+            }, 1500);
+            return;
+          }
+          
+          // Check if user has a pending player link request
+          const pendingRequests = profileData.playerLinkRequests || [];
+          const hasPendingRequest = pendingRequests.some(r => r.status === 'pending');
+          
+          if (hasPendingRequest) {
+            console.log('⏳ User has pending player link request, redirecting to link page...');
+            showAlert('✅ Welcome back! You have a pending link request.', 'success');
+            setTimeout(() => {
+              window.location.href = 'link-player.html';
+            }, 1500);
+            return;
+          }
+          
+          // Check if user previously skipped player linking (fan account)
+          if (profileData.linkingSkipped === true) {
+            console.log('🎯 User has fan account (skipped linking), redirecting to fan profile...');
+            showAlert('✅ Welcome back!', 'success');
+            setTimeout(() => {
+              window.location.href = 'profile-fan.html';
+            }, 1500);
+            return;
+          }
+          
+          // New user or incomplete setup - go to player linking
+          console.log('→ User needs to link player, redirecting to link page...');
+          showAlert('✅ Signed in! Please link your player account...', 'success');
           setTimeout(() => {
-            window.location.href = 'profile.html';
+            window.location.href = 'link-player.html';
           }, 1500);
         } else {
-          console.log('→ User needs to link player, redirecting to link page...');
+          // No profile data - treat as new user
+          console.log('→ No profile found, redirecting to link page...');
           showAlert('✅ Signed in! Please link your player account...', 'success');
           setTimeout(() => {
             window.location.href = 'link-player.html';
