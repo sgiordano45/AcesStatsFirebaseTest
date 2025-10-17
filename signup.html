@@ -733,8 +733,8 @@
           showAlert('✅ Account created! Check your email to verify your address.', 'success');
           
           setTimeout(() => {
-            // Redirect to link player page
-            window.location.href = 'link-player.html';
+            // Redirect to verify email page
+            window.location.href = 'verify-email.html';
           }, 2000);
         } else {
           throw new Error(result.message || 'Registration failed');
@@ -759,7 +759,8 @@
           showAlert('✅ Signed up with Google! Redirecting...', 'success');
           
           setTimeout(() => {
-            window.location.href = 'link-player.html';
+            // Google users go straight to link-player (already verified)
+			window.location.href = 'link-player.html';
           }, 1500);
         } else {
           let errorMessage = result.message || 'Sign-up failed';

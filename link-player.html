@@ -870,7 +870,16 @@
             <span class="user-badge">✓ Google Account</span>
           </div>
         </div>
-        
+        <!-- Email Verification Banner (for unverified email/password users) -->
+  <div id="verificationBanner" class="alert alert-warning" style="display: none; margin-top: 1rem;">
+    <strong>📧 Email Verification Required</strong>
+    <p style="margin: 0.5rem 0;">
+      You must verify your email address before linking a player account.
+    </p>
+    <button class="btn btn-primary" onclick="window.location.href='verify-email.html'" style="margin-top: 0.5rem;">
+      <span>Verify Email Now →</span>
+    </button>
+  </div>
         <!-- Pending Request Section -->
         <div id="pendingRequestSection" style="display: none;">
           <div class="pending-request-card">
@@ -1022,6 +1031,26 @@ async function handleUserLoggedIn(user) {
   const providerData = user.providerData[0];
   userAuthMethod = providerData?.providerId === 'google.com' ? 'google' : 'email';
   console.log('Auth method:', userAuthMethod);
+  
+  // Check email verification for email/password users
+  if (userAuthMethod === 'email' && !user.emailVerified) {
+    console.log('⚠️ User email not verified');
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('notLoggedIn').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    
+    // Show user info
+    document.getElementById('userName').textContent = user.displayName || 'User';
+    document.getElementById('userEmail').textContent = user.email;
+    document.getElementById('userAvatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.email);
+    
+    // Show verification banner and hide everything else
+    document.getElementById('verificationBanner').style.display = 'block';
+    document.getElementById('alreadyLinkedSection').style.display = 'none';
+    document.getElementById('pendingRequestSection').style.display = 'none';
+    document.getElementById('selectionSection').style.display = 'none';
+    return; // Stop here - don't allow linking
+  }
   
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('notLoggedIn').style.display = 'none';

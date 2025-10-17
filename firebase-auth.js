@@ -448,6 +448,152 @@ export async function changeUserPassword(currentPassword, newPassword) {
 }
 
 // ========================================
+// EMAIL VERIFICATION FUNCTIONS
+// ========================================
+
+/**
+ * Check if user needs email verification
+ * Google users are always considered verified
+ * @param {Object} user - Firebase user object
+ * @returns {boolean}
+ */
+export function needsEmailVerification(user) {
+  if (!user) return false;
+  
+  // Check if this is a Google user (always verified)
+  const isGoogleUser = user.providerData.some(
+    provider => provider.providerId === 'google.com'
+  );
+  
+  if (isGoogleUser) {
+    return false; // Google users don't need verification
+  }
+  
+  // Email/password users need verification
+  return !user.emailVerified;
+}
+
+/**
+ * Resend verification email with rate limiting
+ * @returns {Promise<Object>}
+ */
+export async function resendVerificationEmail() {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      return { success: false, message: 'No user signed in' };
+    }
+    
+    // Check if already verified
+    if (user.emailVerified) {
+      return { success: false, message: 'Email already verified' };
+    }
+    
+    // Check if this is a Google user
+    const isGoogleUser = user.providerData.some(
+      provider => provider.providerId === 'google.com'
+    );
+    
+    if (isGoogleUser) {
+      return { success: false, message: 'Google users do not need email verification' };
+    }
+    
+    // Send verification email
+    await sendEmailVerification(user);
+    
+    console.log('✅ Verification email resent to:', user.email);
+    return { 
+      success: true, 
+      message: 'Verification email sent! Please check your inbox.' 
+    };
+    
+  } catch (error) {
+    console.error('❌ Error resending verification email:', error);
+    
+    let message = 'Failed to send verification email. Please try again.';
+    
+    if (error.code === 'auth/too-many-requests') {
+      message = 'Too many requests. Please wait a few minutes before trying again.';
+    }
+    
+    return { 
+      success: false, 
+      error: error.code,
+      message 
+    };
+  }
+}
+
+/**
+ * Refresh user's email verification status
+ * Call this after user claims to have verified their email
+ * @returns {Promise<Object>}
+ */
+export async function refreshVerificationStatus() {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      return { success: false, message: 'No user signed in' };
+    }
+    
+    // Reload user to get fresh token with updated emailVerified status
+    await user.reload();
+    
+    // Get the refreshed user
+    const refreshedUser = auth.currentUser;
+    
+    console.log('✅ Verification status refreshed:', refreshedUser.emailVerified);
+    
+    return { 
+      success: true, 
+      emailVerified: refreshedUser.emailVerified,
+      user: refreshedUser
+    };
+    
+  } catch (error) {
+    console.error('❌ Error refreshing verification status:', error);
+    return { 
+      success: false, 
+      error: error.code,
+      message: 'Failed to check verification status. Please try again.'
+    };
+  }
+}
+
+/**
+ * Get user's verification status and provider info
+ * Useful for determining what verification UI to show
+ * @returns {Object}
+ */
+export function getVerificationInfo() {
+  const user = auth.currentUser;
+  
+  if (!user) {
+    return {
+      signedIn: false,
+      emailVerified: false,
+      isGoogleUser: false,
+      needsVerification: false
+    };
+  }
+  
+  const isGoogleUser = user.providerData.some(
+    provider => provider.providerId === 'google.com'
+  );
+  
+  return {
+    signedIn: true,
+    emailVerified: user.emailVerified,
+    isGoogleUser: isGoogleUser,
+    needsVerification: !isGoogleUser && !user.emailVerified,
+    email: user.email
+  };
+}
+
+
+// ========================================
 // USER PROFILE FUNCTIONS
 // ========================================
 

@@ -894,6 +894,19 @@ body {
       </div>
     </div>
   </header>
+  <!-- Email Verification Banner (for unverified email/password users) -->
+  <div id="verificationBanner" class="alert alert-warning" style="display: none; margin: 1rem auto; max-width: 1200px; padding: 0 2rem;">
+    <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 1.25rem; border-radius: 12px;">
+      <strong style="color: #92400e; font-size: 16px;">📧 Email Verification Required</strong>
+      <p style="margin: 0.75rem 0; color: #92400e;">
+        Please verify your email address to access all profile features and ensure account security.
+      </p>
+      <button class="btn btn-primary" onclick="window.location.href='verify-email.html'" style="margin-top: 0.5rem;">
+        <span>Verify Email Now →</span>
+      </button>
+    </div>
+  </div>
+
 
   <!-- Navigation Tabs -->
   <nav class="nav-tabs">
@@ -1434,11 +1447,24 @@ body {
 
     async function loadUserProfile(user) {
       console.log('📋 Loading user profile for:', user.uid);
-      
+      		    // Check email verification for email/password users
+    const isEmailProvider = user.providerData.some(
+      provider => provider.providerId === 'password'
+    );
+    
+    if (isEmailProvider && !user.emailVerified) {
+      console.log('⚠️ User email not verified - showing banner');
+      document.getElementById('verificationBanner').style.display = 'block';
+    } else {
+      document.getElementById('verificationBanner').style.display = 'none';
+    }
       try {
         const result = await getUserProfile(user.uid);
         console.log('✅ User profile result:', result);
         
+
+		
+		
         if (result.success && result.data) {
           userProfile = result.data;
         } else {
