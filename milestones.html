@@ -654,13 +654,22 @@ function aggregatePlayerStats() {
   const playerStats = {};
   
   allData.forEach(player => {
+    // CRITICAL: Skip migrated legacy profiles to prevent duplicates
+    if (player.migrated === true) {
+      return;
+    }
+    
     const playerName = formatPlayerName(player.name || player.displayName || player.userId);
     if (!playerName) return;
     
-    if (!playerStats[playerName]) {
-      playerStats[playerName] = {
-        id: player.id || player.userId || player.playerId,  // ← ADD THIS LINE
-		name: playerName,
+    // Use player ID as the unique key instead of name
+    const playerId = player.id || player.userId || player.playerId;
+    
+    if (!playerStats[playerId]) {
+      playerStats[playerId] = {
+        id: playerId,
+        playerId: playerId,
+        name: playerName,
         totalHits: 0,
         totalRuns: 0,
         totalWalks: 0
@@ -673,9 +682,9 @@ function aggregatePlayerStats() {
       const seasonsArray = seasonsObjectToArray(player);
       
       seasonsArray.forEach(season => {
-        playerStats[playerName].totalHits += Number(season.hits) || 0;
-        playerStats[playerName].totalRuns += Number(season.runs) || 0;
-        playerStats[playerName].totalWalks += Number(season.walks) || 0;
+        playerStats[playerId].totalHits += Number(season.hits) || 0;
+        playerStats[playerId].totalRuns += Number(season.runs) || 0;
+        playerStats[playerId].totalWalks += Number(season.walks) || 0;
       });
     }
   });
