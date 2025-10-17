@@ -1363,7 +1363,14 @@ body {
         const displayName = userProfile?.preferredDisplayName || user.displayName || 'User';
         
         // Update header
-        document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
+                const photoElement = document.getElementById('profilePhoto');
+        if (user.photoURL) {
+          photoElement.src = user.photoURL;
+          photoElement.style.display = 'block';
+        } else {
+          // Hide the photo element if no photo available
+          photoElement.style.display = 'none';
+        }
         document.getElementById('displayName').textContent = displayName;
         document.getElementById('playerName').textContent = userProfile?.linkedPlayer || 'Not linked';
         document.getElementById('teamBadge').textContent = userProfile?.linkedTeam || 'No team';
@@ -1467,7 +1474,13 @@ if (userProfile.linkedTeam) {
       } catch (error) {
         console.error('❌ Error loading user profile:', error);
         // Continue anyway, show default values
-        document.getElementById('profilePhoto').src = user.photoURL || 'https://via.placeholder.com/120';
+        const photoElement = document.getElementById('profilePhoto');
+  if (user.photoURL) {
+    photoElement.src = user.photoURL;
+    photoElement.style.display = 'block';
+  } else {
+    photoElement.style.display = 'none';
+  }
         document.getElementById('displayName').textContent = user.displayName || 'User';
         document.getElementById('playerName').textContent = 'Not linked';
         document.getElementById('teamBadge').textContent = 'No team';
