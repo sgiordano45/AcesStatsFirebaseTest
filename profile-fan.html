@@ -1048,17 +1048,55 @@ body {
         </div>
       </div>
 
-      <div class="section-card">
-        <div class="section-header">
-          <h2><span class="section-icon">🔑</span> Change Password</h2>
-        </div>
-        <p style="color: var(--text-light); margin-bottom: 1.5rem;">
-          Since you're signed in with Google, password changes are managed through your Google account.
-        </p>
-        <a href="https://myaccount.google.com/security" target="_blank" class="btn btn-primary">
-          Manage Google Account Security →
-        </a>
+<!-- Change Password Section -->
+<div class="section-card">
+  <div class="section-header">
+    <h2><span class="section-icon">🔑</span> Change Password</h2>
+  </div>
+  
+  <div id="successMessagePassword" class="success-message">
+    Password changed successfully!
+  </div>
+  
+  <!-- Email/Password Users -->
+  <div id="passwordChangeForm" style="display: none;">
+    <form id="changePasswordForm">
+      <div class="form-group">
+        <label class="form-label" for="currentPassword">Current Password</label>
+        <input type="password" id="currentPassword" class="form-input" 
+               placeholder="Enter current password" required>
       </div>
+      <div class="form-group">
+        <label class="form-label" for="newPassword">New Password</label>
+        <input type="password" id="newPassword" class="form-input" 
+               placeholder="Enter new password (min 6 characters)" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirmPassword">Confirm New Password</label>
+        <input type="password" id="confirmPassword" class="form-input" 
+               placeholder="Confirm new password" required>
+      </div>
+      <div class="btn-group">
+        <button type="submit" class="btn btn-primary">
+          🔑 Change Password
+        </button>
+        <button type="button" class="btn btn-secondary" id="cancelPasswordChange">
+          ✖️ Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Google Users -->
+  <div id="googlePasswordMessage" style="display: none;">
+    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+      Since you're signed in with Google, password changes are managed through your Google account.
+    </p>
+    <a href="https://myaccount.google.com/security" target="_blank" class="btn btn-primary">
+      Manage Google Account Security →
+    </a>
+  </div>
+</div>
 
       <div class="section-card">
         <div class="section-header">
@@ -1210,6 +1248,9 @@ if (user.providerData && user.providerData.length > 0) {
 }
 document.getElementById('accountType').value = accountType;
 
+// NEW: Update password change UI based on account type
+updatePasswordChangeUI(user);
+
 // Load the display name form
 document.getElementById('preferredDisplayName').value = userProfile?.preferredDisplayName || '';
 document.getElementById('googleAccountName').textContent = user.displayName || user.email;
@@ -1245,6 +1286,81 @@ document.getElementById('googleAccountName').textContent = user.displayName || u
         document.getElementById('accountEmail').value = user.email;
       }
     }
+
+// Import password change function
+import { changeUserPassword } from './firebase-auth.js';
+
+// Show/hide password change form based on account type
+function updatePasswordChangeUI(user) {
+  const isEmailProvider = user.providerData.some(
+    provider => provider.providerId === 'password'
+  );
+  
+  if (isEmailProvider) {
+    document.getElementById('passwordChangeForm').style.display = 'block';
+    document.getElementById('googlePasswordMessage').style.display = 'none';
+  } else {
+    document.getElementById('passwordChangeForm').style.display = 'none';
+    document.getElementById('googlePasswordMessage').style.display = 'block';
+  }
+}
+
+// Handle password change form submission
+document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  
+  // Validate passwords match
+  if (newPassword !== confirmPassword) {
+    alert('New passwords do not match');
+    return;
+  }
+  
+  // Show loading state
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '🔄 Changing Password...';
+  
+  try {
+    const result = await changeUserPassword(currentPassword, newPassword);
+    
+    if (result.success) {
+      // Clear form
+      document.getElementById('changePasswordForm').reset();
+      
+      // Show success message
+      showSuccessMessage('successMessagePassword');
+      
+      // Optional: Sign out user to re-authenticate with new password
+      // Uncomment if you want to force re-login after password change
+      // setTimeout(() => {
+      //   alert('Password changed! Please sign in again with your new password.');
+      //   logoutUser().then(() => {
+      //     window.location.href = 'signin.html';
+      //   });
+      // }, 2000);
+      
+    } else {
+      alert(result.message || 'Failed to change password');
+    }
+  } catch (error) {
+    console.error('Error changing password:', error);
+    alert('An error occurred while changing password');
+  } finally {
+    // Restore button
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+  }
+});
+
+// Handle cancel button
+document.getElementById('cancelPasswordChange').addEventListener('click', () => {
+  document.getElementById('changePasswordForm').reset();
+});
 
     function updateFavoritesCounts() {
       const favoriteTeams = userProfile?.favoriteTeams || [];

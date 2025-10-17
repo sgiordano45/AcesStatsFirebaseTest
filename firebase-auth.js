@@ -368,6 +368,85 @@ export async function setAuthPersistence(rememberMe = true) {
   }
 }
 
+/**
+ * Change user password (for email/password accounts)
+ * @param {string} currentPassword - Current password for verification
+ * @param {string} newPassword - New password
+ * @returns {Promise<Object>}
+ */
+export async function changeUserPassword(currentPassword, newPassword) {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      return { success: false, message: 'No user signed in' };
+    }
+    
+    // Check if user is using email/password authentication
+    const isEmailProvider = user.providerData.some(
+      provider => provider.providerId === 'password'
+    );
+    
+    if (!isEmailProvider) {
+      return { 
+        success: false, 
+        message: 'Password change is only available for email/password accounts' 
+      };
+    }
+    
+    // Validate new password
+    if (newPassword.length < 6) {
+      return { 
+        success: false, 
+        message: 'New password must be at least 6 characters' 
+      };
+    }
+    
+    if (currentPassword === newPassword) {
+      return { 
+        success: false, 
+        message: 'New password must be different from current password' 
+      };
+    }
+    
+    // Re-authenticate user with current password
+    const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import(
+      'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'
+    );
+    
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    
+    try {
+      await reauthenticateWithCredential(user, credential);
+    } catch (error) {
+      if (error.code === 'auth/wrong-password') {
+        return { 
+          success: false, 
+          message: 'Current password is incorrect' 
+        };
+      }
+      throw error;
+    }
+    
+    // Update password
+    await updatePassword(user, newPassword);
+    
+    console.log('✅ Password changed successfully');
+    return { 
+      success: true, 
+      message: 'Password changed successfully!' 
+    };
+    
+  } catch (error) {
+    console.error('❌ Error changing password:', error);
+    return { 
+      success: false, 
+      error: error.code,
+      message: getErrorMessage(error.code) || 'Failed to change password. Please try again.'
+    };
+  }
+}
+
 // ========================================
 // USER PROFILE FUNCTIONS
 // ========================================
