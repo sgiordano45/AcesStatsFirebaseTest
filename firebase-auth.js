@@ -754,6 +754,17 @@ export async function linkPlayerToUser(userId, playerName, teamId, isCaptain = f
       if (existingPlayerData.role) updateData.role = existingPlayerData.role;
       if (existingPlayerData.currentTeam && !teamId) updateData.linkedTeam = existingPlayerData.currentTeam;
       
+	  // ADD THESE LINES FOR PLAYER INFO:
+  if (existingPlayerData.bats) updateData.bats = existingPlayerData.bats;
+  if (existingPlayerData.batting) updateData.bats = existingPlayerData.batting; // fallback field name
+  if (existingPlayerData.throws) updateData.throws = existingPlayerData.throws;
+  if (existingPlayerData.throwing) updateData.throws = existingPlayerData.throwing; // fallback field name
+  if (existingPlayerData.position) updateData.position = existingPlayerData.position;
+  if (existingPlayerData.number) updateData.number = existingPlayerData.number;
+  if (existingPlayerData.nickname) updateData.nickname = existingPlayerData.nickname;
+  if (existingPlayerData.photo) updateData.photo = existingPlayerData.photo;
+  if (existingPlayerData.photoURL) updateData.photoURL = existingPlayerData.photoURL;
+	  
       updateData.mergedFromProfile = playerUserId;
       updateData.mergedAt = serverTimestamp();
       
