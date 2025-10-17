@@ -1156,6 +1156,8 @@ body {
         currentUser = user;
         try {
           await loadUserProfile(user);
+		    const { ensureCorrectProfilePage } = await import('./firebase-auth.js');
+			ensureCorrectProfilePage(userProfile, 'profile-fan.html');
         } catch (error) {
           console.error('❌ Error loading profile data:', error);
           alert('Error loading profile. Check console for details.');

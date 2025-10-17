@@ -1277,7 +1277,7 @@ body {
   </div>
 
   <script type="module">
-    import { onAuthChange, getCurrentUser, logoutUser, getUserProfile, updateUserProfile as updateUserProfileAuth, addFavoriteTeam, addFavoritePlayer } from './firebase-auth.js';
+    import { onAuthChange, getCurrentUser, logoutUser, getUserProfile, updateUserProfile as updateUserProfileAuth, addFavoriteTeam, addFavoritePlayer} from './firebase-auth.js';
     import { getCurrentSeason, getSeasonPlayerStatsOptimized, getAllTeams, getAllPlayerStatsOptimized } from './firebase-data.js';
 
     let currentUser = null;
@@ -1314,6 +1314,10 @@ body {
         currentUser = user;
         try {
           await loadUserProfile(user);
+		       
+			const { ensureCorrectProfilePage } = await import('./firebase-auth.js');
+			ensureCorrectProfilePage(userProfile, 'profile.html');
+
 		  await loadCaptainTools();
           await loadUserStats(user);
         } catch (error) {

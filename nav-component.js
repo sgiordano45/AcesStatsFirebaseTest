@@ -26,6 +26,31 @@ export class NavigationComponent {
     return 'User';
   }
   
+  async getProfilePageUrl() {
+  try {
+    // Import the helper function
+    const { getProfilePageForUser, getUserProfile } = await import('./firebase-auth.js');
+    
+    // Get current user
+    if (typeof window.auth !== 'undefined' && window.auth.currentUser) {
+      const userId = window.auth.currentUser.uid;
+      
+      // Get user profile
+      const result = await getUserProfile(userId);
+      if (result.success && result.data) {
+        const profileUrl = getProfilePageForUser(result.data);
+        console.log('📄 Profile URL for user role:', result.data.userRole, '→', profileUrl);
+        return profileUrl;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not determine profile URL, using default:', error);
+  }
+  
+  // Fallback to default
+  return 'profile.html';
+}
+  
   // Check if user is authenticated (integrate with your auth system)
   checkAuth() {
     // Check Firebase Auth
