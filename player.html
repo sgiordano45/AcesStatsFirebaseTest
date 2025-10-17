@@ -19,7 +19,6 @@
     min-height: 100vh;
   }
   
-  /* Loading Overlay */
   .loading-overlay {
     position: fixed;
     top: 0;
@@ -87,7 +86,6 @@
     overflow: hidden;
   }
   
-  /* Decorative background elements */
   .player-header::before {
     content: "";
     position: absolute;
@@ -219,7 +217,6 @@
     font-size: 1.1em;
   }
   
-  /* Master Chef Recognition Section */
   .master-chef-section {
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
     color: white;
@@ -304,7 +301,6 @@
     opacity: 0.85;
   }
   
-  /* Awards Section */
   .awards-section {
     background: white;
     border-radius: 16px;
@@ -375,7 +371,6 @@
     color: #718096;
   }
   
-  /* Stats Tables */
   .stats-section {
     background: white;
     border-radius: 16px;
@@ -443,7 +438,6 @@
     text-decoration: underline;
   }
   
-  /* Back button */
   .back-button {
     background: white;
     color: #2d5016;
@@ -483,7 +477,6 @@
     transform: translateX(0);
   }
   
-  /* Mobile responsive */
   @media (max-width: 768px) {
     body {
       padding: 10px;
@@ -537,11 +530,9 @@
 </head>
 <body>
 
-<!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="softball-spinner"></div>
 </div>
-
 
 <div class="page-container">
   <button class="back-button" onclick="window.history.back()">← Back</button>
@@ -563,7 +554,6 @@
     </div>
   </div>
 
-  <!-- Master Chef Recognition Section -->
   <div class="master-chef-section" id="masterChefSection">
     <div class="master-chef-title">
       <div class="chef-icon">👨‍🍳</div>
@@ -600,10 +590,9 @@
     </div>
   </div>
 
-  <!-- Awards Section -->
   <div class="awards-section" id="awardsSection" style="display: none;">
-    <h2>Awards & Recognition</h2>
-    <div class="awards-grid" id="awardsGrid"></div>
+    <h2>🏅 Awards & Recognition</h2>
+    <div id="awardsContent"></div>
   </div>
 
   <div id="statsContainer" style="display: none;">
@@ -682,7 +671,8 @@
     getPlayerAwards,
     seasonsObjectToArray,
     resolvePlayerName,
-    getPlayerByIdentifier
+    getPlayerByIdentifier,
+    getAllPlayerStatsOptimized
   } from './firebase-data.js';
 
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
@@ -702,7 +692,6 @@
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
-  // NEW: Support both ID and name-based URLs
   const urlParams = new URLSearchParams(window.location.search);
   const playerId = urlParams.get('id');
   const playerName = urlParams.get('name');
@@ -723,25 +712,222 @@
     document.getElementById('statsContainer').style.display = 'block';
   }
 
-    async function loadPlayerData() {
+  async function calculateTop10Rankings(playerCareerStats, displayName) {
+    if (!playerCareerStats) return [];
+    
+    console.log('🔢 Calculating Top 10 rankings for:', displayName);
+    const allPlayerStats = await getAllPlayerStatsOptimized();
+    const allPlayersArray = [];
+    
+    allPlayerStats.forEach(player => {
+      const seasons = seasonsObjectToArray(player);
+      let totalGames = 0, totalAtBats = 0, totalHits = 0, totalRuns = 0, totalWalks = 0;
+      let acesWarValues = [];
+      
+      seasons.forEach(s => {
+        totalGames += Number(s.games) || 0;
+        totalAtBats += Number(s.atBats) || 0;
+        totalHits += Number(s.hits) || 0;
+        totalRuns += Number(s.runs) || 0;
+        totalWalks += Number(s.walks) || 0;
+        if (typeof s.acesBPI === 'number') {
+          acesWarValues.push(s.acesBPI);
+        }
+      });
+      
+      const plateAppearances = totalAtBats + totalWalks;
+      const battingAverage = totalAtBats > 0 ? totalHits / totalAtBats : 0;
+      const onBasePercentage = plateAppearances > 0 ? (totalHits + totalWalks) / plateAppearances : 0;
+      const avgAcesWar = acesWarValues.length > 0 ? acesWarValues.reduce((a, b) => a + b, 0) / acesWarValues.length : 0;
+      
+      allPlayersArray.push({
+        name: player.name || player.displayName,
+        totalGames,
+        totalAtBats,
+        totalHits,
+        totalRuns,
+        totalWalks,
+        plateAppearances,
+        battingAverage,
+        onBasePercentage,
+        avgAcesWar,
+        acesWarValues
+      });
+    });
+    
+    const rankings = [];
+    
+    const categories = [
+      { name: "Career Games", stat: "totalGames", format: (val) => val.toString(), minimum: 0 },
+      { name: "Career At-Bats", stat: "totalAtBats", format: (val) => val.toString(), minimum: 0 },
+      { name: "Career Hits", stat: "totalHits", format: (val) => val.toString(), minimum: 0 },
+      { name: "Career Runs", stat: "totalRuns", format: (val) => val.toString(), minimum: 0 },
+      { name: "Career Walks", stat: "totalWalks", format: (val) => val.toString(), minimum: 0 },
+      { name: "Career Batting Average", stat: "battingAverage", format: (val) => val.toFixed(3), minimum: 150, minimumField: "plateAppearances" },
+      { name: "Career On-Base Percentage", stat: "onBasePercentage", format: (val) => val.toFixed(3), minimum: 150, minimumField: "plateAppearances" },
+      { name: "Career Average AcesBPI", stat: "avgAcesWar", format: (val) => val.toFixed(2), minimum: 0, filter: (p) => p.acesWarValues.length > 0 }
+    ];
+    
+    categories.forEach(category => {
+      let qualifyingPlayers = allPlayersArray.filter(p => {
+        if (category.filter && !category.filter(p)) return false;
+        if (category.minimumField) {
+          return p[category.minimumField] >= category.minimum;
+        }
+        return p[category.stat] >= category.minimum;
+      });
+      
+      qualifyingPlayers.sort((a, b) => b[category.stat] - a[category.stat]);
+      
+      const playerRank = qualifyingPlayers.findIndex(p => p.name === displayName) + 1;
+      
+      if (playerRank > 0 && playerRank <= 10) {
+        rankings.push({
+          category: category.name,
+          rank: playerRank,
+          value: category.format(playerCareerStats[category.stat]),
+          rawValue: playerCareerStats[category.stat]
+        });
+      }
+    });
+    
+    rankings.sort((a, b) => a.rank - b.rank);
+    
+    console.log('✅ Found', rankings.length, 'Top 10 rankings');
+    return rankings;
+  }
+
+  async function populateAwards(awards, displayName, careerStats) {
+    const awardsSection = document.getElementById('awardsSection');
+    const awardsContent = document.getElementById('awardsContent');
+    
+    console.log('🏆 Populating awards for:', displayName);
+    const top10Rankings = await calculateTop10Rankings(careerStats, displayName);
+    
+    if (awards.length === 0 && top10Rankings.length === 0) {
+      console.log('ℹ️ No awards or Top 10 rankings to display');
+      return;
+    }
+    
+    let html = '';
+    
+    if (top10Rankings.length > 0) {
+      html += `
+        <div style="margin-bottom: 30px;">
+          <h3 style="background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%); color: white; padding: 12px 18px; margin: 0 0 20px 0; border-radius: 12px; font-size: 1.3em; box-shadow: 0 4px 8px rgba(255,165,0,0.3);">
+            ⭐ All-Time Top 10 Rankings
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+      `;
+      
+      top10Rankings.forEach(ranking => {
+        const medalEmoji = ranking.rank === 1 ? '🥇' : ranking.rank === 2 ? '🥈' : ranking.rank === 3 ? '🥉' : '🏅';
+        
+        html += `
+          <div style="border: 3px solid #ffa500; border-radius: 12px; padding: 20px; text-align: center; background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%); box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease;">
+            <div style="font-size: 3em; margin-bottom: 10px;">${medalEmoji}</div>
+            <div style="background: linear-gradient(135deg, #2d5016 0%, #1a6b4a 100%); color: white; padding: 6px 12px; border-radius: 8px; font-weight: bold; margin-bottom: 12px; font-size: 1.1em;">
+              #${ranking.rank}
+            </div>
+            <div style="font-size: 0.95em; color: #666; margin-bottom: 8px; font-weight: 600;">${ranking.category}</div>
+            <div style="font-size: 1.3em; font-weight: bold; color: #2d5016;">${ranking.value}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    if (awards.length > 0) {
+      html += `
+        <div>
+          <h3 style="background: linear-gradient(135deg, #2d5016 0%, #1a6b4a 100%); color: white; padding: 12px 18px; margin: 0 0 20px 0; border-radius: 12px; font-size: 1.3em; box-shadow: 0 4px 8px rgba(45,80,22,0.3);">
+            🏆 Career Awards & Honors
+          </h3>
+          <div class="awards-grid">
+      `;
+      
+      const awardIcons = {
+        'Team MVP': 'team_mvp.png',
+        'All Aces': 'all_aces.png',
+        'Gold Glove': 'gold_glove.png',
+        'Team of the Year': 'team_of_the_year.png',
+        'Rookie of the Year': 'rookie_of_the_year.png',
+        'Most Improved Ace': 'most_improved_ace.png',
+        'Comeback Player of the Year': 'comeback_player.png',
+        'Slugger of the Year': 'slugger_of_the_year.png',
+        'Pitcher of the Year': 'pitcher_of_the_year.png',
+        'Captain of the Year': 'captain_of_the_year.png',
+        'Al Pineda Good Guy Award': 'al_pineda_good_guy_award.png',
+        'Iron Man Award': 'iron_man_award.png',
+        'Sub of the Year': 'sub_of_the_year.png',
+        'Andrew Streaman Boner Award': 'andrew_streaman_boner_award.png',
+        'Erik Lund Perservenance Award': 'erik_lund_perservenance_award.png',
+        'Mr. Streaman Award for Excellence': 'mr_streaman_award_for_excellence.png'
+      };
+      
+      const fallbackEmojis = {
+        'Team MVP': '👑',
+        'All Aces': '⭐',
+        'Gold Glove': '🥇',
+        'Team of the Year': '🏆',
+        'Rookie of the Year': '🌟',
+        'Most Improved Ace': '📈',
+        'Comeback Player of the Year': '🔄',
+        'Slugger of the Year': '💪',
+        'Pitcher of the Year': '🥎',
+        'Captain of the Year': '🎖️',
+        'Al Pineda Good Guy Award': '🤝',
+        'Iron Man Award': '💯',
+        'Sub of the Year': '🅿️',
+        'Andrew Streaman Boner Award': '🎪',
+        'Erik Lund Perservenance Award': '⚡',
+        'Mr. Streaman Award for Excellence': '🌟'
+      };
+      
+      awards.forEach(award => {
+        const season = award.season ? award.season.charAt(0).toUpperCase() + award.season.slice(1) : '';
+        const awardType = award.category || 'Award';
+        const iconFile = awardIcons[awardType];
+        const fallbackEmoji = fallbackEmojis[awardType] || '🏆';
+        
+        html += `
+          <div class="award-item">
+            ${iconFile ? 
+              `<img src="awards/${iconFile}" alt="${awardType}" class="award-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="award-icon fallback" style="display: none;">${fallbackEmoji}</span>` :
+              `<span class="award-icon fallback">${fallbackEmoji}</span>`
+            }
+            <div class="award-details">
+              <div class="award-name">${awardType}</div>
+              <div class="award-season">${award.year} ${season}</div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    awardsContent.innerHTML = html;
+    awardsSection.style.display = 'block';
+  }
+
+  async function loadPlayerData() {
     const loadStartTime = performance.now();
     console.log(`⚡ Loading data for: ${playerId ? `ID=${playerId}` : `name=${playerName}`}`);
     console.time('Total Load Time');
 
     try {
-      // NEW: Resolve player identifier with proper fallback
       console.time('Resolve Player');
       let resolvedPlayer;
       let isNewUser = false;
       
       if (playerId) {
-        // Direct ID lookup
         resolvedPlayer = await getPlayerStatsOptimized(playerId);
         
         if (!resolvedPlayer || resolvedPlayer.migrated) {
           console.warn('⚠️ Player ID not found in aggregatedPlayerStats or is migrated');
           
-          // FALLBACK 1: Check if this ID exists in users collection (new user not yet aggregated)
           console.log('🔍 Checking users collection for new user...');
           const { getUserProfile } = await import('./firebase-auth.js');
           const userResult = await getUserProfile(playerId);
@@ -749,7 +935,6 @@
           if (userResult.success && userResult.data) {
             console.log('✅ Found user profile:', userResult.data);
             
-            // If user has a linkedPlayer, try to load stats by that name
             if (userResult.data.linkedPlayer) {
               console.log('🔗 User has linkedPlayer:', userResult.data.linkedPlayer);
               resolvedPlayer = await resolvePlayerName(userResult.data.linkedPlayer);
@@ -759,7 +944,6 @@
               }
             }
             
-            // If still not found, create placeholder for new user
             if (!resolvedPlayer) {
               console.log('🆕 Creating placeholder for new user (not yet aggregated)');
               isNewUser = true;
@@ -780,13 +964,11 @@
               };
             }
           } else {
-            // FALLBACK 2: Try using the ID as a player name
             console.log('⚠️ Not in users collection, trying ID as player name');
             resolvedPlayer = await resolvePlayerName(playerId);
           }
         }
       } else {
-        // Name-based lookup with resolution
         resolvedPlayer = await resolvePlayerName(playerName);
       }
       
@@ -802,23 +984,19 @@
       
       console.log(`✅ Resolved to: "${resolvedPlayer.name}" (ID: ${resolvedPlayer.id})`);
       
-      // Update URL to use ID if we came from name (only if player has aggregated stats)
       if (playerName && !playerId && !isNewUser) {
         const newUrl = `${window.location.pathname}?id=${resolvedPlayer.id}`;
         window.history.replaceState({}, '', newUrl);
         console.log('🔄 Updated URL to ID-based');
       }
       
-      // Update page title
       const displayName = resolvedPlayer.name || resolvedPlayer.displayName;
       document.getElementById('pageTitle').textContent = `${displayName} - Player Stats`;
       
-      // NEW: Show message for new users with no stats
       if (isNewUser) {
         const playerHeader = document.getElementById('playerHeader');
         const statsContainer = document.getElementById('statsContainer');
         
-        // Show header with basic info
         document.getElementById('playerName').textContent = displayName;
         
         const detailsContainer = document.getElementById('playerDetails');
@@ -854,7 +1032,6 @@
         
         document.getElementById('playerHeader').style.display = 'flex';
         
-        // Show friendly message instead of stats
         statsContainer.innerHTML = `
           <div class="stats-section">
             <h2>Welcome to Mountainside Aces!</h2>
@@ -873,7 +1050,6 @@
         return;
       }
       
-      // Fetch additional data for existing players
       console.time('Fetch Additional Data');
       const [playerInfo, playerAwards] = await Promise.all([
         getPlayerInfo(displayName).catch(() => null),
@@ -933,14 +1109,31 @@
         return seasonB - seasonA;
       });
 
+      const careerStats = {
+        totalGames: resolvedPlayer.career?.games || 0,
+        totalAtBats: resolvedPlayer.career?.atBats || 0,
+        totalHits: resolvedPlayer.career?.hits || 0,
+        totalRuns: resolvedPlayer.career?.runs || 0,
+        totalWalks: resolvedPlayer.career?.walks || 0,
+        battingAverage: resolvedPlayer.career?.battingAverage || 0,
+        onBasePercentage: resolvedPlayer.career?.onBasePercentage || 0,
+        avgAcesWar: resolvedPlayer.career?.avgAcesBPI || 0,
+        plateAppearances: (resolvedPlayer.career?.atBats || 0) + (resolvedPlayer.career?.walks || 0),
+        acesWarValues: seasonsArray
+          .map(s => s.acesBPI)
+          .filter(v => typeof v === 'number')
+      };
+
       const combinedData = {
         stats: allStats,
         info: playerInfo,
         awards: playerAwards,
         playerId: resolvedPlayer.id,
-        playerName: displayName
+        playerName: displayName,
+        careerStats: careerStats
       };
-      renderPlayerData(combinedData);
+      
+      await renderPlayerData(combinedData);
       hideLoadingIndicator();
 
       const loadEndTime = performance.now();
@@ -953,13 +1146,15 @@
     }
   }
 
-  function renderPlayerData(playerData) {
-    const { stats, info, awards, playerId, playerName } = playerData;
+  async function renderPlayerData(playerData) {
+    const { stats, info, awards, playerId, playerName, careerStats } = playerData;
     if (stats.length === 0) return;
     populatePlayerHeader(stats, info, playerName);
     populateStatsTables(stats, playerId);
     handleMasterChefSection(playerName);
-    if (awards && awards.length > 0) populateAwards(awards);
+    if ((awards && awards.length > 0) || careerStats) {
+      await populateAwards(awards, playerName, careerStats);
+    }
   }
 
   function populatePlayerHeader(stats, info, displayName) {
@@ -1134,70 +1329,6 @@
     return { games, atBats, hits, runs, walks, BA, OBP, avgAcesWar };
   }
 
-  function populateAwards(awards) {
-    const awardsSection = document.getElementById('awardsSection');
-    const awardsGrid = document.getElementById('awardsGrid');
-    
-    const awardIcons = {
-      'Team MVP': 'team_mvp.png',
-      'All Aces': 'all_aces.png',
-      'Gold Glove': 'gold_glove.png',
-      'Team of the Year': 'team_of_the_year.png',
-      'Rookie of the Year': 'rookie_of_the_year.png',
-      'Most Improved Ace': 'most_improved_ace.png',
-      'Comeback Player of the Year': 'comeback_player.png',
-      'Slugger of the Year': 'slugger_of_the_year.png',
-      'Pitcher of the Year': 'pitcher_of_the_year.png',
-      'Captain of the Year': 'captain_of_the_year.png',
-      'Al Pineda Good Guy Award': 'al_pineda_good_guy_award.png',
-      'Iron Man Award': 'iron_man_award.png',
-      'Sub of the Year': 'sub_of_the_year.png',
-      'Andrew Streaman Boner Award': 'andrew_streaman_boner_award.png',
-      'Erik Lund Perservenance Award': 'erik_lund_perservenance_award.png',
-      'Mr. Streaman Award for Excellence': 'mr_streaman_award_for_excellence.png'
-    };
-    
-    const fallbackEmojis = {
-      'Team MVP': '👑',
-      'All Aces': '⭐',
-      'Gold Glove': '🥇',
-      'Team of the Year': '🏆',
-      'Rookie of the Year': '🌟',
-      'Most Improved Ace': '📈',
-      'Comeback Player of the Year': '🔄',
-      'Slugger of the Year': '💪',
-      'Pitcher of the Year': '🥎',
-      'Captain of the Year': '🎖️',
-      'Al Pineda Good Guy Award': '🤝',
-      'Iron Man Award': '💯',
-      'Sub of the Year': '🅿️',
-      'Andrew Streaman Boner Award': '🎪',
-      'Erik Lund Perservenance Award': '⚡',
-      'Mr. Streaman Award for Excellence': '🌟'
-    };
-    
-    awardsGrid.innerHTML = awards.map(award => {
-      const season = award.season ? award.season.charAt(0).toUpperCase() + award.season.slice(1) : '';
-      const awardType = award.category || 'Award';
-      const iconFile = awardIcons[awardType];
-      const fallbackEmoji = fallbackEmojis[awardType] || '🏆';
-      
-      return `
-        <div class="award-item">
-          ${iconFile ? 
-            `<img src="awards/${iconFile}" alt="${awardType}" class="award-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="award-icon fallback" style="display: none;">${fallbackEmoji}</span>` :
-            `<span class="award-icon fallback">${fallbackEmoji}</span>`
-          }
-          <div class="award-details">
-            <div class="award-name">${awardType}</div>
-            <div class="award-season">${award.year} ${season}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-    awardsSection.style.display = 'block';
-  }
-
   function handleMasterChefSection(displayName) {
     const chefSection = document.getElementById('masterChefSection');
     if (displayName === 'Mike Streaman') {
@@ -1221,7 +1352,6 @@
 </script>
 <script type="module">
   import { NavigationComponent } from './nav-component.js';
-  // Navigation auto-initializes on load!
 </script>
 <script src="mobile-enhancements.js"></script>
 </body>
