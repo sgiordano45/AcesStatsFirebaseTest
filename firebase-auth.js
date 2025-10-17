@@ -652,7 +652,7 @@ export async function approveTeamStaff(captainId, requestUserId, teamId) {
           ...req,
           status: 'approved',
           reviewedBy: captainId,
-          reviewedAt: serverTimestamp()
+          reviewedAt: new Date().toISOString()
         };
       }
       return req;
@@ -779,7 +779,7 @@ export async function denyTeamStaffRequest(captainId, requestUserId, teamId) {
           ...req,
           status: 'denied',
           reviewedBy: captainId,
-          reviewedAt: serverTimestamp()
+          reviewedAt: new Date().toISOString()
         };
       }
       return req;
@@ -1272,7 +1272,7 @@ export async function approvePlayerLink(approverId, requestId, notes = '') {
           ...r,
           status: 'approved',
           reviewedBy: approverId,
-          reviewedAt: serverTimestamp(),
+          reviewedAt: new Date().toISOString(),
           notes
         };
       }
@@ -1367,7 +1367,7 @@ export async function denyPlayerLink(denierId, requestId, reason = '') {
           ...r,
           status: 'denied',
           reviewedBy: denierId,
-          reviewedAt: serverTimestamp(),
+          reviewedAt: new Date().toISOString(),
           denialReason: reason
         };
       }
@@ -1490,7 +1490,7 @@ export async function cancelPlayerLinkRequest(userId, requestId) {
         return {
           ...r,
           status: 'cancelled',
-          cancelledAt: serverTimestamp()
+          cancelledAt: new Date().toISOString()
         };
       }
       return r;
