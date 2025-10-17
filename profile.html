@@ -1421,10 +1421,23 @@ body {
           }
         }
         
-        // NEW: Determine the display name to use (preferred or Google name)
-        const displayName = userProfile?.preferredDisplayName || user.displayName || 'User';
-        
-		// Determine account type based on provider data
+// NEW: Determine the display name to use (preferred or Google name)
+const displayName = userProfile?.preferredDisplayName || user.displayName || 'User';
+
+// Update header
+const photoElement = document.getElementById('profilePhoto');
+if (user.photoURL) {
+  photoElement.src = user.photoURL;
+  photoElement.style.display = 'block';
+} else {
+  photoElement.style.display = 'none';
+}
+document.getElementById('displayName').textContent = displayName;
+document.getElementById('playerName').textContent = userProfile?.linkedPlayer || 'Not linked';
+document.getElementById('teamBadge').textContent = userProfile?.linkedTeam || 'No team';
+document.getElementById('accountEmail').value = user.email;
+
+// Determine account type based on provider data
 let accountType = 'Email/Password';
 if (user.providerData && user.providerData.length > 0) {
   const provider = user.providerData[0].providerId;
@@ -1434,42 +1447,13 @@ if (user.providerData && user.providerData.length > 0) {
     accountType = 'Email/Password';
   }
 }
+document.getElementById('accountType').value = accountType;
 
-// Update the account type display
-document.getElementById('accountType').value = accountType;
+// NEW: Load the display name form
+document.getElementById('preferredDisplayName').value = userProfile?.preferredDisplayName || '';
+document.getElementById('googleAccountName').textContent = user.displayName || user.email;
 		
-		
-		
-        // Update header
-                const photoElement = document.getElementById('profilePhoto');
-        if (user.photoURL) {
-          photoElement.src = user.photoURL;
-          photoElement.style.display = 'block';
-        } else {
-          // Hide the photo element if no photo available
-          photoElement.style.display = 'none';
-        }
-        document.getElementById('displayName').textContent = displayName;
-        document.getElementById('playerName').textContent = userProfile?.linkedPlayer || 'Not linked';
-        document.getElementById('teamBadge').textContent = userProfile?.linkedTeam || 'No team';
-        document.getElementById('accountEmail').value = user.email;
-        
-		// NEW CODE HERE:
-			let accountType = 'Email/Password';
-			if (user.providerData && user.providerData.length > 0) {
-			const provider = user.providerData[0].providerId;
-			if (provider === 'google.com') {
-				accountType = 'Google Sign-In';
-			} else if (provider === 'password') {
-				accountType = 'Email/Password';
-			}
-			}
-document.getElementById('accountType').value = accountType;
-		
-		
-        // NEW: Load the display name form
-        document.getElementById('preferredDisplayName').value = userProfile?.preferredDisplayName || '';
-        document.getElementById('googleAccountName').textContent = user.displayName || user.email;
+		        
         
         // Calculate member since
         const createdDate = new Date(user.metadata.creationTime);
