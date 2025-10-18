@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offseason Management Hub - Mountainside Aces</title>
+    <meta name="theme-color" content="#2d5016">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mountainside Aces">
+    
+    <style>
+        :root {
+            --primary-color: #2d5016;
+            --secondary-color: #1a6b4a;
+            --accent-color: #ffd700;
+            --card-bg: #ffffff;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .softball-spinner::before {
+            content: '⚾';
+            font-size: 80px;
+            animation: spin 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0%, 100% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.1);
+            }
+        }
+
+        /* Override React component styles with Aces theme */
+        .min-h-screen {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%) !important;
+        }
+
+        /* Header styling */
+        .bg-gradient-to-r {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bg-gradient-to-r::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+        }
+
+        .bg-gradient-to-r::after {
+            content: '⚾';
+            position: absolute;
+            font-size: 200px;
+            opacity: 0.05;
+            bottom: -50px;
+            left: -30px;
+            pointer-events: none;
+        }
+
+        /* Tab buttons */
+        .flex.border-b button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bg-blue-50 {
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1) 0%, rgba(26, 107, 74, 0.1) 100%) !important;
+        }
+
+        .text-blue-700 {
+            color: var(--primary-color) !important;
+        }
+
+        .border-blue-700 {
+            border-color: var(--primary-color) !important;
+        }
+
+        /* Buttons */
+        .bg-blue-600 {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+            transition: all 0.3s ease;
+        }
+
+        .bg-blue-600:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .hover\:bg-blue-700:hover {
+            background: linear-gradient(135deg, #1f3b0f 0%, #0f4d33 100%) !important;
+        }
+
+        /* Cards */
+        .bg-white.border {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .bg-white.border:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color) !important;
+        }
+
+        .bg-white.border::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .bg-white.border:hover::before {
+            opacity: 1;
+        }
+
+        /* Status badges */
+        .bg-green-100 {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+            color: #155724 !important;
+        }
+
+        .bg-blue-100 {
+            background: linear-gradient(135deg, var(--primary-color) 0.1, var(--secondary-color) 0.1) !important;
+            color: var(--primary-color) !important;
+        }
+
+        .bg-purple-100 {
+            background: linear-gradient(135deg, #e7d5f5 0%, #dac4ed 100%) !important;
+            color: #5a287a !important;
+        }
+
+        .bg-red-100 {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
+            color: #721c24 !important;
+        }
+
+        /* Edit/Delete buttons */
+        .text-blue-600 {
+            color: var(--primary-color) !important;
+        }
+
+        .hover\:bg-blue-50:hover {
+            background: rgba(45, 80, 22, 0.1) !important;
+        }
+
+        .text-red-600 {
+            color: #dc3545 !important;
+        }
+
+        .hover\:bg-red-50:hover {
+            background: rgba(220, 53, 69, 0.1) !important;
+        }
+
+        /* Empty state */
+        .bg-gray-50 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%) !important;
+            border: 2px dashed var(--border-color);
+        }
+
+        /* Modal overlay */
+        .fixed.inset-0.bg-black {
+            backdrop-filter: blur(4px);
+        }
+
+        /* Focus rings */
+        .focus\:ring-blue-500:focus {
+            --tw-ring-color: var(--primary-color) !important;
+        }
+
+        .focus\:ring-2:focus {
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.2) !important;
+        }
+
+        /* Animation for cards */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bg-white.border {
+            animation: fadeInUp 0.6s ease backwards;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .bg-gradient-to-r h1 {
+                font-size: 2rem !important;
+            }
+            
+            .bg-gradient-to-r::after {
+                font-size: 120px;
+                bottom: -30px;
+                left: -20px;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f3f5;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+    </style>
+
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="softball-spinner"></div>
+    </div>
+
+    <!-- React Root -->
+    <div id="root"></div>
+
+    <!-- React Component -->
+    <script type="text/babel">
+        const { useState } = React;
+        const { Plus, Trash2, Edit2, Calendar, Users, X, Save } = lucide;
+
+        function OffseasonHub() {
+          const [activeTab, setActiveTab] = useState('roster');
+          const [roster, setRoster] = useState([]);
+          const [schedule, setSchedule] = useState([]);
+          const [showPlayerForm, setShowPlayerForm] = useState(false);
+          const [showScheduleForm, setShowScheduleForm] = useState(false);
+          const [editingPlayer, setEditingPlayer] = useState(null);
+          const [editingEvent, setEditingEvent] = useState(null);
+
+          const [playerForm, setPlayerForm] = useState({
+            name: '',
+            position: '',
+            number: '',
+            status: 'addition',
+            previousTeam: '',
+            notes: ''
+          });
+
+          const [scheduleForm, setScheduleForm] = useState({
+            date: '',
+            time: '',
+            opponent: '',
+            location: '',
+            type: 'game',
+            notes: ''
+          });
+
+          const resetPlayerForm = () => {
+            setPlayerForm({
+              name: '',
+              position: '',
+              number: '',
+              status: 'addition',
+              previousTeam: '',
+              notes: ''
+            });
+            setEditingPlayer(null);
+            setShowPlayerForm(false);
+          };
+
+          const resetScheduleForm = () => {
+            setScheduleForm({
+              date: '',
+              time: '',
+              opponent: '',
+              location: '',
+              type: 'game',
+              notes: ''
+            });
+            setEditingEvent(null);
+            setShowScheduleForm(false);
+          };
+
+          const handleAddPlayer = () => {
+            if (editingPlayer !== null) {
+              setRoster(roster.map((p, i) => i === editingPlayer ? { ...playerForm, id: Date.now() } : p));
+            } else {
+              setRoster([...roster, { ...playerForm, id: Date.now() }]);
+            }
+            resetPlayerForm();
+          };
+
+          const handleEditPlayer = (index) => {
+            setPlayerForm(roster[index]);
+            setEditingPlayer(index);
+            setShowPlayerForm(true);
+          };
+
+          const handleDeletePlayer = (index) => {
+            setRoster(roster.filter((_, i) => i !== index));
+          };
+
+          const handleAddEvent = () => {
+            if (editingEvent !== null) {
+              setSchedule(schedule.map((e, i) => i === editingEvent ? { ...scheduleForm, id: Date.now() } : e));
+            } else {
+              setSchedule([...schedule, { ...scheduleForm, id: Date.now() }]);
+            }
+            resetScheduleForm();
+          };
+
+          const handleEditEvent = (index) => {
+            setScheduleForm(schedule[index]);
+            setEditingEvent(index);
+            setShowScheduleForm(true);
+          };
+
+          const handleDeleteEvent = (index) => {
+            setSchedule(schedule.filter((_, i) => i !== index));
+          };
+
+          const getStatusColor = (status) => {
+            const colors = {
+              addition: 'bg-green-100 text-green-800',
+              trade: 'bg-blue-100 text-blue-800',
+              teamChange: 'bg-purple-100 text-purple-800',
+              deletion: 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+          };
+
+          const getStatusLabel = (status) => {
+            const labels = {
+              addition: 'Addition',
+              trade: 'Trade',
+              teamChange: 'Team Change',
+              deletion: 'Deletion'
+            };
+            return labels[status] || status;
+          };
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+                    <h1 className="text-3xl font-bold">⚾ Offseason Management Hub</h1>
+                    <p className="text-blue-100 mt-1">Manage roster changes and schedule your season</p>
+                  </div>
+
+                  <div className="flex border-b border-gray-200">
+                    <button
+                      onClick={() => setActiveTab('roster')}
+                      className={`flex-1 px-6 py-4 font-semibold flex items-center justify-center gap-2 transition-colors ${
+                        activeTab === 'roster'
+                          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Users size={20} />
+                      Roster Changes
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('schedule')}
+                      className={`flex-1 px-6 py-4 font-semibold flex items-center justify-center gap-2 transition-colors ${
+                        activeTab === 'schedule'
+                          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Calendar size={20} />
+                      Schedule Builder
+                    </button>
+                  </div>
+
+                  <div className="p-6">
+                    {activeTab === 'roster' && (
+                      <div>
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-2xl font-bold text-gray-800">Roster Management</h2>
+                          <button
+                            onClick={() => setShowPlayerForm(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                          >
+                            <Plus size={20} />
+                            Add Player
+                          </button>
+                        </div>
+
+                        {showPlayerForm && (
+                          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-gray-800">
+                                  {editingPlayer !== null ? 'Edit Player' : 'Add New Player'}
+                                </h3>
+                                <button onClick={resetPlayerForm} className="text-gray-400 hover:text-gray-600">
+                                  <X size={24} />
+                                </button>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                  <input
+                                    type="text"
+                                    value={playerForm.name}
+                                    onChange={(e) => setPlayerForm({ ...playerForm, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                                    <input
+                                      type="text"
+                                      value={playerForm.position}
+                                      onChange={(e) => setPlayerForm({ ...playerForm, position: e.target.value })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Number</label>
+                                    <input
+                                      type="text"
+                                      value={playerForm.number}
+                                      onChange={(e) => setPlayerForm({ ...playerForm, number: e.target.value })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                  <select
+                                    value={playerForm.status}
+                                    onChange={(e) => setPlayerForm({ ...playerForm, status: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  >
+                                    <option value="addition">Addition</option>
+                                    <option value="trade">Trade</option>
+                                    <option value="teamChange">Team Change</option>
+                                    <option value="deletion">Deletion</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Previous Team</label>
+                                  <input
+                                    type="text"
+                                    value={playerForm.previousTeam}
+                                    onChange={(e) => setPlayerForm({ ...playerForm, previousTeam: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                  <textarea
+                                    value={playerForm.notes}
+                                    onChange={(e) => setPlayerForm({ ...playerForm, notes: e.target.value })}
+                                    rows="3"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <button
+                                  onClick={handleAddPlayer}
+                                  disabled={!playerForm.name}
+                                  className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                                >
+                                  <Save size={20} />
+                                  {editingPlayer !== null ? 'Update Player' : 'Add Player'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {roster.length === 0 ? (
+                          <div className="text-center py-12 bg-gray-50 rounded-lg">
+                            <Users size={48} className="mx-auto text-gray-400 mb-3" />
+                            <p className="text-gray-500 text-lg">No roster changes yet</p>
+                            <p className="text-gray-400 text-sm mt-1">Add your first player to get started</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {roster.map((player, index) => (
+                              <div key={player.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <h3 className="text-lg font-bold text-gray-800">{player.name}</h3>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(player.status)}`}>
+                                        {getStatusLabel(player.status)}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                                      {player.position && <span><strong>Position:</strong> {player.position}</span>}
+                                      {player.number && <span><strong>Number:</strong> {player.number}</span>}
+                                      {player.previousTeam && <span><strong>From:</strong> {player.previousTeam}</span>}
+                                    </div>
+                                    {player.notes && <p className="text-sm text-gray-500 italic">{player.notes}</p>}
+                                  </div>
+                                  <div className="flex gap-2 ml-4">
+                                    <button
+                                      onClick={() => handleEditPlayer(index)}
+                                      className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                                    >
+                                      <Edit2 size={18} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeletePlayer(index)}
+                                      className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === 'schedule' && (
+                      <div>
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-2xl font-bold text-gray-800">Schedule Builder</h2>
+                          <button
+                            onClick={() => setShowScheduleForm(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                          >
+                            <Plus size={20} />
+                            Add Event
+                          </button>
+                        </div>
+
+                        {showScheduleForm && (
+                          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-gray-800">
+                                  {editingEvent !== null ? 'Edit Event' : 'Add New Event'}
+                                </h3>
+                                <button onClick={resetScheduleForm} className="text-gray-400 hover:text-gray-600">
+                                  <X size={24} />
+                                </button>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                    <input
+                                      type="date"
+                                      value={scheduleForm.date}
+                                      onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                    <input
+                                      type="time"
+                                      value={scheduleForm.time}
+                                      onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Opponent</label>
+                                  <input
+                                    type="text"
+                                    value={scheduleForm.opponent}
+                                    onChange={(e) => setScheduleForm({ ...scheduleForm, opponent: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                  <input
+                                    type="text"
+                                    value={scheduleForm.location}
+                                    onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                  <select
+                                    value={scheduleForm.type}
+                                    onChange={(e) => setScheduleForm({ ...scheduleForm, type: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  >
+                                    <option value="game">Game</option>
+                                    <option value="practice">Practice</option>
+                                    <option value="scrimmage">Scrimmage</option>
+                                    <option value="tournament">Tournament</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                  <textarea
+                                    value={scheduleForm.notes}
+                                    onChange={(e) => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
+                                    rows="2"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                </div>
+
+                                <button
+                                  onClick={handleAddEvent}
+                                  disabled={!scheduleForm.date || !scheduleForm.opponent}
+                                  className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                                >
+                                  <Save size={20} />
+                                  {editingEvent !== null ? 'Update Event' : 'Add Event'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {schedule.length === 0 ? (
+                          <div className="text-center py-12 bg-gray-50 rounded-lg">
+                            <Calendar size={48} className="mx-auto text-gray-400 mb-3" />
+                            <p className="text-gray-500 text-lg">No events scheduled yet</p>
+                            <p className="text-gray-400 text-sm mt-1">Add your first event to build the schedule</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {schedule.sort((a, b) => new Date(a.date) - new Date(b.date)).map((event, index) => (
+                              <div key={event.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className="text-blue-600 font-bold text-lg">
+                                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </span>
+                                      {event.time && <span className="text-gray-600">@ {event.time}</span>}
+                                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold uppercase">
+                                        {event.type}
+                                      </span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-1">vs {event.opponent}</h3>
+                                    {event.location && <p className="text-sm text-gray-600 mb-1">📍 {event.location}</p>}
+                                    {event.notes && <p className="text-sm text-gray-500 italic">{event.notes}</p>}
+                                  </div>
+                                  <div className="flex gap-2 ml-4">
+                                    <button
+                                      onClick={() => handleEditEvent(index)}
+                                      className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                                    >
+                                      <Edit2 size={18} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteEvent(index)}
+                                      className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Render the component
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<OffseasonHub />);
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Hide loading overlay after page loads
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+          }, 800);
+        });
+    </script>
+</body>
+</html>
