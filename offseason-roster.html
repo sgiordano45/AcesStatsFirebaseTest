@@ -714,6 +714,20 @@
         console.log('Loaded teams:', teamsData);
         console.log('Loaded players:', playersData);
         
+        // Get current season from Firestore
+        let currentSeasonId = '2025-fall'; // Default fallback
+        try {
+          const seasonsSnapshot = await getDocs(query(collection(db, 'seasons'), where('isActive', '==', true)));
+          if (!seasonsSnapshot.empty) {
+            currentSeasonId = seasonsSnapshot.docs[0].id;
+            console.log('✅ Current season detected:', currentSeasonId);
+          } else {
+            console.log('⚠️ No active season found, using default:', currentSeasonId);
+          }
+        } catch (err) {
+          console.warn('Could not fetch current season, using default:', currentSeasonId, err);
+        }
+        
         // Organize players by team
         const teamsWithPlayers = {};
         const currentRosterPlayerIds = new Set();
@@ -725,44 +739,68 @@
           };
         });
         
-        // Add players to their respective teams
+        // Add players to their respective teams ONLY if they played in current season
         playersData.forEach(player => {
           const teamName = player.currentTeam;
-          if (teamName && teamsWithPlayers[teamName]) {
+          
+          // Check if player has stats for current season
+          let playedInCurrentSeason = false;
+          if (player.seasons && typeof player.seasons === 'object') {
+            // Check for exact match or season keys that start with currentSeasonId
+            const seasonKeys = Object.keys(player.seasons);
+            playedInCurrentSeason = seasonKeys.some(key => 
+              key === currentSeasonId || key.startsWith(currentSeasonId + '-')
+            );
+          }
+          
+          if (teamName && teamsWithPlayers[teamName] && playedInCurrentSeason) {
             currentRosterPlayerIds.add(player.id);
             teamsWithPlayers[teamName].players.push({
               id: player.id,
               name: player.name || player.displayName,
               ba: player.career?.battingAverage?.toFixed(3) || '.000',
-              acesBPI: player.career?.acesBPI?.toString() || '0'
+              acesBPI: player.career?.acesBPI ? player.career.acesBPI.toFixed(1) : '0.0'
             });
           }
         });
         
-        // Find past players
+        // Find past players (those not on current season rosters)
         const pastPlayersList = playersData
           .filter(player => !currentRosterPlayerIds.has(player.id))
           .map(player => {
+            // Get most recent season from player's season data
             let mostRecentSeason = '2022-fall';
+            let mostRecentTeam = 'Unknown';
+            
             if (player.seasons && Object.keys(player.seasons).length > 0) {
               const seasonKeys = Object.keys(player.seasons).sort().reverse();
               mostRecentSeason = seasonKeys[0];
+              
+              // Get team from most recent season
+              const recentSeasonData = player.seasons[mostRecentSeason];
+              if (recentSeasonData && recentSeasonData.team) {
+                mostRecentTeam = recentSeasonData.team;
+              }
             }
             
             return {
               id: player.id,
               name: player.name || player.displayName,
               ba: player.career?.battingAverage?.toFixed(3) || '.000',
-              acesBPI: player.career?.acesBPI?.toString() || '0',
+              acesBPI: player.career?.acesBPI ? player.career.acesBPI.toFixed(1) : '0.0',
               lastSeason: mostRecentSeason,
-              lastTeam: player.currentTeam || 'Unknown'
+              lastTeam: mostRecentTeam || player.currentTeam || 'Unknown'
             };
           })
+          // Sort by most recent season (desc) then alphabetically by name
           .sort((a, b) => {
             const seasonCompare = b.lastSeason.localeCompare(a.lastSeason);
             if (seasonCompare !== 0) return seasonCompare;
             return a.name.localeCompare(b.name);
           });
+        
+        console.log('✅ Found past players:', pastPlayersList.length);
+        console.log('✅ Current season rosters:', Object.entries(teamsWithPlayers).map(([name, data]) => `${name}: ${data.players.length}`));
         
         teams = teamsWithPlayers;
         pastPlayers = pastPlayersList;
@@ -1063,7 +1101,7 @@
           return;
         }
         
-        teams[toTeam].players.push({
+        team.players.push({
           id: pastPlayer.id,
           name: pastPlayer.name,
           ba: pastPlayer.ba,
