@@ -816,7 +816,7 @@
         teamCard.className = 'team-card';
         teamCard.dataset.team = teamName;
         
-        const emptySlots = teamData.maxRoster - teamData.players.length;
+        const emptySlots = Math.max(0, teamData.maxRoster - teamData.players.length);
         
         teamCard.innerHTML = `
           <div class="team-header">
@@ -844,7 +844,7 @@
                 Add
               </button>
             ` : ''}
-            ${Array(emptySlots).fill(0).map((_, i) => '<div class="empty-slot">Empty</div>').join('')}
+            ${Array.from({ length: emptySlots }, (_, i) => `<div class="empty-slot">Empty</div>`).join('')}
           </div>
         `;
         
