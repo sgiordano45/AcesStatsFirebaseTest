@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mountainside Aces">
   <title>Roster Management | Mountainside Aces</title>
-  
+
   <style>
     :root {
       --primary-color: #2d5016;
@@ -513,6 +514,7 @@
       }
     }
   </style>
+
 </head>
 <body>
   <!-- Loading Overlay -->
@@ -522,6 +524,7 @@
   </div>
 
   <!-- Error Container (hidden by default) -->
+
   <div id="errorContainer" class="error-container" style="display: none;">
     <div class="error-card">
       <h2>⚠️ Error</h2>
@@ -531,6 +534,7 @@
   </div>
 
   <!-- Main App (hidden until loaded) -->
+
   <div id="mainApp" style="display: none;">
     <!-- Header -->
     <header>
@@ -546,97 +550,100 @@
             <p>Drag and drop players to manage offseason roster changes</p>
           </div>
         </div>
-        
-        <div class="header-actions">
-          <button id="toggleSeasonBtn" class="btn btn-toggle">
-            <span id="seasonTypeText">Fall → Summer (16 spots)</span>
-          </button>
-          <button id="saveBtn" class="btn btn-save">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </header>
 
-    <!-- Main Content -->
-    <main>
-      <!-- Add Past Player Section -->
-      <div class="add-player-section">
-        <h3>➕ Add Past Player to Roster</h3>
-        <div class="add-player-form">
-          <div class="form-group">
-            <label>Select Past Player (<span id="pastPlayerCount">0</span> available)</label>
-            <select id="pastPlayerSelect">
-              <option value="">-- Select a player --</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Add to Team</label>
-            <select id="teamSelect">
-              <option value="">-- Select a team --</option>
-            </select>
-          </div>
-          
-          <button id="addPastPlayerBtn" class="btn btn-add" disabled>
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <line x1="19" y1="8" x2="19" y2="14"/>
-              <line x1="22" y1="11" x2="16" y2="11"/>
-            </svg>
-            Add to Team
-          </button>
-        </div>
-        
-        <div id="playerPreview" style="display: none;" class="player-preview">
-          <p><strong id="previewName"></strong> • BA: <span id="previewBA"></span> • BPI: <span id="previewBPI"></span> • Last played: <span id="previewSeason"></span></p>
-        </div>
-      </div>
+```
+    <div class="header-actions">
+      <button id="toggleSeasonBtn" class="btn btn-toggle">
+        <span id="seasonTypeText">Fall → Summer (16 spots)</span>
+      </button>
+      <button id="saveBtn" class="btn btn-save">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save Changes
+      </button>
+    </div>
+  </div>
+</header>
 
-      <!-- Teams Grid -->
-      <div id="teamsGrid" class="teams-grid"></div>
-
-      <!-- Unavailable Players Zone -->
-      <div id="unavailableZone" style="display: none;" class="unavailable-zone">
-        <div class="unavailable-header">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <div>
-            <h2>Unavailable Players (Fall)</h2>
-            <p>Drag players here who won't play in the fall season</p>
-          </div>
-        </div>
-        
-        <div class="unavailable-content">
-          <div id="unavailableEmpty" class="unavailable-empty">
-            <div class="unavailable-empty-icon">🗑️</div>
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">No unavailable players yet</p>
-            <p style="font-size: 0.85rem;">Drag players here to mark them as unavailable</p>
-          </div>
-          <div id="unavailablePlayersGrid" class="unavailable-players-grid" style="display: none;"></div>
-        </div>
+<!-- Main Content -->
+<main>
+  <!-- Add Past Player Section -->
+  <div class="add-player-section">
+    <h3>➕ Add Past Player to Roster</h3>
+    <div class="add-player-form">
+      <div class="form-group">
+        <label>Select Past Player (<span id="pastPlayerCount">0</span> available)</label>
+        <select id="pastPlayerSelect">
+          <option value="">-- Select a player --</option>
+        </select>
       </div>
-
-      <!-- Instructions -->
-      <div class="instructions">
-        <h3>💡 Instructions</h3>
-        <ul>
-          <li>• <strong>Drag and drop</strong> player cards between teams to make roster moves</li>
-          <li>• Click <strong>"Add"</strong> to add new or returning players to any team</li>
-          <li>• Toggle between <strong>Fall → Summer</strong> (16 spots) or <strong>Summer → Fall</strong> (14 spots)</li>
-          <li id="unavailableInstruction" style="display: none;">• When transitioning to Fall, drag players who can't play to the <strong>Unavailable Players</strong> zone</li>
-          <li>• Click <strong>"Save Changes"</strong> when done to persist roster moves</li>
-        </ul>
+      
+      <div class="form-group">
+        <label>Add to Team</label>
+        <select id="teamSelect">
+          <option value="">-- Select a team --</option>
+        </select>
       </div>
-    </main>
+      
+      <button id="addPastPlayerBtn" class="btn btn-add" disabled>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        Add to Team
+      </button>
+    </div>
+    
+    <div id="playerPreview" style="display: none;" class="player-preview">
+      <p><strong id="previewName"></strong> • BA: <span id="previewBA"></span> • BPI: <span id="previewBPI"></span> • Last played: <span id="previewSeason"></span></p>
+    </div>
+  </div>
+
+  <!-- Teams Grid -->
+  <div id="teamsGrid" class="teams-grid"></div>
+
+  <!-- Unavailable Players Zone -->
+  <div id="unavailableZone" style="display: none;" class="unavailable-zone">
+    <div class="unavailable-header">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+      <div>
+        <h2>Unavailable Players (Fall)</h2>
+        <p>Drag players here who won't play in the fall season</p>
+      </div>
+    </div>
+    
+    <div class="unavailable-content">
+      <div id="unavailableEmpty" class="unavailable-empty">
+        <div class="unavailable-empty-icon">🗑️</div>
+        <p style="font-weight: 600; margin-bottom: 0.5rem;">No unavailable players yet</p>
+        <p style="font-size: 0.85rem;">Drag players here to mark them as unavailable</p>
+      </div>
+      <div id="unavailablePlayersGrid" class="unavailable-players-grid" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instructions">
+    <h3>💡 Instructions</h3>
+    <ul>
+      <li>• <strong>Drag and drop</strong> player cards between teams to make roster moves</li>
+      <li>• Click <strong>"Add"</strong> to add new or returning players to any team</li>
+      <li>• Toggle between <strong>Fall → Summer</strong> (16 spots) or <strong>Summer → Fall</strong> (14 spots)</li>
+      <li id="unavailableInstruction" style="display: none;">• When transitioning to Fall, drag players who can't play to the <strong>Unavailable Players</strong> zone</li>
+      <li>• Click <strong>"Save Changes"</strong> when done to persist roster moves</li>
+    </ul>
+  </div>
+</main>
+```
+
   </div>
 
   <script type="module">
@@ -1056,7 +1063,7 @@
           return;
         }
         
-        team.players.push({
+        teams[toTeam].players.push({
           id: pastPlayer.id,
           name: pastPlayer.name,
           ba: pastPlayer.ba,
@@ -1085,7 +1092,7 @@
               id: `new_${Date.now()}`,
               name: newPlayerName.trim(),
               ba: '.000',
-              acesBPI: '0'
+              acesBPI: '0.0'
             });
             
             renderApp();
@@ -1097,5 +1104,6 @@
     // Start the app
     init();
   </script>
+
 </body>
 </html>
