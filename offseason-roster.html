@@ -640,6 +640,57 @@
   </div>
 
   <script type="module">
+    // Import Firebase modules directly
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs, doc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCAEWkrTcprzJ2KPPJu-vFJPvYOVU4ky20",
+      authDomain: "acessoftballreference-84791.firebaseapp.com",
+      projectId: "acessoftballreference-84791",
+      storageBucket: "acessoftballreference-84791.firebasestorage.app",
+      messagingSenderId: "777699560175",
+      appId: "1:777699560175:web:4092b422e7d7116352e91a"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Helper functions
+    async function getAllTeams() {
+      const teamsSnapshot = await getDocs(collection(db, 'teams'));
+      return teamsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    }
+
+    async function getAllPlayerStatsOptimized() {
+      const statsRef = collection(db, 'aggregatedPlayerStats');
+      const snapshot = await getDocs(statsRef);
+      
+      const players = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        
+        // Skip migrated legacy profiles
+        if (data.migrated === true) {
+          return;
+        }
+        
+        players.push({
+          id: doc.id,
+          ...data,
+          playerId: doc.id,
+          playerName: data.name
+        });
+      });
+      
+      return players;
+    }
+
     let seasonType = 'fall-to-summer';
     let teams = {};
     let unavailablePlayers = [];
@@ -649,15 +700,11 @@
     // Initialize app
     async function init() {
       try {
-        // Import Firebase functions
-        const { getAllTeams, getAllPlayerStatsOptimized } = await import('https://cdn.jsdelivr.net/gh/Aces-Sin/aceref@main/firebase-data.js');
-        
-        // Load teams
+        // Load teams and players
         const teamsData = await getAllTeams();
-        console.log('Loaded teams:', teamsData);
-        
-        // Load all players
         const playersData = await getAllPlayerStatsOptimized();
+        
+        console.log('Loaded teams:', teamsData);
         console.log('Loaded players:', playersData);
         
         // Organize players by team
