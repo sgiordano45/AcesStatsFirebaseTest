@@ -605,7 +605,7 @@ table a:hover {
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
   // Helper function to format player names from firstname_lastname to First Last
-function formatPlayerName(name) {
+function formatPlayerName(name) {function formatPlayerName(name) {
   if (!name) return "";
   
   // If name already has spaces, capitalize each word properly
@@ -618,8 +618,11 @@ function formatPlayerName(name) {
         if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
 		if (word.toLowerCase() === 'lacasse') return 'LaCasse';
 		if (word.toLowerCase() === 'mccabe') return 'McCabe';
-		if (word.toLowerCase() === 'ogrady') return "O'Grady";
+		if (word.toLowerCase() === "o'grady") return "O'Grady";
 		if (word.toLowerCase() === 'mcmahon') return 'McMahon';
+		if (word.toLowerCase() === 'mccorkell') return 'McCorkell';
+		if (word.toLowerCase() === 'denoble') return 'DeNoble';
+		if (word.toLowerCase() === 'digiacomo') return 'DiGiacomo';
         // Add more special cases as needed
         
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
@@ -637,8 +640,12 @@ function formatPlayerName(name) {
         if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
         if (word.toLowerCase() === 'mccabe') return 'McCabe';
 		if (word.toLowerCase() === 'lacasse') return 'LaCasse';
-		        if (word.toLowerCase() === 'ogrady') return "O'Grady";
+		        if (word.toLowerCase() === "o'grady") return "O'Grady";
 		if (word.toLowerCase() === 'mcmahon') return 'McMahon';
+				if (word.toLowerCase() === 'mccorkell') return 'McCorkell';
+		if (word.toLowerCase() === 'denoble') return 'DeNoble';
+		if (word.toLowerCase() === 'digiacomo') return 'DiGiacomo';
+		
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       })
       .join(' ');
@@ -650,8 +657,12 @@ function formatPlayerName(name) {
   if (name.toLowerCase() === 'mccarthy') return 'McCarthy';
   if (name.toLowerCase() === 'mccabe') return 'McCabe';
   if (name.toLowerCase() === 'lacasse') return 'LaCasse';
-  if (name.toLowerCase() === 'ogrady') return "O'Grady";
+  if (name.toLowerCase() === "o'grady") return "O'Grady";
   if (name.toLowerCase() === 'mcmahon') return 'McMahon';
+  		if (name.toLowerCase() === 'mccorkell') return 'McCorkell';
+		if (name.toLowerCase() === 'denoble') return 'DeNoble';
+		if (name.toLowerCase() === 'digiacomo') return 'DiGiacomo';
+  
   
   // Otherwise just capitalize the single name
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
