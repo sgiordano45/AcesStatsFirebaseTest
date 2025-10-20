@@ -600,19 +600,41 @@ let allData = [];
 function formatPlayerName(name) {
   if (!name) return "";
   
-  // If name already has spaces, capitalize each word
+  // If name already has spaces, capitalize each word properly
   if (name.includes(' ')) {
     return name.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => {
+        // Handle special cases like DelleDonne, McDonald, etc.
+        if (word.toLowerCase() === 'delledonne') return 'DelleDonne';
+        if (word.toLowerCase() === 'mcdonald') return 'McDonald';
+        if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
+        // Add more special cases as needed
+        
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
       .join(' ');
   }
   
   // If name has underscores, replace with spaces and capitalize
   if (name.includes('_')) {
     return name.split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => {
+        // Handle special cases
+        if (word.toLowerCase() === 'delledonne') return 'DelleDonne';
+        if (word.toLowerCase() === 'mcdonald') return 'McDonald';
+        if (word.toLowerCase() === 'mccarthy') return 'McCarthy';
+        if (word.toLowerCase() === 'mccabe') return 'McCabe';
+		
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
       .join(' ');
   }
+  
+  // Handle special cases for single words
+  if (name.toLowerCase() === 'delledonne') return 'DelleDonne';
+  if (name.toLowerCase() === 'mcdonald') return 'McDonald';
+  if (name.toLowerCase() === 'mccarthy') return 'McCarthy';
+  if (name.toLowerCase() === 'mccabe') return 'McCabe';
   
   // Otherwise just capitalize the single name
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
