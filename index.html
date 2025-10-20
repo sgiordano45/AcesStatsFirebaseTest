@@ -447,6 +447,55 @@
     border-top-color: rgba(255,255,255,0.3);
   }
 
+  /* Deep Winter Navy Card */
+  .midnight-card {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+
+  .midnight-card::before {
+    background: linear-gradient(90deg, #5f9ea0 0%, #4682b4 100%);
+    opacity: 1;
+  }
+
+  .midnight-card::after {
+    content: '🌙';
+    color: white;
+  }
+
+  .midnight-card .card-title,
+  .midnight-card .card-description,
+  .midnight-card .card-stats {
+    color: white;
+  }
+
+  .midnight-card .card-stats {
+    border-top-color: rgba(255,255,255,0.3);
+  }
+
+  .note {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 30px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .note h3 {
+    color: var(--text-dark);
+    margin-top: 0;
+  }
+
+  .note code {
+    background: #f7fafc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: #e53e3e;
+  }
+
+
   /* Autumn themed card */
   .autumn-card {
     background: linear-gradient(135deg, #d2691e 0%, #ff8c00 100%);
@@ -969,6 +1018,14 @@
             <p class="card-description">Approve player links, team staff, etc</p>
           </div>
         </a>
+		<!-- Offseason Hub -->
+        <a href="offseason.html" class="card-link" id="offseasonCard" style="display: none;">
+          <div class="card midnight-card">
+            <div class="card-icon">🎣</div>
+            <h3 class="card-title">Offseason Hub</h3>
+            <p class="card-description">Shift players across rosters, analyze the proposed schedule</p>
+          </div>
+        </a>
       </div>
     </section>
 
@@ -1236,6 +1293,7 @@
           updateRSVPCard(profile);
           updateGameTrackerCard(profile);
           updateApprovalsCard(profile);
+		  updateOffseasonCard(profile);
         }
       }
       
@@ -1369,6 +1427,28 @@
       approvalsCard.style.display = 'block';
     } else {
       approvalsCard.style.display = 'none';
+    }
+  }
+    function updateOffseasonCard(profile) {
+    const offseasonCard = document.getElementById('offseasonCard');
+    if (!offseasonCard) return;
+    
+    const userRole = profile.userRole;
+    const canApprove = userRole === USER_ROLES.ADMIN || 
+                       userRole === USER_ROLES.LEAGUE_STAFF || 
+                       userRole === USER_ROLES.CAPTAIN;
+    
+    const isCaptainViaTeamRoles = profile.teamRoles && 
+      Object.values(profile.teamRoles).some(
+        teamRole => teamRole.role === USER_ROLES.CAPTAIN && teamRole.status === 'active'
+      );
+    
+    const isCaptainLegacy = profile.isCaptain === true;
+    
+    if (canApprove || isCaptainViaTeamRoles || isCaptainLegacy) {
+      offseasonCard.style.display = 'block';
+    } else {
+      offseasonCard.style.display = 'none';
     }
   }
 </script>
