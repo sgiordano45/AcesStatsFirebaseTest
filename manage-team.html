@@ -336,9 +336,21 @@
   <div class="container">
     <div class="header">
       <div class="header-content">
-        <h1>Team Management</h1>
-        <p>Manage team staff roles and permissions</p>
-        <span class="role-badge" id="userRoleBadge">Loading...</span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>Team Management</h1>
+            <p>Manage team staff roles and permissions</p>
+            <span class="role-badge" id="userRoleBadge">Loading...</span>
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <a href="index.html" class="btn btn-secondary" style="background: white; color: var(--primary-color); text-decoration: none;">
+              🏠 Home
+            </a>
+            <a href="profile.html" class="btn btn-secondary" style="background: white; color: var(--primary-color); text-decoration: none;">
+              👤 My Profile
+            </a>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -351,7 +363,7 @@
       <!-- Team Players Section -->
       <div class="card">
         <h2 class="section-title">
-          ⚾ Your Team Players
+          👥 Your Team Players
         </h2>
         <p style="color: var(--text-light); margin-bottom: 1rem;">
           Players registered and linked to <strong id="teamName">your team</strong>
@@ -365,7 +377,7 @@
       <!-- Fans Section -->
       <div class="card">
         <h2 class="section-title">
-          🎯 Registered Fans
+          📣 Registered Fans
         </h2>
         <p style="color: var(--text-light); margin-bottom: 1rem;">
           Fans, family, and supporters who may help with team activities
