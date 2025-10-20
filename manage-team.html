@@ -336,7 +336,7 @@
   <div class="container">
     <div class="header">
       <div class="header-content">
-        <h1>⚙️ Team Management</h1>
+        <h1>Team Management</h1>
         <p>Manage team staff roles and permissions</p>
         <span class="role-badge" id="userRoleBadge">Loading...</span>
       </div>
@@ -380,7 +380,7 @@
 
   <script type="module">
     import { onAuthChange, getCurrentUser, getUserProfile, updateUserProfile } from './firebase-auth.js';
-    import { getAllUsers } from './firebase-data.js';
+    import { getAllPlayers } from './firebase-data.js';
 
     let currentUser = null;
     let userProfile = null;
@@ -449,7 +449,7 @@
         }
 
         // Load all users
-        allUsers = await getAllUsers();
+        allUsers = await getAllPlayers();
         
         // Filter players on captain's team
         players = allUsers.filter(u => {
