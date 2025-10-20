@@ -326,8 +326,10 @@
     .player-stats {
       display: flex;
       justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--text-light);
+      font-size: 0.7rem;
+      color: var(--text-dark);
+      gap: 0.5rem;
+      font-weight: 500;
     }
 
     .add-player-btn {
@@ -871,11 +873,11 @@
               <div class="player-card" draggable="true" data-player-id="${player.id}">
                 <div class="player-name">${player.name}</div>
                 <div class="player-stats">
-                  <span>${player.ba}</span>
-                  <span>${player.acesBPI}</span>
+                  <span>BA: ${player.ba}</span>
+                  <span>BPI: ${player.acesBPI}</span>
                 </div>
               </div>
-            `).join('')}
+            `).join('')}}
             ${teamData.players.length < teamData.maxRoster ? `
               <button class="add-player-btn" data-team="${teamName}">
                 <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
@@ -990,8 +992,8 @@
             <div class="unavailable-player player-card" draggable="true" data-player-id="${player.id}">
               <div class="player-name">${player.name}</div>
               <div class="player-stats">
-                <span>${player.ba}</span>
-                <span>${player.acesBPI}</span>
+                <span>BA: ${player.ba}</span>
+                <span>BPI: ${player.acesBPI}</span>
               </div>
             </div>
           `).join('');
