@@ -121,6 +121,36 @@
             z-index: 1;
         }
 
+        /* Back Button */
+        .back-button {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(-5px);
+        }
+
+        .back-button::before {
+            content: "←";
+            font-size: 1.2rem;
+        }
+
         /* Container */
         .container {
             max-width: 1400px;
@@ -324,6 +354,21 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            body {
+                padding-top: 60px; /* Account for fixed mobile nav */
+            }
+            
+            .back-button {
+                top: 1rem;
+                left: 1rem;
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+
+            .header {
+                padding: 5rem 2rem 3rem;
+            }
+
             .header h1 {
                 font-size: 2.5rem;
             }
@@ -363,14 +408,23 @@
         <div class="softball-spinner"></div>
     </div>
 
-    <!-- Header -->
-    <div class="header">
-        <h1>🎣 Offseason Management Hub</h1>
-        <p>Manage your league's roster movements and schedule planning for the upcoming season</p>
-    </div>
+    <!-- Page Container - Required for navigation component -->
+    <div class="page-container">
+        
+        <!-- Optional Desktop Navigation Area -->
+        <div class="filters-nav">
+            <!-- Desktop nav will be injected here by nav-component.js -->
+        </div>
+        
+        <!-- Header -->
+        <div class="header">
+            <a href="index.html" class="back-button">Back Home</a>
+            <h1>🎣 Offseason Management Hub</h1>
+            <p>Manage your league's roster movements and schedule planning for the upcoming season</p>
+        </div>
 
-    <!-- Main Content -->
-    <div class="container">
+        <!-- Main Content -->
+        <div class="container">
         <h2 class="section-title">Management Tools</h2>
         
         <div class="cards-grid">
@@ -401,6 +455,8 @@
             </a>
         </div>
     </div>
+    
+    </div><!-- End page-container -->
 
     <script>
         // Hide loading overlay after page loads

@@ -39,6 +39,7 @@ export const NAV_STRUCTURE = {
     { id: 'favorites', href: 'favorites.html', label: 'Favorites', icon: '⭐', priority: 4, requiresAuth: true },
     { id: 'game-tracker', href: 'game-tracker.html', label: 'Game Tracker', icon: '🔶', priority: 4, requiresAuth: true },
     { id: 'roster-management', href: 'roster-management.html', label: 'Roster Management', icon: '✉️', priority: 4, requiresAuth: true },
+	{ id: 'offseason-hub', href: 'offseason.html', label: 'Offseason Hub', icon: '🎣️', priority: 4, requiresAuth: true },
   ],
   
   // Public auth pages (signin handles both signin and signup - don't show in nav)
@@ -148,19 +149,23 @@ export const PAGE_CONFIGS = {
   
   // Auth-specific pages
   'profile.html': {
-    desktop: ['home', 'profile', 'favorites', 'current-season', 'players']
+    desktop: []
   },
   
   'favorites.html': {
-    desktop: ['home', 'profile', 'favorites', 'players', 'teams']
+    desktop: []
   },
   
   'game-tracker.html': {
-    desktop: ['home', 'game-tracker', 'current-season', 'weekend-preview', 'roster-management']
+    desktop: ['home', 'roster-management']
   },
   
   'roster-management.html': {
-    desktop: ['home', 'roster-management', 'game-tracker', 'teams', 'players']
+    desktop: []
+  },
+  
+    'offseason.html': {
+    desktop: []
   },
   
   // Signin page (handles both signin and signup) - minimal nav
