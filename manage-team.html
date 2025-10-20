@@ -451,6 +451,10 @@
         // Load all users
         allUsers = await getAllPlayers();
         
+        // Filter to only verified users (excludes placeholder accounts)
+        allUsers = allUsers.filter(u => u.emailVerified === true);
+        console.log(`✅ Loaded ${allUsers.length} verified users`);
+        
         // Filter players on captain's team
         players = allUsers.filter(u => {
           const isPlayer = u.linkedPlayer && u.linkedTeam === userProfile.linkedTeam;
