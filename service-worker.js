@@ -1,5 +1,5 @@
 // service-worker.js - Offline Functionality for Mountainside Aces
-// Version 1.0.0 - Subdirectory Deployment
+// Version 1.0.1 - Better error handling for debugging
 
 const CACHE_VERSION = 'aces-v1.0.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
@@ -47,22 +47,36 @@ const EXTERNAL_RESOURCES = [
   'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js'
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets with better error handling
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll([...STATIC_ASSETS, ...EXTERNAL_RESOURCES]);
+      .then(async (cache) => {
+        console.log('[SW] Caching static assets...');
+        
+        // Try to cache each asset individually to identify failures
+        const allAssets = [...STATIC_ASSETS, ...EXTERNAL_RESOURCES];
+        const cachePromises = allAssets.map(async (asset) => {
+          try {
+            await cache.add(asset);
+            console.log(`[SW] ✅ Cached: ${asset}`);
+          } catch (error) {
+            console.error(`[SW] ❌ Failed to cache: ${asset}`, error);
+            // Don't fail the entire installation if one asset fails
+          }
+        });
+        
+        await Promise.allSettled(cachePromises);
+        console.log('[SW] Static asset caching complete (with possible failures)');
       })
       .then(() => {
-        console.log('[SW] Static assets cached successfully');
+        console.log('[SW] Service worker installation complete');
         return self.skipWaiting(); // Activate immediately
       })
       .catch((error) => {
-        console.error('[SW] Failed to cache static assets:', error);
+        console.error('[SW] Critical error during installation:', error);
       })
   );
 });
