@@ -1,40 +1,43 @@
 // service-worker.js - Offline Functionality for Mountainside Aces
-// Version 1.0.0
+// Version 1.0.0 - Subdirectory Deployment
 
 const CACHE_VERSION = 'aces-v1.0.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
+// Base path for GitHub Pages subdirectory deployment
+const BASE_PATH = '/AcesStatsFirebaseTest';
+
 // Critical files that should always be cached
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/mobile-enhancements.css',
-  '/firebase-auth.js',
-  '/firebase-data.js',
-  '/firebase-roster.js',
-  '/nav-component.js',
-  '/nav-config.js',
-  '/nav-styles.css',
-  '/current-season.html',
-  '/weekend-preview.html',
-  '/batting.html',
-  '/signin.html',
-  '/signup.html',
-  '/profile.html',
-  '/profile-fan.html',
-  '/schedule.html',
-  '/awards.html',
-  '/league-rules.html',
-  '/verify-email.html',
-  '/reset-password.html',
-  '/link-player.html',
-  '/teams.html',
-  '/players.html',
-  '/stats.html',
-  '/offline.html'
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/style.css`,
+  `${BASE_PATH}/mobile-enhancements.css`,
+  `${BASE_PATH}/firebase-auth.js`,
+  `${BASE_PATH}/firebase-data.js`,
+  `${BASE_PATH}/firebase-roster.js`,
+  `${BASE_PATH}/nav-component.js`,
+  `${BASE_PATH}/nav-config.js`,
+  `${BASE_PATH}/nav-styles.css`,
+  `${BASE_PATH}/current-season.html`,
+  `${BASE_PATH}/weekend-preview.html`,
+  `${BASE_PATH}/batting.html`,
+  `${BASE_PATH}/signin.html`,
+  `${BASE_PATH}/signup.html`,
+  `${BASE_PATH}/profile.html`,
+  `${BASE_PATH}/profile-fan.html`,
+  `${BASE_PATH}/schedule.html`,
+  `${BASE_PATH}/awards.html`,
+  `${BASE_PATH}/league-rules.html`,
+  `${BASE_PATH}/verify-email.html`,
+  `${BASE_PATH}/reset-password.html`,
+  `${BASE_PATH}/link-player.html`,
+  `${BASE_PATH}/teams.html`,
+  `${BASE_PATH}/players.html`,
+  `${BASE_PATH}/stats.html`,
+  `${BASE_PATH}/offline.html`
 ];
 
 // Firebase and external resources
@@ -103,6 +106,11 @@ self.addEventListener('fetch', (event) => {
 
   // Skip Chrome extension requests
   if (url.protocol === 'chrome-extension:') {
+    return;
+  }
+
+  // Only handle requests for our app (not other origins)
+  if (!url.pathname.startsWith(BASE_PATH) && !isExternalResource(url)) {
     return;
   }
 
@@ -198,7 +206,7 @@ async function networkFirstWithOfflinePage(request) {
     }
 
     // Return offline fallback page
-    const offlinePage = await caches.match('/offline.html');
+    const offlinePage = await caches.match(`${BASE_PATH}/offline.html`);
     if (offlinePage) {
       return offlinePage;
     }
@@ -209,8 +217,12 @@ async function networkFirstWithOfflinePage(request) {
 
 // Helper: Check if request is for a static asset
 function isStaticAsset(url) {
-  return STATIC_ASSETS.some(asset => url.pathname === asset) ||
-         EXTERNAL_RESOURCES.some(resource => url.href.startsWith(resource));
+  return STATIC_ASSETS.some(asset => url.pathname === asset);
+}
+
+// Helper: Check if request is for an external resource
+function isExternalResource(url) {
+  return EXTERNAL_RESOURCES.some(resource => url.href.startsWith(resource));
 }
 
 // Helper: Check if request is for an image
