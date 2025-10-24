@@ -1670,17 +1670,29 @@
       document.addEventListener('DOMContentLoaded', loadData);
 	  
 	  
-	  function updateConnectionStatus() {
+function updateConnectionStatus() {
   const status = document.getElementById('connectionStatus');
   if (!status) return;
   
+  const icon = status.querySelector('.status-icon');
+  const text = status.querySelector('.status-text');
+  
   if (navigator.onLine) {
-    status.classList.add('online', 'hidden');
-    status.querySelector('.status-text').textContent = 'Back online';
-    setTimeout(() => status.classList.add('hidden'), 3000);
+    // Show "Back online" message
+    status.classList.remove('hidden');  // SHOW IT FIRST
+    status.classList.add('online');
+    icon.textContent = '✅';
+    text.textContent = 'Back online';
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+      status.classList.add('hidden');
+    }, 3000);
   } else {
+    // Show "You're offline" message
     status.classList.remove('hidden', 'online');
-    status.querySelector('.status-text').textContent = "You're offline";
+    icon.textContent = '📡';
+    text.textContent = "You're offline";
   }
 }
 
