@@ -16,8 +16,8 @@ const STATIC_ASSETS = [
   '/firebase-data.js',
   '/firebase-roster.js',
   '/nav-component.js',
-  'nav-config.js',
-  'nav-styles.css'
+  '/nav-config.js',
+  '/nav-styles.css',
   '/current-season.html',
   '/weekend-preview.html',
   '/batting.html',
@@ -125,7 +125,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Strategy 4: Network-first with offline fallback for HTML pages
-  if (request.headers.get('Accept').includes('text/html')) {
+  if (request.headers.get('Accept') && request.headers.get('Accept').includes('text/html')) {
     event.respondWith(networkFirstWithOfflinePage(request));
     return;
   }
