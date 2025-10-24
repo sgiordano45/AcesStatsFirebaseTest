@@ -42,7 +42,7 @@
   .player-card-hover:hover .remove-btn { opacity: 1 !important; }
   .player-card-hover:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
   .player-card-draggable { 
-    cursor: grab !important; 
+    cursor: move !important; 
     user-select: none; 
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -50,15 +50,14 @@
     touch-action: none;
   }
   .player-card-draggable:active { 
-    cursor: grabbing !important; 
+    cursor: move !important; 
   }
   .player-card-draggable:hover { 
     transform: translateY(-2px); 
     box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important; 
   }
   .player-card-draggable * {
-    pointer-events: none !important;
-    user-select: none !important;
+        user-select: none !important;
   }
   .player-card-draggable .remove-btn {
     pointer-events: auto !important;
@@ -112,6 +111,37 @@
       transform: translateX(-5px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
+/* Connection Status Indicator */
+.connection-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ffc107;
+  color: #856404;
+  padding: 10px 16px;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 9999;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.connection-status.hidden {
+  display: none;
+}
+
+.connection-status.online {
+  background: #28a745;
+  color: white;
+}
+
+.connection-status .status-icon {
+  font-size: 1rem;
+}
 </style>
 </head>
 <body>
@@ -840,7 +870,7 @@ const printDefensiveRotation = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: '10px',
-          cursor: draggable && isCaptain ? 'grab' : 'default',
+          cursor: draggable && isCaptain ? 'move' : 'default',
           transition: 'all 0.2s ease', 
           position: 'relative',
           minHeight: isSmall ? '40px' : '48px'
@@ -859,12 +889,11 @@ const printDefensiveRotation = () => {
           fontSize: isSmall ? '11px' : '13px', 
           fontWeight: '600', 
           flexShrink: 0,
-          pointerEvents: 'none',
           userSelect: 'none'
         }}>
           {player.avatar || '?'}
         </div>
-        <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none', userSelect: 'none' }}>
+        <div style={{ flex: 1, minWidth: 0, userSelect: 'none' }}>
           <div style={{ 
             fontWeight: '500', fontSize: isSmall ? '11px' : '14px',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -882,7 +911,7 @@ const printDefensiveRotation = () => {
           {!isSmall && <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>#{player.jersey || 'N/A'}</div>}
         </div>
         {showStats && !isSmall && (
-          <div style={{ fontSize: '11px', color: 'var(--text-dark)', pointerEvents: 'none', userSelect: 'none' }}>{player.battingAvg || '.000'}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-dark)', userSelect: 'none' }}>{player.battingAvg || '.000'}</div>
         )}
         {onRemove && isCaptain && (
           <button onClick={onRemove} className="remove-btn"
@@ -1298,6 +1327,24 @@ const printDefensiveRotation = () => {
     </div>
   );
 }
+
+function updateConnectionStatus() {
+  const status = document.getElementById('connectionStatus');
+  if (!status) return;
+  
+  if (navigator.onLine) {
+    status.classList.add('online', 'hidden');
+    status.querySelector('.status-text').textContent = 'Back online';
+    setTimeout(() => status.classList.add('hidden'), 3000);
+  } else {
+    status.classList.remove('hidden', 'online');
+    status.querySelector('.status-text').textContent = "You're offline";
+  }
+}
+
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+if (!navigator.onLine) updateConnectionStatus();
 </script>
 <script type="module">
   import { NavigationComponent } from './nav-component.js';

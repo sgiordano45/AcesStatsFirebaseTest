@@ -697,9 +697,45 @@
   .section:nth-child(4) { animation-delay: 0.4s; }
   .section:nth-child(5) { animation-delay: 0.5s; }
   .section:nth-child(6) { animation-delay: 0.6s; }
+  
+/* Connection Status Indicator */
+.connection-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ffc107;
+  color: #856404;
+  padding: 10px 16px;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 9999;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.connection-status.hidden {
+  display: none;
+}
+
+.connection-status.online {
+  background: #28a745;
+  color: white;
+}
+
+.connection-status .status-icon {
+  font-size: 1rem;
+}
 </style>
 </head>
 <body>
+<div id="connectionStatus" class="connection-status hidden">
+  <span class="status-icon">📡</span>
+  <span class="status-text">You're offline</span>
+</div>
   <!-- Loading Spinner -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="softball-spinner"></div>
@@ -1632,6 +1668,25 @@
       }
 
       document.addEventListener('DOMContentLoaded', loadData);
+	  
+	  
+	  function updateConnectionStatus() {
+  const status = document.getElementById('connectionStatus');
+  if (!status) return;
+  
+  if (navigator.onLine) {
+    status.classList.add('online', 'hidden');
+    status.querySelector('.status-text').textContent = 'Back online';
+    setTimeout(() => status.classList.add('hidden'), 3000);
+  } else {
+    status.classList.remove('hidden', 'online');
+    status.querySelector('.status-text').textContent = "You're offline";
+  }
+}
+
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+if (!navigator.onLine) updateConnectionStatus();
     </script>
 	<script type="module">
   import { NavigationComponent } from './nav-component.js';
