@@ -2050,7 +2050,9 @@
   } from './firebase-data.js';
 
   const announcements = [
-    { type: 'announcement', text: '🏆 2025 Fall Playoffs starts November 16th!', className: 'news-announcement' },
+    { type: 'announcement', text: '🚨 Welcome to the upgraded Aces Softball Reference🚨', className: 'news-announcement' },
+	{ type: 'announcement', text: '⚠️ We have added the functionality to create user accounts & profiles. Please explore and let me know if you have issues or questions!⚠️ ', className: 'news-announcement' },
+	{ type: 'announcement', text: '🏆 2025 Fall Playoffs starts November 16th!', className: 'news-announcement' },
     { type: 'announcement', text: '⭐ Remember to clean up all trash after your games!', className: 'news-announcement' }
   ];
 
@@ -2217,5 +2219,36 @@
   import { NavigationComponent } from './nav-component.js';
   // Navigation auto-initializes on load!
 </script>
+<!-- Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
+      });
+      console.log('✅ Service Worker registered:', registration.scope);
+
+      // Handle updates
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateNotification(registration);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('❌ Service Worker registration failed:', error);
+    }
+  });
+}
+</script>
+
+<!-- Offline Queue Manager -->
+<script src="/offline-queue.js"></script>
+
+<!-- Offline-Aware Firebase Wrapper -->
+<script src="/firebase-offline-wrapper.js"></script>
 </body>
 </html>
