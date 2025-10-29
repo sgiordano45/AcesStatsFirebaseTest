@@ -633,6 +633,7 @@
       getDocs,
       setDoc, 
       updateDoc, 
+      deleteDoc,
       addDoc,
       onSnapshot,
       collection,
@@ -770,15 +771,21 @@
         console.log('📝 Creating initial offseason document from current season...');
         
         // Get current season
+        console.log('🔍 Calling getCurrentSeason()...');
         const currentSeason = await getCurrentSeason();
+        console.log('📊 Current season result:', currentSeason);
         
         const initialTeams = {};
         
         if (currentSeason && currentSeason.teams) {
           console.log('✅ Found current season:', currentSeason.id);
+          console.log('📋 Teams object:', currentSeason.teams);
+          console.log('📋 Number of teams:', Object.keys(currentSeason.teams).length);
           
           // Get all player stats to fetch BA and AcesBPI
+          console.log('🔍 Fetching all player stats...');
           const allPlayerStats = await getAllPlayerStatsOptimized();
+          console.log(`✅ Loaded ${allPlayerStats.length} player stats`);
           
           // Create a map for quick lookup
           const playerStatsMap = {};
@@ -788,11 +795,14 @@
               acesBPI: player.career?.acesBPI?.toFixed(1) || '0.0'
             };
           });
+          console.log(`📊 Created stats map with ${Object.keys(playerStatsMap).length} players`);
           
           // Convert current season rosters to offseason format
           Object.keys(currentSeason.teams).forEach(teamName => {
             const teamData = currentSeason.teams[teamName];
             const roster = teamData.roster || [];
+            
+            console.log(`  Team: ${teamName}, Roster size: ${roster.length}`, roster);
             
             initialTeams[teamName] = {
               maxRoster: 16, // Default to fall-to-summer
@@ -809,14 +819,18 @@
           });
           
           console.log(`✅ Loaded ${Object.keys(initialTeams).length} teams with rosters`);
+          console.log('📊 Initial teams structure:', initialTeams);
         } else {
           // Default teams if no season exists
-          console.log('⚠️ No current season found, creating default teams');
+          console.log('⚠️ No current season found or no teams property');
+          console.log('   currentSeason:', currentSeason);
+          console.log('   Creating default teams...');
           ['Team A', 'Team B', 'Team C', 'Team D', 'Team E', 'Team F'].forEach(name => {
             initialTeams[name] = { maxRoster: 16, players: [] };
           });
         }
         
+        console.log('💾 Saving to Firestore...');
         const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
         await setDoc(offseasonRef, {
           teams: initialTeams,
@@ -830,10 +844,13 @@
           lastModifiedByName: userProfile.displayName || currentUser.email
         });
         
-        console.log('✅ Initial offseason document created');
+        console.log('✅ Initial offseason document created successfully');
       } catch (error) {
         console.error('❌ Error creating initial offseason doc:', error);
+        console.error('❌ Error stack:', error.stack);
+        
         // Create minimal fallback structure
+        console.log('⚠️ Creating fallback structure...');
         const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
         await setDoc(offseasonRef, {
           teams: {
@@ -853,6 +870,7 @@
           lastModifiedBy: currentUser.uid,
           lastModifiedByName: userProfile.displayName || currentUser.email
         });
+        console.log('✅ Fallback structure created');
       }
     }
     
@@ -1040,6 +1058,13 @@
                   <polyline points="7 3 7 8 15 8"/>
                 </svg>
                 Save
+              </button>
+              <button class="btn" id="resetBtn" style="background: #dc2626; color: white;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 4v6h6M23 20v-6h-6"/>
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                </svg>
+                Reset from Current Season
               </button>
             </div>
           </div>
@@ -1250,6 +1275,27 @@
       // Save changes
       document.getElementById('saveBtn').addEventListener('click', () => {
         saveRosterChanges();
+      });
+      
+      // Reset from current season
+      document.getElementById('resetBtn').addEventListener('click', async () => {
+        if (confirm('⚠️ This will reset all changes and reload rosters from the current season. Are you sure?')) {
+          console.log('🔄 User requested reset from current season');
+          try {
+            // Delete the current offseason document
+            const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
+            await deleteDoc(offseasonRef);
+            console.log('✅ Deleted existing offseason document');
+            
+            // Recreate from current season
+            await createInitialOffseasonDoc();
+            
+            showToast('Rosters reset from current season! 🔄', 'success');
+          } catch (error) {
+            console.error('❌ Error resetting:', error);
+            showToast('Error resetting rosters: ' + error.message, 'error');
+          }
+        }
       });
       
       // Toggle changelog
