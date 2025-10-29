@@ -670,17 +670,25 @@
     // ========================================
     
     onAuthStateChanged(auth, async (user) => {
+      console.log('🔐 Auth state changed, user:', user ? user.email : 'none');
+      
       if (user) {
         currentUser = user;
+        console.log('👤 Loading user profile for:', user.uid);
         await loadUserProfile();
         
+        console.log('🔒 Permission check result:', hasPermission);
+        
         if (hasPermission) {
+          console.log('✅ User has permission, initializing offseason planning...');
           await initializeOffseasonPlanning();
           await setupPresenceTracking();
         } else {
+          console.log('❌ User does not have permission');
           showPermissionDenied();
         }
       } else {
+        console.log('❌ No user, redirecting to signin');
         window.location.href = 'signin.html';
       }
     });
@@ -725,10 +733,14 @@
     // ========================================
     
     async function initializeOffseasonPlanning() {
+      console.log('🚀 Starting initializeOffseasonPlanning...');
       const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
+      console.log('📄 Offseason document reference:', OFFSEASON_DOC_ID);
       
       // Check if offseason planning document exists
+      console.log('🔍 Checking if offseason document exists...');
       const offseasonDoc = await getDoc(offseasonRef);
+      console.log('📊 Document exists:', offseasonDoc.exists());
       
       if (!offseasonDoc.exists()) {
         // Create initial document from current season rosters
