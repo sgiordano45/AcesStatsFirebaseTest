@@ -842,10 +842,20 @@
       );
       
       unsubscribeChangelog = onSnapshot(changelogQuery, (snapshot) => {
-        changeLog = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        console.log('📋 Changelog snapshot received');
+        console.log('📊 Number of changelog docs:', snapshot.docs.length);
+        console.log('📊 Snapshot empty?', snapshot.empty);
+        
+        changeLog = snapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log('  📝 Changelog entry:', doc.id, data);
+          return {
+            id: doc.id,
+            ...data
+          };
+        });
+        
+        console.log('📋 Final changeLog array length:', changeLog.length);
         renderChangelog();
       });
       
@@ -1352,13 +1362,23 @@
     
     function renderChangelog() {
       const list = document.getElementById('changelogList');
-      if (!list) return;
+      console.log('🎨 renderChangelog called');
+      console.log('📋 changeLog array:', changeLog);
+      console.log('📋 changeLog.length:', changeLog.length);
+      console.log('📍 changelogList element:', list);
+      
+      if (!list) {
+        console.log('⚠️ changelogList element not found!');
+        return;
+      }
       
       if (changeLog.length === 0) {
+        console.log('ℹ️ No changelog entries, showing empty state');
         list.innerHTML = '<div class="changelog-empty">No changes yet</div>';
         return;
       }
       
+      console.log('✅ Rendering', changeLog.length, 'changelog entries');
       list.innerHTML = changeLog.map(entry => {
         const timestamp = entry.timestamp?.toDate ? entry.timestamp.toDate() : new Date();
         const timeStr = formatRelativeTime(timestamp);
