@@ -644,7 +644,7 @@
       serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import { db } from './firebase-data.js';
-    import { getCurrentSeason, getAllPlayerStatsOptimized } from './firebase-data.js';
+    import { getCurrentSeason, getAllPlayerStatsOptimized, getSeasonPlayerStatsOptimized } from './firebase-data.js';
     
     const auth = getAuth();
     
@@ -797,17 +797,17 @@
         
         const initialTeams = {};
         
-        if (currentSeason && currentSeason.teams) {
+        if (currentSeason) {
           console.log('✅ Found current season:', currentSeason.id);
-          console.log('📋 Teams object:', currentSeason.teams);
-          console.log('📋 Number of teams:', Object.keys(currentSeason.teams).length);
           
-          // Get all player stats to fetch BA and AcesBPI
-          console.log('🔍 Fetching all player stats...');
+          // Get player stats for this season - this is how we know who's on each team
+          console.log('🔍 Loading season player stats...');
+          const seasonPlayers = await getSeasonPlayerStatsOptimized(currentSeason.id);
+          console.log(`✅ Loaded ${seasonPlayers.length} players for season ${currentSeason.id}`);
+          
+          // Get career stats for BA and AcesBPI
+          console.log('🔍 Loading career stats for BA and AcesBPI...');
           const allPlayerStats = await getAllPlayerStatsOptimized();
-          console.log(`✅ Loaded ${allPlayerStats.length} player stats`);
-          
-          // Create a map for quick lookup
           const playerStatsMap = {};
           allPlayerStats.forEach(player => {
             playerStatsMap[player.name] = {
@@ -817,40 +817,66 @@
           });
           console.log(`📊 Created stats map with ${Object.keys(playerStatsMap).length} players`);
           
-          // Convert current season rosters to offseason format
-          Object.keys(currentSeason.teams).forEach(teamName => {
-            const teamData = currentSeason.teams[teamName];
-            const roster = teamData.roster || [];
+          // Group players by team
+          const teamRosters = {};
+          seasonPlayers.forEach(player => {
+            const playerName = player.playerName || player.name || player.id;
+            const teamName = player.team || player.teamId || player.currentTeam || 'Unknown';
             
-            console.log(`  Team: ${teamName}, Roster size: ${roster.length}`, roster);
+            if (!teamName || teamName === 'Unknown' || teamName.trim() === '') {
+              console.log(`⚠️ Player ${playerName} has no team assignment, skipping`);
+              return;
+            }
             
+            if (!teamRosters[teamName]) {
+              teamRosters[teamName] = [];
+            }
+            
+            // Get stats from career data
+            const stats = playerStatsMap[playerName] || { ba: '.000', acesBPI: '0.0' };
+            
+            teamRosters[teamName].push({
+              id: playerName.toLowerCase().replace(/\s+/g, '_'),
+              name: playerName,
+              ba: stats.ba,
+              acesBPI: stats.acesBPI
+            });
+          });
+          
+          console.log(`📊 Built rosters for ${Object.keys(teamRosters).length} teams`);
+          Object.keys(teamRosters).forEach(teamName => {
+            console.log(`  ${teamName}: ${teamRosters[teamName].length} players`);
+          });
+          
+          // Convert to offseason format
+          Object.keys(teamRosters).forEach(teamName => {
             initialTeams[teamName] = {
               maxRoster: 16, // Default to fall-to-summer
-              players: roster.map(playerName => {
-                const stats = playerStatsMap[playerName] || { ba: '.000', acesBPI: '0.0' };
-                return {
-                  id: playerName.toLowerCase().replace(/\s+/g, '_'),
-                  name: playerName,
-                  ba: stats.ba,
-                  acesBPI: stats.acesBPI
-                };
-              })
+              players: teamRosters[teamName]
             };
           });
           
-          console.log(`✅ Loaded ${Object.keys(initialTeams).length} teams with rosters`);
-          console.log('📊 Initial teams structure:', initialTeams);
+          // If no teams found, create defaults
+          if (Object.keys(initialTeams).length === 0) {
+            console.log('⚠️ No teams found in player stats, creating defaults');
+            ['Team A', 'Team B', 'Team C', 'Team D', 'Team E', 'Team F'].forEach(name => {
+              initialTeams[name] = { maxRoster: 16, players: [] };
+            });
+          } else {
+            console.log(`✅ Successfully built ${Object.keys(initialTeams).length} teams with rosters`);
+          }
+          
         } else {
           // Default teams if no season exists
-          console.log('⚠️ No current season found or no teams property');
-          console.log('   currentSeason:', currentSeason);
-          console.log('   Creating default teams...');
+          console.log('⚠️ No current season found, creating default teams');
           ['Team A', 'Team B', 'Team C', 'Team D', 'Team E', 'Team F'].forEach(name => {
             initialTeams[name] = { maxRoster: 16, players: [] };
           });
         }
         
         console.log('💾 Saving to Firestore...');
+        console.log('📊 Final teams structure:', initialTeams);
+        
         const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
         await setDoc(offseasonRef, {
           teams: initialTeams,
