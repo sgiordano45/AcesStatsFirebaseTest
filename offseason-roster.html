@@ -654,6 +654,7 @@
     let hasPermission = false;
     let teams = {};
     let unavailablePlayers = [];
+    let pastPlayers = []; // Players not in current season
     let seasonType = 'fall-to-summer'; // or 'summer-to-fall'
     let draggedPlayer = null;
     let changeLog = [];
@@ -855,6 +856,43 @@
               players: teamRosters[teamName]
             };
           });
+          
+          // Identify past players (not in current season)
+          console.log('🔍 Identifying past players...');
+          const currentSeasonPlayerNames = new Set();
+          seasonPlayers.forEach(player => {
+            const name = player.playerName || player.name || player.id;
+            currentSeasonPlayerNames.add(name);
+          });
+          
+          pastPlayers = allPlayerStats
+            .filter(player => !currentSeasonPlayerNames.has(player.name))
+            .map(player => {
+              // Find the most recent season they played
+              let lastSeason = 'Unknown';
+              let lastTeam = 'Unknown';
+              
+              if (player.seasons && typeof player.seasons === 'object') {
+                const seasonKeys = Object.keys(player.seasons).sort().reverse();
+                if (seasonKeys.length > 0) {
+                  const recentSeasonKey = seasonKeys[0];
+                  lastSeason = recentSeasonKey;
+                  lastTeam = player.seasons[recentSeasonKey].team || 'Unknown';
+                }
+              }
+              
+              return {
+                id: player.name.toLowerCase().replace(/\s+/g, '_'),
+                name: player.name,
+                ba: player.career?.battingAverage?.toFixed(3) || '.000',
+                acesBPI: player.career?.acesBPI?.toFixed(1) || '0.0',
+                lastSeason: lastSeason,
+                lastTeam: lastTeam
+              };
+            })
+            .sort((a, b) => b.lastSeason.localeCompare(a.lastSeason)); // Sort by most recent
+          
+          console.log(`✅ Found ${pastPlayers.length} past players not in current season`);
           
           // If no teams found, create defaults
           if (Object.keys(initialTeams).length === 0) {
@@ -1126,7 +1164,40 @@
                 <li id="unavailableInstruction" style="${seasonType === 'summer-to-fall' ? 'display: list-item;' : 'display: none;'}"><strong>Unavailable Players:</strong> Drag players here who won't play next season</li>
                 <li><strong>Save Changes:</strong> All captains/staff see updates in real-time</li>
                 <li><strong>Add Past Players:</strong> Bring back players from previous seasons</li>
+                <li><strong>Create New Teams:</strong> Add teams like Army (summer only) or special teams</li>
               </ul>
+            </div>
+
+            <!-- Add Past Player Section -->
+            <div class="add-player-section">
+              <h3>➕ Add Past Player or Create New Team</h3>
+              <div class="add-player-form">
+                <div class="form-group">
+                  <label for="pastPlayerSelect">Past Player (not in current season)</label>
+                  <select id="pastPlayerSelect">
+                    <option value="">Select a player...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="teamSelect">Add to Team</label>
+                  <select id="teamSelect">
+                    <option value="">Select a team...</option>
+                    <option value="__NEW_TEAM__">➕ Create New Team</option>
+                  </select>
+                </div>
+                <button class="btn btn-add" id="addPastPlayerBtn" disabled>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Add Player
+                </button>
+              </div>
+              <div id="playerPreview" class="player-preview" style="display: none;">
+                <p><strong>Preview:</strong></p>
+                <p>Player: <strong id="previewName"></strong></p>
+                <p>BA: <strong id="previewBA"></strong> | AcesBPI: <strong id="previewBPI"></strong></p>
+                <p>Last Seen: <strong id="previewSeason"></strong> with <strong id="previewTeam"></strong></p>
+              </div>
             </div>
 
             <div id="unavailableZone" class="unavailable-zone" style="${seasonType === 'summer-to-fall' ? 'display: block;' : 'display: none;'}" data-team="unavailable">
@@ -1155,6 +1226,8 @@
       renderTeams();
       renderUnavailable();
       renderActiveEditors();
+      populatePastPlayersDropdown();
+      populateTeamSelectDropdown();
       setupEventListeners();
     }
     
@@ -1243,6 +1316,47 @@
       return `${Math.floor(seconds / 86400)}d ago`;
     }
     
+    function populatePastPlayersDropdown() {
+      const select = document.getElementById('pastPlayerSelect');
+      if (!select) return;
+      
+      // Clear existing options except the first one
+      select.innerHTML = '<option value="">Select a player...</option>';
+      
+      // Add past players sorted by most recent season
+      pastPlayers.forEach(player => {
+        const option = document.createElement('option');
+        option.value = player.id;
+        option.textContent = `${player.name} - ${player.lastTeam} (${player.lastSeason})`;
+        option.dataset.playerData = JSON.stringify(player);
+        select.appendChild(option);
+      });
+      
+      console.log(`✅ Populated dropdown with ${pastPlayers.length} past players`);
+    }
+    
+    function populateTeamSelectDropdown() {
+      const select = document.getElementById('teamSelect');
+      if (!select) return;
+      
+      // Clear and rebuild
+      select.innerHTML = '<option value="">Select a team...</option>';
+      
+      // Add existing teams
+      Object.keys(teams).sort().forEach(teamName => {
+        const option = document.createElement('option');
+        option.value = teamName;
+        option.textContent = `${teamName} (${teams[teamName].players.length}/${teams[teamName].maxRoster})`;
+        select.appendChild(option);
+      });
+      
+      // Add "Create New Team" option
+      const newTeamOption = document.createElement('option');
+      newTeamOption.value = '__NEW_TEAM__';
+      newTeamOption.textContent = '➕ Create New Team';
+      select.appendChild(newTeamOption);
+    }
+    
     function setupDragAndDrop() {
       // Player drag events
       document.querySelectorAll('.player-card').forEach(card => {
@@ -1306,6 +1420,112 @@
     }
     
     function setupEventListeners() {
+      // Past player selection
+      const pastPlayerSelect = document.getElementById('pastPlayerSelect');
+      const teamSelect = document.getElementById('teamSelect');
+      const addBtn = document.getElementById('addPastPlayerBtn');
+      const preview = document.getElementById('playerPreview');
+      
+      if (pastPlayerSelect) {
+        pastPlayerSelect.addEventListener('change', () => {
+          const playerId = pastPlayerSelect.value;
+          addBtn.disabled = !playerId || !teamSelect.value;
+          
+          if (playerId) {
+            const selectedOption = pastPlayerSelect.options[pastPlayerSelect.selectedIndex];
+            const player = JSON.parse(selectedOption.dataset.playerData);
+            
+            document.getElementById('previewName').textContent = player.name;
+            document.getElementById('previewBA').textContent = player.ba;
+            document.getElementById('previewBPI').textContent = player.acesBPI;
+            document.getElementById('previewSeason').textContent = player.lastSeason;
+            document.getElementById('previewTeam').textContent = player.lastTeam;
+            preview.style.display = 'block';
+          } else {
+            preview.style.display = 'none';
+          }
+        });
+      }
+      
+      if (teamSelect) {
+        teamSelect.addEventListener('change', () => {
+          addBtn.disabled = !pastPlayerSelect.value || !teamSelect.value;
+        });
+      }
+      
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const playerId = pastPlayerSelect.value;
+          let teamName = teamSelect.value;
+          
+          if (!playerId || !teamName) {
+            alert('Please select both a player and a team');
+            return;
+          }
+          
+          // Handle new team creation
+          if (teamName === '__NEW_TEAM__') {
+            const newTeamName = prompt('Enter new team name (e.g., "Army", "Special Team"):');
+            if (!newTeamName || !newTeamName.trim()) return;
+            
+            teamName = newTeamName.trim();
+            
+            // Create new team if it doesn't exist
+            if (!teams[teamName]) {
+              teams[teamName] = {
+                maxRoster: seasonType === 'fall-to-summer' ? 16 : 14,
+                players: []
+              };
+              console.log(`✅ Created new team: ${teamName}`);
+            }
+          }
+          
+          // Find the player data
+          const selectedOption = pastPlayerSelect.options[pastPlayerSelect.selectedIndex];
+          const pastPlayer = JSON.parse(selectedOption.dataset.playerData);
+          
+          if (!pastPlayer) {
+            alert('Player data not found');
+            return;
+          }
+          
+          const team = teams[teamName];
+          if (!team) {
+            alert(`Team ${teamName} not found`);
+            return;
+          }
+          
+          if (team.players.length >= team.maxRoster) {
+            alert(`${teamName} roster is full (${team.maxRoster}/${team.maxRoster})`);
+            return;
+          }
+          
+          // Add player to team
+          team.players.push({
+            id: pastPlayer.id,
+            name: pastPlayer.name,
+            ba: pastPlayer.ba,
+            acesBPI: pastPlayer.acesBPI
+          });
+          
+          // Remove from past players list
+          pastPlayers = pastPlayers.filter(p => p.id !== pastPlayer.id);
+          
+          // Save and update UI
+          await saveRosterChanges();
+          await logChange('player_added', `added ${pastPlayer.name} to ${teamName}`);
+          
+          // Reset form
+          pastPlayerSelect.value = '';
+          teamSelect.value = '';
+          preview.style.display = 'none';
+          addBtn.disabled = true;
+          
+          showToast(`Added ${pastPlayer.name} to ${teamName}! ✅`, 'success');
+          renderApp();
+        });
+      }
+      
       // Toggle season type
       document.getElementById('toggleSeasonBtn').addEventListener('click', () => {
         seasonType = seasonType === 'fall-to-summer' ? 'summer-to-fall' : 'fall-to-summer';
