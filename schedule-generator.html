@@ -965,9 +965,21 @@
 
     // Initialize
     async function init() {
-      await loadTeams();
-      setupEventListeners();
-      setDefaultStartDate();
+      try {
+        await loadTeams();
+        setupEventListeners();
+        setDefaultStartDate();
+        
+        // Hide loading overlay after everything is loaded
+        setTimeout(() => {
+          document.getElementById('loadingOverlay').classList.add('hidden');
+        }, 500);
+      } catch (error) {
+        console.error('Initialization error:', error);
+        // Hide loading overlay even on error
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        alert('Error loading schedule generator. Please refresh the page.');
+      }
     }
 
     function setupEventListeners() {
