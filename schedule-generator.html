@@ -946,7 +946,8 @@
   </div>
 
   <script type="module">
-    import { db, collection, getDocs, addDoc } from './firebase-config.js';
+    import { db, collection, getDocs } from './firebase-config.js';
+    import { addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
     // Global state
     let currentStep = 1;
