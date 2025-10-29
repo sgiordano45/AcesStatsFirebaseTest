@@ -750,13 +750,21 @@
       
       // Subscribe to real-time updates
       unsubscribeRoster = onSnapshot(offseasonRef, (doc) => {
+        console.log('📡 Snapshot received, exists:', doc.exists());
         if (doc.exists()) {
           const data = doc.data();
+          console.log('📊 Offseason document data:', data);
+          console.log('📊 Teams in document:', Object.keys(data.teams || {}));
+          console.log('📊 First team example:', Object.keys(data.teams || {})[0], data.teams[Object.keys(data.teams || {})[0]]);
+          
           teams = data.teams || {};
           unavailablePlayers = data.unavailablePlayers || [];
           seasonType = data.seasonType || 'fall-to-summer';
           
+          console.log('🎯 Loaded into memory - teams:', Object.keys(teams).length);
           renderApp();
+        } else {
+          console.log('⚠️ Document snapshot says it does not exist');
         }
       });
       
