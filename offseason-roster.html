@@ -800,12 +800,23 @@
         const changelogRef = collection(db, 'offseasonRosters', OFFSEASON_DOC_ID, 'changelog');
         const changelogSnapshot = await getDocs(changelogRef);
         
-        const deletePromises = changelogSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        console.log(`📊 Found ${changelogSnapshot.docs.length} changelog entries to delete`);
+        
+        if (changelogSnapshot.docs.length === 0) {
+          console.log('ℹ️ No changelog entries to delete');
+          return;
+        }
+        
+        const deletePromises = changelogSnapshot.docs.map(docSnap => {
+          console.log(`  🗑️ Deleting changelog entry: ${docSnap.id}`);
+          return deleteDoc(docSnap.ref);
+        });
         await Promise.all(deletePromises);
         
-        console.log(`✅ Deleted ${changelogSnapshot.docs.length} changelog entries`);
+        console.log(`✅ Successfully deleted ${changelogSnapshot.docs.length} changelog entries`);
       } catch (error) {
         console.error('❌ Error clearing changelog:', error);
+        throw error; // Re-throw to handle in caller
       }
     }
     
@@ -1628,17 +1639,24 @@
         if (confirm('⚠️ This will reset all changes and reload rosters from the current season. Are you sure?')) {
           console.log('🔄 User requested reset from current season');
           try {
-            // Clear the changelog subcollection first
+            // Step 1: Clear the changelog subcollection first
+            console.log('🗑️ Step 1: Clearing changelog...');
             await clearChangelogSubcollection();
             
-            // Delete the current offseason document
+            // Step 2: Delete the current offseason document
+            console.log('🗑️ Step 2: Deleting offseason document...');
             const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
             await deleteDoc(offseasonRef);
             console.log('✅ Deleted existing offseason document');
             
-            // Recreate from current season (this will also reload past players)
+            // Step 3: Small delay to ensure Firestore processes the deletes
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Step 4: Recreate from current season (this will also reload past players)
+            console.log('📝 Step 3: Recreating from current season...');
             await createInitialOffseasonDoc();
             
+            console.log('✅ Reset complete!');
             showToast('Rosters reset from current season! 🔄', 'success');
           } catch (error) {
             console.error('❌ Error resetting:', error);

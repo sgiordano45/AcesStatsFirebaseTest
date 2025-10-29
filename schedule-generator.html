@@ -325,6 +325,43 @@
       transform: translateY(-2px);
     }
 
+    .restriction-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .restriction-team,
+    .restriction-day {
+      padding: 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      min-width: 150px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--error-red);
+      background: white;
+      color: var(--error-red);
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      background: var(--error-red);
+      color: white;
+    }
+
     .info-card {
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
       border-left: 4px solid #3b82f6;
@@ -804,6 +841,38 @@
             </div>
           </div>
 
+          <!-- Team Scheduling Restrictions -->
+          <div class="form-group">
+            <label>Team Scheduling Restrictions (Optional)</label>
+            <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 1rem;">
+              Specify if any teams cannot play on certain days of the week
+            </p>
+            <div id="restrictionsContainer">
+              <div class="restriction-row">
+                <select class="restriction-team">
+                  <option value="">-- Select Team --</option>
+                </select>
+                <span style="padding: 0 0.5rem;">cannot play on</span>
+                <select class="restriction-day">
+                  <option value="">-- Select Day --</option>
+                  <option value="sunday">Sunday</option>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                  <option value="saturday">Saturday</option>
+                </select>
+                <button type="button" class="btn-icon" onclick="removeRestriction(this)" style="display: none;">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="addRestriction()" style="margin-top: 0.5rem; padding: 0.5rem 1rem;">
+              + Add Restriction
+            </button>
+          </div>
+
           <div class="form-group">
             <label for="balanceHomeAway">
               <input type="checkbox" id="balanceHomeAway" checked style="width: auto; display: inline; margin-right: 0.5rem;">
@@ -949,6 +1018,7 @@
       startDate: '',
       gamesPerWeek: 4,
       timeSlots: [],
+      teamRestrictions: [], // Array of {teamId, teamName, restrictedDay}
       balanceHomeAway: true,
       minimizeDoubleHeaders: true,
       generatedSchedule: []
@@ -1031,6 +1101,90 @@
       } else {
         scheduleConfig.timeSlots = scheduleConfig.timeSlots.filter(t => t !== time);
       }
+    }
+
+    function populateRestrictionTeams() {
+      const selects = document.querySelectorAll('.restriction-team');
+      const teamsHtml = '<option value="">-- Select Team --</option>' + 
+        scheduleConfig.selectedTeams.map(team => 
+          `<option value="${team.id}">${team.name}</option>`
+        ).join('');
+      
+      selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = teamsHtml;
+        select.value = currentValue;
+      });
+    }
+
+    window.addRestriction = function() {
+      const container = document.getElementById('restrictionsContainer');
+      const newRow = document.createElement('div');
+      newRow.className = 'restriction-row';
+      newRow.innerHTML = `
+        <select class="restriction-team">
+          <option value="">-- Select Team --</option>
+          ${scheduleConfig.selectedTeams.map(team => 
+            `<option value="${team.id}">${team.name}</option>`
+          ).join('')}
+        </select>
+        <span style="padding: 0 0.5rem;">cannot play on</span>
+        <select class="restriction-day">
+          <option value="">-- Select Day --</option>
+          <option value="sunday">Sunday</option>
+          <option value="monday">Monday</option>
+          <option value="tuesday">Tuesday</option>
+          <option value="wednesday">Wednesday</option>
+          <option value="thursday">Thursday</option>
+          <option value="friday">Friday</option>
+          <option value="saturday">Saturday</option>
+        </select>
+        <button type="button" class="btn-icon" onclick="removeRestriction(this)">
+          ✕
+        </button>
+      `;
+      container.appendChild(newRow);
+      
+      // Show remove button on all rows when there's more than one
+      updateRemoveButtons();
+    }
+
+    window.removeRestriction = function(button) {
+      button.closest('.restriction-row').remove();
+      updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+      const rows = document.querySelectorAll('.restriction-row');
+      rows.forEach((row, index) => {
+        const removeBtn = row.querySelector('.btn-icon');
+        if (removeBtn) {
+          removeBtn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+        }
+      });
+    }
+
+    function captureRestrictions() {
+      scheduleConfig.teamRestrictions = [];
+      const rows = document.querySelectorAll('.restriction-row');
+      
+      rows.forEach(row => {
+        const teamSelect = row.querySelector('.restriction-team');
+        const daySelect = row.querySelector('.restriction-day');
+        
+        if (teamSelect.value && daySelect.value) {
+          const teamId = teamSelect.value;
+          const team = scheduleConfig.selectedTeams.find(t => t.id === teamId);
+          
+          scheduleConfig.teamRestrictions.push({
+            teamId: teamId,
+            teamName: team ? team.name : teamId,
+            restrictedDay: daySelect.value
+          });
+        }
+      });
+      
+      console.log('📋 Team restrictions:', scheduleConfig.teamRestrictions);
     }
 
     function setDefaultStartDate() {
@@ -1125,6 +1279,11 @@
     }
 
     window.nextStep = function() {
+      if (currentStep === 2) {
+        // Populate team dropdowns in restrictions when moving to step 3
+        populateRestrictionTeams();
+      }
+      
       if (currentStep === 3) {
         captureParameters();
         updateConfigSummary();
@@ -1172,16 +1331,26 @@
       scheduleConfig.gamesPerWeek = parseInt(document.getElementById('gamesPerWeek').value) || 4;
       scheduleConfig.balanceHomeAway = document.getElementById('balanceHomeAway').checked;
       scheduleConfig.minimizeDoubleHeaders = document.getElementById('minimizeDoubleHeaders').checked;
+      captureRestrictions();
     }
 
     function updateConfigSummary() {
       const gamesPerTeam = scheduleConfig.seasonType === 'summer' ? 20 : 12;
       const gameDays = scheduleConfig.seasonType === 'fall' ? 'Sundays' : 'Mon/Tue/Wed';
+      
+      let restrictionsText = '';
+      if (scheduleConfig.teamRestrictions.length > 0) {
+        restrictionsText = '<br><strong>Restrictions:</strong> ';
+        restrictionsText += scheduleConfig.teamRestrictions.map(r => 
+          `${r.teamName} (no ${r.restrictedDay.charAt(0).toUpperCase() + r.restrictedDay.slice(1)}s)`
+        ).join(', ');
+      }
+      
       const summary = `
         <strong>${scheduleConfig.seasonYear} ${scheduleConfig.seasonType.charAt(0).toUpperCase() + scheduleConfig.seasonType.slice(1)} Season</strong><br>
         ${scheduleConfig.selectedTeams.length} teams • ${gamesPerTeam} games per team<br>
         Starting ${new Date(scheduleConfig.startDate).toLocaleDateString()}<br>
-        Game days: ${gameDays} • Time slots: ${scheduleConfig.timeSlots.join(', ')}
+        Game days: ${gameDays} • Time slots: ${scheduleConfig.timeSlots.join(', ')}${restrictionsText}
       `;
       document.getElementById('configSummary').innerHTML = summary;
     }
@@ -1296,8 +1465,20 @@
           g.home.id === awayTeamId || g.away.id === awayTeamId
         );
 
-        // If either team already played, move to next week
-        if ((homePlayedThisWeek || awayPlayedThisWeek) && gamesThisWeek.length > 0) {
+        // Check if either team has a restriction for this day
+        let dayRestricted = false;
+        const currentDayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()];
+        
+        const homeRestriction = scheduleConfig.teamRestrictions.find(r => r.teamId === homeTeamId && r.restrictedDay === currentDayName);
+        const awayRestriction = scheduleConfig.teamRestrictions.find(r => r.teamId === awayTeamId && r.restrictedDay === currentDayName);
+        
+        if (homeRestriction || awayRestriction) {
+          dayRestricted = true;
+          console.log(`⚠️ Team restriction: ${homeRestriction ? game.home.name : game.away.name} cannot play on ${currentDayName}`);
+        }
+
+        // If either team already played, or day is restricted, move to next week
+        if ((homePlayedThisWeek || awayPlayedThisWeek || dayRestricted) && gamesThisWeek.length > 0) {
           // Move to next Sunday
           currentDate.setDate(currentDate.getDate() + 7);
           weekNumber++;
@@ -1350,8 +1531,53 @@
         if (!weeklyTeamGameCount[awayTeamId]) weeklyTeamGameCount[awayTeamId] = 0;
 
         // Check if either team would exceed weekly limit
-        if (weeklyTeamGameCount[homeTeamId] >= maxGamesPerTeamPerWeek || 
-            weeklyTeamGameCount[awayTeamId] >= maxGamesPerTeamPerWeek) {
+        let needsNewWeek = weeklyTeamGameCount[homeTeamId] >= maxGamesPerTeamPerWeek || 
+                           weeklyTeamGameCount[awayTeamId] >= maxGamesPerTeamPerWeek;
+
+        // Check team restrictions for current day
+        const currentDayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()];
+        const homeRestriction = scheduleConfig.teamRestrictions.find(r => r.teamId === homeTeamId && r.restrictedDay === currentDayName);
+        const awayRestriction = scheduleConfig.teamRestrictions.find(r => r.teamId === awayTeamId && r.restrictedDay === currentDayName);
+        
+        // If day is restricted for either team, try to move to next day
+        if (homeRestriction || awayRestriction) {
+          console.log(`⚠️ Team restriction: ${homeRestriction ? game.home.name : game.away.name} cannot play on ${currentDayName}`);
+          
+          // Move to next day if we haven't filled slots yet
+          if (slotIndex > 0) {
+            dayOfWeek++;
+            slotIndex = 0;
+            
+            if (dayOfWeek >= 3) { // After Wednesday
+              // Move to next Monday
+              currentDate.setDate(currentDate.getDate() + 5); // Wed + 5 = Mon
+              weekNumber++;
+              weeklyTeamGameCount = {};
+              dayOfWeek = 0;
+            } else {
+              // Move to next day (Tue or Wed)
+              currentDate.setDate(currentDate.getDate() + 1);
+            }
+          }
+          
+          // Re-check restriction on new day
+          const newDayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()];
+          const homeRecheck = scheduleConfig.teamRestrictions.find(r => r.teamId === homeTeamId && r.restrictedDay === newDayName);
+          const awayRecheck = scheduleConfig.teamRestrictions.find(r => r.teamId === awayTeamId && r.restrictedDay === newDayName);
+          
+          // If still restricted, move to next week
+          if (homeRecheck || awayRecheck) {
+            currentDate.setDate(currentDate.getDate() + (7 - dayOfWeek)); // Get to next Monday
+            weekNumber++;
+            weeklyTeamGameCount = {};
+            weeklyTeamGameCount[homeTeamId] = 0;
+            weeklyTeamGameCount[awayTeamId] = 0;
+            dayOfWeek = 0;
+            slotIndex = 0;
+          }
+        }
+
+        if (needsNewWeek) {
           // Move to next week
           currentDate.setDate(currentDate.getDate() + (7 - dayOfWeek)); // Get to next Monday
           weekNumber++;
@@ -1534,6 +1760,7 @@
         startDate: '',
         gamesPerWeek: 4,
         timeSlots: [],
+        teamRestrictions: [],
         balanceHomeAway: true,
         minimizeDoubleHeaders: true,
         generatedSchedule: []
