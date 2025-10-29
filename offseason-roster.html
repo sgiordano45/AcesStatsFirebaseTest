@@ -733,6 +733,82 @@
     // FIREBASE OFFSEASON PLANNING
     // ========================================
     
+    async function loadPastPlayers() {
+      try {
+        console.log('🔍 Loading past players list...');
+        
+        // Get current season to identify current players
+        const currentSeason = await getCurrentSeason();
+        if (!currentSeason) {
+          console.log('⚠️ No current season found, cannot determine past players');
+          pastPlayers = [];
+          return;
+        }
+        
+        // Get current season players
+        const seasonPlayers = await getSeasonPlayerStatsOptimized(currentSeason.id);
+        const currentSeasonPlayerNames = new Set();
+        seasonPlayers.forEach(player => {
+          const name = player.playerName || player.name || player.id;
+          currentSeasonPlayerNames.add(name);
+        });
+        
+        console.log(`📊 Current season has ${currentSeasonPlayerNames.size} active players`);
+        
+        // Get all player stats
+        const allPlayerStats = await getAllPlayerStatsOptimized();
+        console.log(`📊 Total players in system: ${allPlayerStats.length}`);
+        
+        // Identify past players (not in current season)
+        pastPlayers = allPlayerStats
+          .filter(player => !currentSeasonPlayerNames.has(player.name))
+          .map(player => {
+            // Find the most recent season they played
+            let lastSeason = 'Unknown';
+            let lastTeam = 'Unknown';
+            
+            if (player.seasons && typeof player.seasons === 'object') {
+              const seasonKeys = Object.keys(player.seasons).sort().reverse();
+              if (seasonKeys.length > 0) {
+                const recentSeasonKey = seasonKeys[0];
+                lastSeason = recentSeasonKey;
+                lastTeam = player.seasons[recentSeasonKey].team || 'Unknown';
+              }
+            }
+            
+            return {
+              id: player.name.toLowerCase().replace(/\s+/g, '_'),
+              name: player.name,
+              ba: player.career?.battingAverage?.toFixed(3) || '.000',
+              acesBPI: player.career?.acesBPI?.toFixed(1) || '0.0',
+              lastSeason: lastSeason,
+              lastTeam: lastTeam
+            };
+          })
+          .sort((a, b) => b.lastSeason.localeCompare(a.lastSeason)); // Sort by most recent
+        
+        console.log(`✅ Found ${pastPlayers.length} past players not in current season`);
+      } catch (error) {
+        console.error('❌ Error loading past players:', error);
+        pastPlayers = [];
+      }
+    }
+    
+    async function clearChangelogSubcollection() {
+      try {
+        console.log('🗑️ Clearing changelog subcollection...');
+        const changelogRef = collection(db, 'offseasonRosters', OFFSEASON_DOC_ID, 'changelog');
+        const changelogSnapshot = await getDocs(changelogRef);
+        
+        const deletePromises = changelogSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        console.log(`✅ Deleted ${changelogSnapshot.docs.length} changelog entries`);
+      } catch (error) {
+        console.error('❌ Error clearing changelog:', error);
+      }
+    }
+    
     async function initializeOffseasonPlanning() {
       console.log('🚀 Starting initializeOffseasonPlanning...');
       const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
@@ -747,6 +823,10 @@
         // Create initial document from current season rosters
         console.log('📝 Creating new offseason planning document...');
         await createInitialOffseasonDoc();
+      } else {
+        // Document exists, but we still need to load past players
+        console.log('📋 Document exists, loading past players list...');
+        await loadPastPlayers();
       }
       
       // Subscribe to real-time updates
@@ -1548,12 +1628,15 @@
         if (confirm('⚠️ This will reset all changes and reload rosters from the current season. Are you sure?')) {
           console.log('🔄 User requested reset from current season');
           try {
+            // Clear the changelog subcollection first
+            await clearChangelogSubcollection();
+            
             // Delete the current offseason document
             const offseasonRef = doc(db, 'offseasonRosters', OFFSEASON_DOC_ID);
             await deleteDoc(offseasonRef);
             console.log('✅ Deleted existing offseason document');
             
-            // Recreate from current season
+            // Recreate from current season (this will also reload past players)
             await createInitialOffseasonDoc();
             
             showToast('Rosters reset from current season! 🔄', 'success');

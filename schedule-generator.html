@@ -75,11 +75,10 @@
     /* Header */
     .header {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      padding: 4rem 2rem 3rem;
+      padding: 2rem 2rem 3rem;
       box-shadow: var(--shadow-lg);
       position: relative;
       overflow: hidden;
-      text-align: center;
       color: white;
     }
 
@@ -104,13 +103,21 @@
       pointer-events: none;
     }
 
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      padding: 0 200px; /* Add padding to avoid button overlap */
+    }
+
     .header h1 {
       font-size: 3rem;
       font-weight: 800;
       margin-bottom: 1rem;
       text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      position: relative;
-      z-index: 1;
+      color: white;
     }
 
     .header p {
@@ -118,8 +125,7 @@
       opacity: 0.95;
       max-width: 700px;
       margin: 0 auto;
-      position: relative;
-      z-index: 1;
+      color: white;
     }
 
     /* Back Button */
@@ -616,7 +622,11 @@
       }
 
       .header {
-        padding: 5rem 2rem 3rem;
+        padding: 5rem 1rem 3rem;
+      }
+
+      .header-content {
+        padding: 0 1rem; /* Reduce padding on mobile */
       }
 
       .header h1 {
@@ -659,8 +669,10 @@
   <!-- Header -->
   <div class="header">
     <a href="offseason.html" class="back-button">Back to Offseason Hub</a>
-    <h1>📅 Schedule Generator</h1>
-    <p>Create balanced schedules for summer (20 games) or fall (12 games) seasons with automatic time slot assignment</p>
+    <div class="header-content">
+      <h1>📅 Schedule Generator</h1>
+      <p>Create balanced schedules for summer (20 games) or fall (12 games) seasons with automatic time slot assignment</p>
+    </div>
   </div>
 
     <div class="wizard-container">
