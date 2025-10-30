@@ -349,4 +349,36 @@ export function canDeletePhoto(userProfile, photo) {
   return false;
 }
 
+/**
+ * Format file size for display
+ * @param {number} bytes - File size in bytes
+ * @returns {string} - Formatted size string
+ */
+export function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
+ * Get available folders for upload
+ * @returns {Array} - Array of folder options
+ */
+export function getAvailableFolders() {
+  return [
+    { value: 'league', label: 'League Photos' },
+    { value: 'green', label: 'Aces Green' },
+    { value: 'blue', label: 'Aces Blue' },
+    { value: 'orange', label: 'Aces Orange' },
+    { value: 'purple', label: 'Aces Purple' },
+    { value: 'red', label: 'Aces Red' },
+    { value: 'yellow', label: 'Aces Yellow' },
+    { value: 'black', label: 'Aces Black' },
+    { value: 'white', label: 'Aces White' },
+    { value: 'gold', label: 'Aces Gold' }
+  ];
+}
+
 export { storage };
