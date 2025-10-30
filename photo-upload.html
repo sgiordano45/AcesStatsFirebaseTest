@@ -597,9 +597,28 @@ onAuthStateChanged(auth, async (user) => {
     // Check permissions
     try {
       const userProfile = await getUserProfile(user.uid);
-      const canUpload = hasPermission(userProfile, 'canManageStaff') || 
-                       hasPermission(userProfile, 'canEditRoster') ||
-                       userProfile.userType === 'admin';
+      console.log('📋 User profile loaded:', {
+        userType: userProfile.userType,
+        userRole: userProfile.userRole,
+        isCaptain: userProfile.isCaptain
+      });
+      
+      // Check multiple possible permission indicators
+      const canUpload = 
+        // Check userType field (new system)
+        userProfile.userType === 'admin' ||
+        userProfile.userType === 'captain' ||
+        userProfile.userType === 'team-staff' ||
+        // Check userRole field (legacy)
+        userProfile.userRole === 'admin' ||
+        userProfile.userRole === 'staff' ||
+        // Check isCaptain flag
+        userProfile.isCaptain === true ||
+        // Check permissions
+        hasPermission(userProfile, 'canManageStaff') || 
+        hasPermission(userProfile, 'canEditRoster');
+      
+      console.log('🔒 Upload permission:', canUpload);
       
       if (!canUpload) {
         alert('You do not have permission to upload photos. This feature is for captains and admins only.');
