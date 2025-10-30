@@ -949,6 +949,17 @@
         const balancePercent = totalGames > 0 ? (Math.min(stats.homeGames, stats.awayGames) / totalGames) * 100 : 50;
         const balanceClass = balance <= 1 ? '' : balance === 2 ? 'warning' : 'danger';
 
+        const timeSlotHTML = Object.keys(stats.timeSlots).length > 0 ? `
+          <div class="stat-row">
+            <span class="stat-label">Time slots:</span>
+          </div>
+          <ul class="double-header-list">
+            ${Object.entries(stats.timeSlots).sort((a, b) => a[0].localeCompare(b[0])).map(([time, count]) => 
+              `<li>${time}: ${count} games</li>`
+            ).join('')}
+          </ul>
+        ` : '';
+
         const doubleHeaderHTML = stats.doubleHeaders.length > 0 ? `
           <div class="stat-row">
             <span class="stat-label">Double-headers:</span>
@@ -973,6 +984,7 @@
             <div class="balance-bar">
               <div class="balance-fill ${balanceClass}" style="width: ${balancePercent}%"></div>
             </div>
+            ${timeSlotHTML}
             ${doubleHeaderHTML}
           </div>
         `;
