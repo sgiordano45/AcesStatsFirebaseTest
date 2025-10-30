@@ -755,33 +755,43 @@
         cell.appendChild(select);
         select.focus();
 
-        select.addEventListener('blur', () => {
+        const handleChange = () => {
           schedule[index][field] = select.value;
           renderSchedule();
           renderTeamSummaries();
-        });
+        };
 
-        select.addEventListener('change', () => {
-          schedule[index][field] = select.value;
-          renderSchedule();
-          renderTeamSummaries();
-        });
+        select.addEventListener('change', handleChange);
+        select.addEventListener('blur', handleChange);
 
       } else if (field === 'date') {
-        // Date input
+        // Date input with wrapper for better UX
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        
         const input = document.createElement('input');
         input.type = 'date';
         input.value = parseDateToISO(currentValue);
+        input.style.cursor = 'pointer';
         
+        wrapper.appendChild(input);
         cell.innerHTML = '';
-        cell.appendChild(input);
+        cell.appendChild(wrapper);
+        
+        // Show picker immediately
+        input.showPicker?.();
         input.focus();
 
-        input.addEventListener('blur', () => {
-          schedule[index][field] = formatDate(input.value);
-          renderSchedule();
-          renderTeamSummaries();
-        });
+        const handleChange = () => {
+          if (input.value) {
+            schedule[index][field] = formatDate(input.value);
+            renderSchedule();
+            renderTeamSummaries();
+          }
+        };
+
+        input.addEventListener('change', handleChange);
+        input.addEventListener('blur', handleChange);
 
       } else if (field === 'homeTeam' || field === 'awayTeam') {
         // Dropdown for teams
@@ -798,17 +808,14 @@
         cell.appendChild(select);
         select.focus();
 
-        select.addEventListener('blur', () => {
+        const handleChange = () => {
           schedule[index][field] = select.value;
           renderSchedule();
           renderTeamSummaries();
-        });
+        };
 
-        select.addEventListener('change', () => {
-          schedule[index][field] = select.value;
-          renderSchedule();
-          renderTeamSummaries();
-        });
+        select.addEventListener('change', handleChange);
+        select.addEventListener('blur', handleChange);
       }
     }
 
