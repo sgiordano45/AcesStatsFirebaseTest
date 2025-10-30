@@ -789,49 +789,47 @@ uploadBtn.addEventListener('click', async () => {
   progressContainer.classList.add('visible');
   
   // Gather metadata
-  const metadata = {
-    folder: folderSelect.value,
-    caption: captionInput.value || '',
-    teamId: folderSelect.value !== 'league' ? folderSelect.value : null
-  };
+  const folder = folderSelect.value;
+  const caption = captionInput.value || 'Team Photo';
+  const teamId = folderSelect.value !== 'league' ? folderSelect.value : null;
   
-  console.log('🚀 Starting upload with metadata:', metadata);
+  console.log('🚀 Starting upload:', { folder, caption, teamId, fileCount: selectedFiles.length });
   
   try {
-    // Upload files
-    const results = await uploadMultiplePhotos(
-      selectedFiles,
-      metadata,
-      (progress, completed, total) => {
-        // Update progress bar
-        progressBar.style.width = `${progress}%`;
-        progressBar.textContent = `${Math.round(progress)}%`;
-        progressText.textContent = `${completed}/${total} files`;
-        
-        // Update individual file statuses
-        selectedFiles.forEach((file, index) => {
-          const fileItem = document.querySelector(`[data-index="${index}"]`);
-          if (fileItem && results[index]) {
-            const statusEl = fileItem.querySelector('.file-status');
-            if (results[index].success) {
-              fileItem.classList.add('success');
-              statusEl.textContent = '✅ Uploaded';
-              statusEl.className = 'file-status success';
-            } else if (results[index].error) {
-              fileItem.classList.add('error');
-              statusEl.textContent = '❌ Failed';
-              statusEl.className = 'file-status error';
-            }
-          }
-        });
-      }
-    );
+    // Upload files - note: uploadMultiplePhotos doesn't support progress callback
+    // We'll update progress after each file
+    const results = await uploadMultiplePhotos(selectedFiles, folder, caption, teamId);
     
     console.log('✅ Upload complete:', results);
     
-    // Check if all succeeded
-    const successCount = results.filter(r => r.success).length;
-    const failCount = results.filter(r => !r.success).length;
+    // Update UI based on results
+    const successCount = results.successful.length;
+    const failCount = results.failed.length;
+    
+    // Update file statuses
+    selectedFiles.forEach((file, index) => {
+      const fileItem = document.querySelector(`[data-index="${index}"]`);
+      if (fileItem) {
+        const statusEl = fileItem.querySelector('.file-status');
+        const wasSuccessful = results.successful.find(r => r.fileName === file.name);
+        const wasFailed = results.failed.find(r => r.fileName === file.name);
+        
+        if (wasSuccessful) {
+          fileItem.classList.add('success');
+          statusEl.textContent = '✅ Uploaded';
+          statusEl.className = 'file-status success';
+        } else if (wasFailed) {
+          fileItem.classList.add('error');
+          statusEl.textContent = '❌ Failed';
+          statusEl.className = 'file-status error';
+        }
+      }
+    });
+    
+    // Update progress bar to 100%
+    progressBar.style.width = '100%';
+    progressBar.textContent = '100%';
+    progressText.textContent = `${successCount}/${selectedFiles.length} files uploaded`;
     
     if (successCount > 0) {
       // Show success message
