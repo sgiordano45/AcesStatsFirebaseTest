@@ -597,21 +597,23 @@ onAuthStateChanged(auth, async (user) => {
     // Check permissions
     try {
       console.log('🔄 Fetching user profile...');
-      const userProfile = await getUserProfile(user.uid);
+      const profileResult = await getUserProfile(user.uid);
       
-      if (!userProfile) {
-        console.error('❌ getUserProfile returned null/undefined');
+      if (!profileResult.success || !profileResult.data) {
+        console.error('❌ getUserProfile failed:', profileResult);
         alert('Could not load user profile. Please try again.');
         window.location.href = 'profile.html';
         return;
       }
+      
+      const userProfile = profileResult.data;
       
       console.log('📋 User profile loaded:', {
         userType: userProfile.userType,
         userRole: userProfile.userRole,
         isCaptain: userProfile.isCaptain,
         isAdmin: userProfile.isAdmin,
-        uid: userProfile.uid
+        uid: user.uid
       });
       
       // Check multiple possible permission indicators
