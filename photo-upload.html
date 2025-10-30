@@ -596,11 +596,22 @@ onAuthStateChanged(auth, async (user) => {
     
     // Check permissions
     try {
+      console.log('🔄 Fetching user profile...');
       const userProfile = await getUserProfile(user.uid);
+      
+      if (!userProfile) {
+        console.error('❌ getUserProfile returned null/undefined');
+        alert('Could not load user profile. Please try again.');
+        window.location.href = 'profile.html';
+        return;
+      }
+      
       console.log('📋 User profile loaded:', {
         userType: userProfile.userType,
         userRole: userProfile.userRole,
-        isCaptain: userProfile.isCaptain
+        isCaptain: userProfile.isCaptain,
+        isAdmin: userProfile.isAdmin,
+        uid: userProfile.uid
       });
       
       // Check multiple possible permission indicators
@@ -614,23 +625,31 @@ onAuthStateChanged(auth, async (user) => {
         userProfile.userRole === 'staff' ||
         // Check isCaptain flag
         userProfile.isCaptain === true ||
+        // Check isAdmin flag
+        userProfile.isAdmin === true ||
         // Check permissions
         hasPermission(userProfile, 'canManageStaff') || 
         hasPermission(userProfile, 'canEditRoster');
       
-      console.log('🔒 Upload permission:', canUpload);
+      console.log('🔒 Upload permission granted:', canUpload);
       
       if (!canUpload) {
+        console.warn('⚠️ User does not have upload permissions');
         alert('You do not have permission to upload photos. This feature is for captains and admins only.');
         window.location.href = 'profile.html';
         return;
       }
 
+      console.log('✅ Permission check passed, showing upload interface');
       loadingOverlay.classList.add('hidden');
       
     } catch (error) {
       console.error('❌ Error checking permissions:', error);
-      alert('Error verifying permissions. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      alert('Error verifying permissions: ' + error.message);
       window.location.href = 'profile.html';
     }
     
